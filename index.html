@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DATARED - Control y Gestión de Retiros DTH/HFC/FTTH</title>
+    <!-- Tailwind CSS para diseño ágil -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS para lectura de Excel -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
 
+    <!-- Header Principal -->
     <header class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
         <div>
             <h1 class="font-bold text-xl tracking-wide">DATARED BOLIVIA</h1>
@@ -18,13 +22,15 @@
         <span class="bg-blue-800 text-xs px-3 py-1 rounded-full border border-blue-700">v1.0 - Producción</span>
     </header>
 
+    <!-- Contenedor Principal -->
     <main class="max-w-6xl mx-auto p-4 space-y-6">
 
+        <!-- MÓDULO 1: Carga Masiva de Excel (Para OPERADORES / SUPERVISORES) -->
         <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <h2 class="text-lg font-bold text-blue-900 mb-2 flex items-center gap-2">
                 📂 Carga Masiva de Pendientes (.xlsx)
             </h2>
-            <p class="text-xs text-slate-500 mb-4">Sube el archivo Excel de retiros para procesar automáticamente las pestañas del documento.</p>
+            <p class="text-xs text-slate-500 mb-4">Sube el archivo Excel de retiros pendientes para procesar automáticamente las pestañas del documento.</p>
             
             <div class="flex flex-col sm:flex-row gap-3 items-center">
                 <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-200 rounded-lg p-1" />
@@ -35,6 +41,7 @@
             <div id="statusOutput" class="mt-3 text-xs font-semibold"></div>
         </section>
 
+        <!-- MÓDULO 2: Panel de Gestión y Lista de Órdenes -->
         <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-lg font-bold text-blue-900">📋 Órdenes de Retiro Asignadas</h2>
@@ -43,12 +50,14 @@
                 </button>
             </div>
 
+            <!-- Tabla de Órdenes Cargadas -->
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead>
                         <tr class="bg-slate-50 text-slate-600 border-b border-slate-200">
                             <th class="p-2.5">Código / Cliente</th>
                             <th class="p-2.5">Ciudad / Zona</th>
+                            <th class="p-2.5">Dirección / Ref.</th>
                             <th class="p-2.5">Tecnología</th>
                             <th class="p-2.5">Estado</th>
                             <th class="p-2.5 text-center">Acciones</th>
@@ -56,7 +65,7 @@
                     </thead>
                     <tbody id="tablaOrdenesBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="5" class="p-4 text-center text-slate-400">Sin órdenes cargadas. Presiona "Actualizar" o sube un Excel.</td>
+                            <td colspan="6" class="p-4 text-center text-slate-400">Sin órdenes cargadas. Presiona "Actualizar" o sube un Excel.</td>
                         </tr>
                     </tbody>
                 </table>
@@ -65,11 +74,14 @@
 
     </main>
 
+    <!-- SCRIPTS Y LÓGICA DE CONEXIÓN -->
     <script>
+        // CONFIGURACIÓN DE SUPABASE
         const SUPABASE_URL = "https://darcifsfttemivwssbqd.supabase.co/rest/v1/";
-        const SUPABASE_ANON_KEY = "sb_publishable_qhiGtIZUe_iZJ5X60qwV6A_my60aqwE"; 
+        const SUPABASE_ANON_KEY = "sb_publishable_qhiGtIZUe_iZJ5X60qwV6A_my60aqwE";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // FUNCIÓN DE CARGA Y PROCESAMIENTO MASIVO DE EXCEL
         async function procesarYSubirExcel() {
             const fileInput = document.getElementById('excelFileInput');
             const statusOutput = document.getElementById('statusOutput');
@@ -83,7 +95,7 @@
             const reader = new FileReader();
 
             statusOutput.className = "mt-3 text-xs font-semibold text-blue-700";
-            statusOutput.innerText = 'Leyendo archivo Excel... Por favor espere.';
+            statusOutput.innerText = 'Leyendo y procesando archivo... Por favor espere.';
 
             reader.onload = async function(e) {
                 try {
@@ -99,30 +111,29 @@
                         if (jsonRows.length === 0) continue;
 
                         for (const row of jsonRows) {
-                            // Mapeo flexible para leer cualquier formato de columna en el Excel
-                            const cliente_nro = row.cliente_nro || row.CODIGO || row.CLIENTE || row.cliente || "";
-                            const cliente_nombre = row.cliente_nombre_completo || row.NOMBRE || row.CLIENTE_NOMBRE || row.nombre || "";
-                            const ciudad = row.ciudad || row.CIUDAD || row.poblacion || row.POBLACION || "Tarija";
-                            const departamento = row.departamento || row.DEPARTAMENTO || "Tarija";
-                            const direccion = row.direccion || row.DIRECCION || "Domicilio Urbano";
-                            const zona = row.zona_grupo || row.zona_tap || row.ZONA || row.NODO || "";
-                            const tecnologia = row.TECNOLOGIA || row.tecnologia || sheetName;
-
+                            // Mapeo adaptado exactamente a la estructura de tu Excel
+                            const cliente_nro = row.cliente_nro || row.cliente || row.CODIGO || "";
+                            const cliente_nombre = row.cliente_nombre_completo || row.cliente_nombre || row.NOMBRE || "";
+                            
                             if (!cliente_nro && !cliente_nombre) continue;
 
+                            // Formateo de coordenadas GPS (Soporta comas y puntos)
+                            let coordX = row.cliente_coordenada_x ? String(row.cliente_coordenada_x).replace(',', '.') : null;
+                            let coordY = row.cliente_coordenada_y ? String(row.cliente_coordenada_y).replace(',', '.') : null;
+
                             const ordenPayload = {
-                                departamento: String(departamento).trim(),
-                                ciudad: String(ciudad).trim(),
+                                departamento: String(row.departament || row.departamento || "TARIJA").trim(),
+                                ciudad: String(row.ciudad || "YACUIBA").trim(),
                                 cliente_nro: String(cliente_nro).trim(),
                                 cliente_nombre: String(cliente_nombre).trim(),
-                                tecnologia: ['FTTH', 'HFC', 'DTH'].includes(tecnologia) ? tecnologia : 'HFC',
-                                zona_nodo_tap: zona ? String(zona).trim() : null,
-                                direccion: String(direccion).trim(),
+                                tecnologia: ['FTTH', 'HFC', 'DTH'].includes(sheetName) ? sheetName : 'HFC',
+                                zona_nodo_tap: row.zona_tap || row.zona_grupo || null,
+                                direccion: String(row.direccion || "Domicilio Urbano").trim(),
                                 referencia: row.referencia ? String(row.referencia).trim() : null,
                                 cliente_telefono: row.cliente_telefono ? String(row.cliente_telefono).trim() : null,
                                 cliente_telefonos_referencia: row.cliente_telefonos_referencia ? String(row.cliente_telefonos_referencia).trim() : null,
-                                coordenada_x: row.cliente_coordenada_x ? parseFloat(row.cliente_coordenada_x) : null,
-                                coordenada_y: row.cliente_coordenada_y ? parseFloat(row.cliente_coordenada_y) : null,
+                                coordenada_x: coordX ? parseFloat(coordX) : null,
+                                coordenada_y: coordY ? parseFloat(coordY) : null,
                                 estado: 'PENDIENTE'
                             };
 
@@ -137,10 +148,10 @@
 
                     if (erroresLogs.length > 0) {
                         statusOutput.className = "mt-3 text-xs font-semibold text-amber-600";
-                        statusOutput.innerText = `Cargados: ${totalCargados}. Errores: ${erroresLogs[0]}`;
+                        statusOutput.innerText = `Se cargaron ${totalCargados} registros a Supabase. (Detalle: ${erroresLogs[0]})`;
                     } else {
                         statusOutput.className = "mt-3 text-xs font-semibold text-emerald-600";
-                        statusOutput.innerText = `¡Éxito! Se cargaron ${totalCargados} órdenes de retiro a Supabase.`;
+                        statusOutput.innerText = `¡Éxito! Se cargaron ${totalCargados} órdenes de retiro correctamente a la base de datos.`;
                     }
                     
                     cargarOrdenesDesdeSupabase();
@@ -153,9 +164,10 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // FUNCIÓN PARA CONSULTAR Y MOSTRAR LAS ÓRDENES DESDE SUPABASE
         async function cargarOrdenesDesdeSupabase() {
             const tbody = document.getElementById('tablaOrdenesBody');
-            tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Cargando...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Cargando órdenes desde Supabase...</td></tr>';
 
             const { data, error } = await supabaseClient
                 .from('ordenes_retiro')
@@ -163,29 +175,30 @@
                 .order('fecha_registro', { ascending: false });
 
             if (error) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-rose-500">Error al cargar: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-500">Error al consultar Supabase: ${error.message}</td></tr>`;
                 return;
             }
 
             if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">No hay órdenes registradas aún en la base de datos.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No hay órdenes registradas aún en la base de datos. Sube un archivo Excel arriba.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = data.map(o => `
                 <tr class="hover:bg-slate-50 border-b border-slate-100">
                     <td class="p-2.5 font-bold text-blue-900">${o.cliente_nro}<br><span class="font-normal text-slate-600">${o.cliente_nombre}</span></td>
-                    <td class="p-2.5">${o.ciudad}<br><span class="text-slate-400 text-[10px]">${o.zona_nodo_tap || o.direccion}</span></td>
+                    <td class="p-2.5">${o.ciudad}<br><span class="text-slate-400 text-[10px]">${o.zona_nodo_tap || ''}</span></td>
+                    <td class="p-2.5 text-slate-600">${o.direccion}<br><span class="text-slate-400 text-[10px]">${o.referencia || ''}</span></td>
                     <td class="p-2.5 font-semibold">${o.tecnologia}</td>
                     <td class="p-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">${o.estado}</span></td>
                     <td class="p-2.5 text-center">
-                        <button class="bg-blue-900 text-white text-[10px] px-2.5 py-1 rounded hover:bg-blue-800">Gestionar</button>
+                        <button class="bg-blue-900 text-white text-[10px] px-2.5 py-1 rounded hover:bg-blue-800 shadow-sm">Gestionar</button>
                     </td>
                 </tr>
             `).join('');
         }
 
-        // Cargar automáticamente al abrir la página
+        // Cargar las órdenes automáticamente al ingresar a la página web
         window.onload = cargarOrdenesDesdeSupabase;
     </script>
 </body>
