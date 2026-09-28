@@ -70,11 +70,15 @@
 
     </main>
 
-    <!-- SCRIPTS CON LA DIRECCIÓN Y CLAVE CORREGIDA DE SUPABASE -->
+    <!-- SCRIPTS CON LIMPIEZA AUTOMÁTICA DE URL Y CREDENCIALES -->
     <script>
-        const SUPABASE_URL ="https://darcifsfttemivwssbqd.supabase.co/rest/v1";
-        const SUPABASE_ANON_KEY ="sb_publishable_qhiGtIZUe_iZJ5X60qwV6A_my60aqwE";
-        const supabaseClient =supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Formateo automático para evitar errores de ruta en el SDK
+        let RAW_URL = "https://darcifsfttemivwssbqd.supabase.co/rest/v1";
+        const SUPABASE_URL = RAW_URL.replace(/\/rest\/v1\/?$/, "").replace(/\/$/, "");
+        
+        const SUPABASE_ANON_KEY = "sb_publishable_qhiGtIZUe_iZJ5X60qwV6A_my60aqwE";
+        
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function procesarYSubirExcel() {
             const fileInput = document.getElementById('excelFileInput');
