@@ -136,7 +136,7 @@
                         <p class="text-xl font-black text-white mt-0.5" id="countTotal">0</p>
                     </div>
                     <div onclick="filtrarPorTabAdmin('SIN_ASIGNAR')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-amber-400 transition-all border-amber-500/30">
-                        <p class="text-[10px] font-bold text-amber-400">⚠️ SIN ASIGNAR</p>
+                        <p class="text-[10px] font-bold text-amber-400">⚠️️ SIN ASIGNAR</p>
                         <p class="text-xl font-black text-amber-200 mt-0.5" id="countSinAsignar">0</p>
                     </div>
                     <div onclick="filtrarPorTabAdmin('PENDIENTES')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-sky-400 transition-all border-sky-500/30">
@@ -433,25 +433,6 @@
                     </div>
 
                     <div id="contenedorFungiblesCatalogo" class="space-y-2"></div>
-
-                    <div class="pt-2 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                        <div>
-                            <label class="text-[10px] text-slate-300">Cable Coaxial/FO (m):</label>
-                            <input type="number" id="matCableMetros" value="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
-                        </div>
-                        <div>
-                            <label class="text-[10px] text-slate-300">Conectores (Cant):</label>
-                            <input type="number" id="matConectores" value="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
-                        </div>
-                        <div>
-                            <label class="text-[10px] text-slate-300">Splitters / TAPs:</label>
-                            <input type="number" id="matSplitters" value="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
-                        </div>
-                        <div>
-                            <label class="text-[10px] text-slate-300">Precintos / Faja:</label>
-                            <input type="number" id="matPrecintos" value="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
-                        </div>
-                    </div>
                 </div>
 
                 <div id="gestionStatusOutput" class="text-xs font-bold text-center min-h-[1rem]"></div>
@@ -503,7 +484,10 @@
             { magic: 'INSACC0010', siga: '3067', nombre: 'ELECTRIC POWER CORD', tipo: 'Cable de Poder' },
             { magic: 'INSACC0003', siga: '1026', nombre: '6 FT JUMPER CABLE HDMI TO HDMI', tipo: 'HDMI' },
             { magic: 'INSACC0011', siga: '3030', nombre: 'JUMPER CABLE HDMI PREMIUM 6FT', tipo: 'HDMI' },
-            { magic: 'INSACC0002', siga: '1025', nombre: '6 FT JUMPER CABLE RCA TO RCA', tipo: 'RCA' }
+            { magic: 'INSACC0002', siga: '1025', nombre: '6 FT JUMPER CABLE RCA TO RCA', tipo: 'RCA' },
+            { magic: 'INSSPL0001', siga: '1045', nombre: 'SPLITTER X2', tipo: 'Splitter' },
+            { magic: 'INSSPL0002', siga: '1046', nombre: 'SPLITTER X3', tipo: 'Splitter' },
+            { magic: 'OTRO', siga: 'OTRO', nombre: 'OTRO (Especificar manualmente)', tipo: 'Otro' }
         ];
 
         let usuarioActual = null;
@@ -1124,14 +1108,30 @@
                 '<option value="' + c.siga + '">[SIGA ' + c.siga + '] ' + c.nombre + '</option>'
             ).join('');
 
-            const rowHtml = '<div id="' + idFila + '" class="flex items-center gap-2 bg-slate-950 p-2 rounded-lg border border-slate-800">' +
-                '<select class="fungibleSelect bg-slate-900 text-slate-200 text-xs rounded-lg p-1.5 w-full border border-sky-500/20">' +
-                    optionsCat +
-                '</select>' +
-                '<input type="number" value="1" min="1" class="fungibleCantInput w-16 p-1.5 tech-input rounded-lg text-xs text-center font-bold" />' +
-                '<button type="button" onclick="eliminarFilaElemento(\'' + idFila + '\')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5">✕</button>' +
+            const rowHtml = '<div id="' + idFila + '" class="space-y-1.5 bg-slate-950 p-2 rounded-lg border border-slate-800">' +
+                '<div class="flex items-center gap-2">' +
+                    '<select onchange="evaluarSeleccionOtro(this, \'' + idFila + '\')" class="fungibleSelect bg-slate-900 text-slate-200 text-xs rounded-lg p-1.5 w-full border border-sky-500/20">' +
+                        optionsCat +
+                    '</select>' +
+                    '<input type="number" value="1" min="1" class="fungibleCantInput w-16 p-1.5 tech-input rounded-lg text-xs text-center font-bold" />' +
+                    '<button type="button" onclick="eliminarFilaElemento(\'' + idFila + '\')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5">✕</button>' +
+                '</div>' +
+                '<input type="text" placeholder="Escriba la descripción del accesorio..." class="fungibleOtroInput hidden w-full p-1.5 tech-input rounded-lg text-xs text-amber-300 border-amber-500/40" />' +
             '</div>';
+            
             container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function evaluarSeleccionOtro(selectEl, idFila) {
+            const fila = document.getElementById(idFila);
+            const inputOtro = fila.querySelector('.fungibleOtroInput');
+            if (selectEl.value === 'OTRO') {
+                inputOtro.classList.remove('hidden');
+                inputOtro.focus();
+            } else {
+                inputOtro.classList.add('hidden');
+                inputOtro.value = '';
+            }
         }
 
         function eliminarFilaElemento(idFila) {
@@ -1220,18 +1220,21 @@
             const filasFungiblesCat = document.querySelectorAll('#contenedorFungiblesCatalogo > div');
             let fungiblesCatArray = [];
             filasFungiblesCat.forEach(f => {
-                const siga = f.querySelector('.fungibleSelect').value;
+                const select = f.querySelector('.fungibleSelect');
+                if (!select) return;
+                const siga = select.value;
                 const cant = f.querySelector('.fungibleCantInput').value;
-                const itemObj = CATALOGO_FUNGIBLES.find(c => c.siga === siga);
-                if (itemObj) {
-                    fungiblesCatArray.push('[SIGA ' + siga + '] ' + itemObj.tipo + ' x' + cant);
+                
+                if (siga === 'OTRO') {
+                    const descManual = f.querySelector('.fungibleOtroInput').value.trim() || 'ACCESORIO OTRO';
+                    fungiblesCatArray.push('[OTRO] ' + descManual + ' x' + cant);
+                } else {
+                    const itemObj = CATALOGO_FUNGIBLES.find(c => c.siga === siga);
+                    if (itemObj) {
+                        fungiblesCatArray.push('[SIGA ' + siga + '] ' + itemObj.tipo + ' x' + cant);
+                    }
                 }
             });
-
-            const matCable = document.getElementById('matCableMetros').value || 0;
-            const matConectores = document.getElementById('matConectores').value || 0;
-            const matSplitters = document.getElementById('matSplitters').value || 0;
-            const matPrecintos = document.getElementById('matPrecintos').value || 0;
 
             const targetId = !isNaN(ordenSeleccionadaGestion.id) ? Number(ordenSeleccionadaGestion.id) : ordenSeleccionadaGestion.id;
 
@@ -1247,7 +1250,7 @@
                 precio_unitario: precioUnit,
                 es_feriado: esFeriado,
                 fungibles_catalogo: fungiblesCatArray.join(', '),
-                materiales_fungibles: 'Cable: ' + matCable + 'm, Conectores: ' + matConectores + ', Splitters: ' + matSplitters + ', Precintos: ' + matPrecintos,
+                materiales_fungibles: 'N/A - SOLO RETIRO',
                 tecnico_nombre: usuarioActual.nombre,
                 ciudad: ordenSeleccionadaGestion.ciudad,
                 tecnologia: ordenSeleccionadaGestion.tecnologia,
@@ -1265,7 +1268,7 @@
             } else {
                 await cargarOrdenesAdminDesdeSupabase();
             }
-            alert("¡Retiro registrado con éxito y sumado a tu planilla!");
+            alert("¡Retiro registrado con éxito!");
         }
 
         function toggleSelectAll(master) {
