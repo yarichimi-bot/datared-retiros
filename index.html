@@ -734,25 +734,24 @@
 
                 const latFormatted = formatearGPS(o.coordenada_x);
                 const lngFormatted = formatearGPS(o.coordenada_y);
-                let mapsUrl = (latFormatted && lngFormatted) ? `https://www.google.com/maps/search/?api=1&query=${latFormatted},${lngFormatted}` : null;
+                let mapsUrl = (latFormatted && lngFormatted) ? "https://www.google.com/maps/search/?api=1&query=" + latFormatted + "," + lngFormatted : null;
 
-                return `
-                <tr class="hover:bg-slate-900/50 border-b border-slate-800 ${o.estado === 'PAGADO' ? 'bg-rose-950/20' : ''}">
-                    <td class="p-3"><input type="checkbox" class="rowCheckbox" value="${o.id}" onchange="actualizarConteoSeleccionados()" /></td>
-                    <td class="p-3 font-bold text-sky-300">${o.cliente_nro}<br><span class="font-normal text-slate-300">${o.cliente_nombre}</span></td>
-                    <td class="p-3"><span class="text-sky-300 font-semibold">${o.departamento || 'TARIJA'}</span> / ${o.ciudad}</td>
-                    <td class="p-3 text-slate-300">${o.direccion}</td>
-                    <td class="p-3 font-semibold text-sky-200">${o.tecnologia}</td>
-                    <td class="p-3 text-slate-400">${o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>'}</td>
-                    <td class="p-3"><span class="${badgeClass} border text-[10px] px-2 py-0.5 rounded-full">${o.estado}</span></td>
-                    <td class="p-3 text-center">
-                        <div class="flex items-center justify-center gap-1.5">
-                            ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" class="bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/40 text-[10px] px-2.5 py-1 rounded-lg font-bold">🗺️ Ir</a>` : ''}
-                            ${o.estado !== 'PAGADO' ? `<button onclick="abrirModalGestionGenerico('${o.id}')" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold">Gestionar</button>` : '<span class="text-rose-400 text-[10px] font-bold">BLOQUEADO</span>'}
-                        </div>
-                    </td>
-                </tr>
-            `}).join('');
+                return '<tr class="hover:bg-slate-900/50 border-b border-slate-800 ' + (o.estado === 'PAGADO' ? 'bg-rose-950/20' : '') + '">' +
+                    '<td class="p-3"><input type="checkbox" class="rowCheckbox" value="' + o.id + '" onchange="actualizarConteoSeleccionados()" /></td>' +
+                    '<td class="p-3 font-bold text-sky-300">' + o.cliente_nro + '<br><span class="font-normal text-slate-300">' + (o.cliente_nombre || '') + '</span></td>' +
+                    '<td class="p-3"><span class="text-sky-300 font-semibold">' + (o.departamento || 'TARIJA') + '</span> / ' + (o.ciudad || '') + '</td>' +
+                    '<td class="p-3 text-slate-300">' + (o.direccion || '') + '</td>' +
+                    '<td class="p-3 font-semibold text-sky-200">' + (o.tecnologia || '') + '</td>' +
+                    '<td class="p-3 text-slate-400">' + (o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>') + '</td>' +
+                    '<td class="p-3"><span class="' + badgeClass + ' border text-[10px] px-2 py-0.5 rounded-full">' + o.estado + '</span></td>' +
+                    '<td class="p-3 text-center">' +
+                        '<div class="flex items-center justify-center gap-1.5">' +
+                            (mapsUrl ? '<a href="' + mapsUrl + '" target="_blank" class="bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/40 text-[10px] px-2.5 py-1 rounded-lg font-bold">🗺️ Ir</a>' : '') +
+                            (o.estado !== 'PAGADO' ? '<button onclick="abrirModalGestionGenerico(\'' + o.id + '\')" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold">Gestionar</button>' : '<span class="text-rose-400 text-[10px] font-bold">BLOQUEADO</span>') +
+                        '</div>' +
+                    '</td>' +
+                '</tr>';
+            }).join('');
         }
 
         async function renderizarConciliacionPagosAdmin() {
@@ -778,21 +777,19 @@
 
             container.innerHTML = Object.keys(resumenPorTecnico).map(tec => {
                 const info = resumenPorTecnico[tec];
-                return `
-                    <div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-3">
-                        <div class="flex justify-between items-center border-b border-sky-500/20 pb-2">
-                            <h3 class="font-bold text-white text-xs">${tec}</h3>
-                            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-bold">${info.totalBoletas} Boletas</span>
-                        </div>
-                        <div class="flex justify-between items-center text-xs">
-                            <span class="text-slate-400">Total a Liquidar:</span>
-                            <span class="text-emerald-400 font-black text-sm">Bs. ${info.montoTotal.toFixed(2)}</span>
-                        </div>
-                        <button onclick="exportarPlanillaPorTecnicoAdmin('${tec}')" class="w-full bg-slate-800 hover:bg-slate-700 text-sky-300 text-[11px] font-bold py-2 rounded-lg border border-sky-500/30 flex items-center justify-center gap-1">
-                            📊 Exportar Planilla Individual (.xlsx)
-                        </button>
-                    </div>
-                `;
+                return '<div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-3">' +
+                    '<div class="flex justify-between items-center border-b border-sky-500/20 pb-2">' +
+                        '<h3 class="font-bold text-white text-xs">' + tec + '</h3>' +
+                        '<span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-bold">' + info.totalBoletas + ' Boletas</span>' +
+                    '</div>' +
+                    '<div class="flex justify-between items-center text-xs">' +
+                        '<span class="text-slate-400">Total a Liquidar:</span>' +
+                        '<span class="text-emerald-400 font-black text-sm">Bs. ' + info.montoTotal.toFixed(2) + '</span>' +
+                    '</div>' +
+                    '<button onclick="exportarPlanillaPorTecnicoAdmin(\'' + tec + '\')" class="w-full bg-slate-800 hover:bg-slate-700 text-sky-300 text-[11px] font-bold py-2 rounded-lg border border-sky-500/30 flex items-center justify-center gap-1">' +
+                        '📊 Exportar Planilla Individual (.xlsx)' +
+                    '</button>' +
+                '</div>';
             }).join('');
         }
 
@@ -820,7 +817,7 @@
                 const precioFinal = calcularPrecioConRecargo(g.fecha_gestion, g.precio_unitario, g.es_feriado);
                 totalMonto += precioFinal;
 
-                const fechaFormateada = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+                const fechaFormateada = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear();
 
                 return {
                     'CODIGO': g.cliente_nro,
@@ -855,11 +852,11 @@
             const { rows, totalMonto } = construirFilasPlanillaOficial(gestiones);
 
             const worksheet = XLSX.utils.json_to_sheet(rows);
-            XLSX.utils.sheet_add_aoa(worksheet, [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'TOTAL PLANILLA:', totalMonto, `=SUM(R2:R${rows.length + 1})`]], { origin: -1 });
+            XLSX.utils.sheet_add_aoa(worksheet, [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'TOTAL PLANILLA:', totalMonto, '=SUM(R2:R' + (rows.length + 1) + ')']], { origin: -1 });
 
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "CONCILIACION_GENERAL");
-            XLSX.writeFile(workbook, `DATARED_Planilla_General_Pagos_${new Date().toISOString().slice(0,10)}.xlsx`);
+            XLSX.writeFile(workbook, 'DATARED_Planilla_General_Pagos_' + new Date().toISOString().slice(0,10) + '.xlsx');
         }
 
         async function exportarPlanillaPorTecnicoAdmin(tecnico) {
@@ -869,11 +866,11 @@
             const { rows, totalMonto } = construirFilasPlanillaOficial(gestiones);
 
             const worksheet = XLSX.utils.json_to_sheet(rows);
-            XLSX.utils.sheet_add_aoa(worksheet, [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'TOTAL PLANILLA:', totalMonto, `=SUM(R2:R${rows.length + 1})`]], { origin: -1 });
+            XLSX.utils.sheet_add_aoa(worksheet, [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'TOTAL PLANILLA:', totalMonto, '=SUM(R2:R' + (rows.length + 1) + ')']], { origin: -1 });
 
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, `${tecnico.slice(0,15)}`);
-            XLSX.writeFile(workbook, `Planilla_Pago_${tecnico.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, tecnico.slice(0,15));
+            XLSX.writeFile(workbook, 'Planilla_Pago_' + tecnico.replace(/\s+/g, '_') + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
         }
 
         function exportarPlanillaPagoTecnico() {
@@ -882,11 +879,11 @@
             const { rows, totalMonto } = construirFilasPlanillaOficial(historialRetiros);
 
             const worksheet = XLSX.utils.json_to_sheet(rows);
-            XLSX.utils.sheet_add_aoa(worksheet, [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'TOTAL PLANILLA:', totalMonto, `=SUM(R2:R${rows.length + 1})`]], { origin: -1 });
+            XLSX.utils.sheet_add_aoa(worksheet, [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'TOTAL PLANILLA:', totalMonto, '=SUM(R2:R' + (rows.length + 1) + ')']], { origin: -1 });
 
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "MI_PLANILLA");
-            XLSX.writeFile(workbook, `Planilla_Pago_${usuarioActual.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
+            XLSX.writeFile(workbook, 'Planilla_Pago_' + usuarioActual.nombre.replace(/\s+/g, '_') + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
         }
 
         function generarCalendarioHorizontal() {
@@ -904,12 +901,10 @@
                 const isoStr = dateObj.toISOString().slice(0, 10);
                 const esSeleccionado = isoStr === fechaSeleccionadaTecnico;
 
-                html += `
-                    <div onclick="seleccionarFechaCalendario('${isoStr}')" class="px-3 py-1.5 rounded-xl cursor-pointer transition-all flex-shrink-0 min-w-[42px] ${esSeleccionado ? 'bg-sky-500 text-white font-bold shadow-lg border border-sky-300' : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'}">
-                        <p class="text-[9px] uppercase">${diasSemana[dateObj.getDay()]}</p>
-                        <p class="text-xs font-black">${dNum}</p>
-                    </div>
-                `;
+                html += '<div onclick="seleccionarFechaCalendario(\'' + isoStr + '\')" class="px-3 py-1.5 rounded-xl cursor-pointer transition-all flex-shrink-0 min-w-[42px] ' + (esSeleccionado ? 'bg-sky-500 text-white font-bold shadow-lg border border-sky-300' : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800') + '">' +
+                    '<p class="text-[9px] uppercase">' + diasSemana[dateObj.getDay()] + '</p>' +
+                    '<p class="text-xs font-black">' + dNum + '</p>' +
+                '</div>';
             }
             container.innerHTML = html;
             document.getElementById('tecFechaPickerInput').value = fechaSeleccionadaTecnico;
@@ -982,10 +977,10 @@
                 return o.fecha_registro.startsWith(fechaSeleccionadaTecnico);
             });
 
-            document.getElementById('conteoCitasTexto').innerText = `Tiene ${listaDia.length} Cita(s) de servicio`;
+            document.getElementById('conteoCitasTexto').innerText = 'Tiene ' + listaDia.length + ' Cita(s) de servicio';
 
             if (listaDia.length === 0) {
-                container.innerHTML = `<p class="text-slate-500 text-xs text-center py-6">No tienes citas o retiros programados para la fecha seleccionada (${fechaSeleccionadaTecnico}).</p>`;
+                container.innerHTML = '<p class="text-slate-500 text-xs text-center py-6">No tienes citas o retiros programados para la fecha seleccionada (' + fechaSeleccionadaTecnico + ').</p>';
                 if (mobileMarkersGroup) mobileMarkersGroup.clearLayers();
                 return;
             }
@@ -996,12 +991,12 @@
             container.innerHTML = listaDia.map((o) => {
                 const lat = formatearGPS(o.coordenada_x);
                 const lng = formatearGPS(o.coordenada_y);
-                const mapsUrl = (lat && lng) ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : null;
+                const mapsUrl = (lat && lng) ? "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng : null;
 
                 if (lat && lng) {
                     bounds.push([parseFloat(lat), parseFloat(lng)]);
                     L.marker([parseFloat(lat), parseFloat(lng)]).addTo(mobileMarkersGroup)
-                        .bindPopup(`<b>${o.cliente_nro}</b><br>${o.cliente_nombre}`);
+                        .bindPopup('<b>' + o.cliente_nro + '</b><br>' + o.cliente_nombre);
                 }
 
                 let statusBadge = "bg-sky-500/20 text-sky-300 border-sky-500/30";
@@ -1009,26 +1004,23 @@
                 if (o.estado === 'OBSERVADO') statusBadge = "bg-amber-500/20 text-amber-300 border-amber-500/30 font-bold animate-pulse";
                 if (o.estado === 'PAGADO') statusBadge = "bg-rose-600 text-white font-bold border-rose-500";
 
-                return `
-                    <div class="bg-slate-900/90 p-3.5 rounded-xl border border-sky-500/20 space-y-2">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <span class="text-[9px] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">SA-${o.cliente_nro}</span>
-                                <h4 class="font-bold text-white text-xs mt-1">${o.cliente_nombre}</h4>
-                                <p class="text-[10px] text-slate-400">📍 ${o.direccion}</p>
-                            </div>
-                            <span class="${statusBadge} text-[9px] px-2 py-0.5 rounded-full border">${o.estado}</span>
-                        </div>
-
-                        <div class="flex justify-between items-center pt-2 border-t border-slate-800 text-[10px]">
-                            <span class="text-slate-400">${o.tecnologia} • ${o.ciudad}</span>
-                            <div class="flex gap-1.5">
-                                ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" class="bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold">🗺️ Ir GPS</a>` : ''}
-                                ${o.estado !== 'PAGADO' ? `<button onclick="abrirModalGestionGenerico('${o.id}')" class="bg-sky-600 text-white px-3 py-1 rounded-lg font-bold">Gestionar</button>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
+                return '<div class="bg-slate-900/90 p-3.5 rounded-xl border border-sky-500/20 space-y-2">' +
+                    '<div class="flex justify-between items-start">' +
+                        '<div>' +
+                            '<span class="text-[9px] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">SA-' + o.cliente_nro + '</span>' +
+                            '<h4 class="font-bold text-white text-xs mt-1">' + o.cliente_nombre + '</h4>' +
+                            '<p class="text-[10px] text-slate-400">📍 ' + o.direccion + '</p>' +
+                        '</div>' +
+                        '<span class="' + statusBadge + ' text-[9px] px-2 py-0.5 rounded-full border">' + o.estado + '</span>' +
+                    '</div>' +
+                    '<div class="flex justify-between items-center pt-2 border-t border-slate-800 text-[10px]">' +
+                        '<span class="text-slate-400">' + o.tecnologia + ' • ' + o.ciudad + '</span>' +
+                        '<div class="flex gap-1.5">' +
+                            (mapsUrl ? '<a href="' + mapsUrl + '" target="_blank" class="bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold">🗺️ Ir GPS</a>' : '') +
+                            (o.estado !== 'PAGADO' ? '<button onclick="abrirModalGestionGenerico(\'' + o.id + '\')" class="bg-sky-600 text-white px-3 py-1 rounded-lg font-bold">Gestionar</button>' : '') +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
             }).join('');
 
             if (bounds.length > 0 && mobileMap) {
@@ -1053,30 +1045,27 @@
                 const precio = calcularPrecioConRecargo(h.fecha_gestion, h.precio_unitario, h.es_feriado);
                 totalMonto += precio;
 
-                return `
-                    <div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-2 text-xs">
-                        <div class="flex justify-between items-start border-b border-sky-500/20 pb-2">
-                            <div>
-                                <span class="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/30">CÓDIGO: ${h.cliente_nro}</span>
-                                <p class="font-bold text-white text-xs mt-1">${h.nodo || 'CLIENTE RETIRADO'}</p>
-                            </div>
-                            <div class="text-right">
-                                <span class="text-[10px] text-slate-400 font-semibold bg-slate-800 px-2 py-0.5 rounded-lg block mb-1">📅 ${fechaFormateada}</span>
-                                <span class="text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-2 py-0.5 rounded-lg">Bs. ${precio.toFixed(2)}</span>
-                            </div>
-                        </div>
-
-                        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-[11px]">
-                            <p class="font-bold text-sky-300 mb-1">📟 EQUIPOS REGISTRADOS:</p>
-                            <p class="text-slate-300 font-mono text-[10px]">${h.modem_serie ? `Módem/ONT: ${h.modem_modelo \vert{}\vert{} ''} (${h.modem_serie})` : ''}</p>
-                            <p class="text-slate-300 font-mono text-[10px]">${h.deco_serie ? `Deco/STB: ${h.deco_modelo \vert{}\vert{} ''} (${h.deco_serie})` : ''}</p>
-                            ${h.fungibles_catalogo ? `<p class="text-amber-300 text-[10px] mt-1">🔌 Accesorio: ${h.fungibles_catalogo}</p>` : ''}
-                        </div>
-                    </div>
-                `;
+                return '<div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-2 text-xs">' +
+                    '<div class="flex justify-between items-start border-b border-sky-500/20 pb-2">' +
+                        '<div>' +
+                            '<span class="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/30">CÓDIGO: ' + h.cliente_nro + '</span>' +
+                            '<p class="font-bold text-white text-xs mt-1">' + (h.nodo || 'CLIENTE RETIRADO') + '</p>' +
+                        '</div>' +
+                        '<div class="text-right">' +
+                            '<span class="text-[10px] text-slate-400 font-semibold bg-slate-800 px-2 py-0.5 rounded-lg block mb-1">📅 ' + fechaFormateada + '</span>' +
+                            '<span class="text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-2 py-0.5 rounded-lg">Bs. ' + precio.toFixed(2) + '</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-[11px]">' +
+                        '<p class="font-bold text-sky-300 mb-1">📟 EQUIPOS REGISTRADOS:</p>' +
+                        '<p class="text-slate-300 font-mono text-[10px]">' + (h.modem_serie ? 'Módem/ONT: ' + (h.modem_modelo || '') + ' (' + h.modem_serie + ')' : '') + '</p>' +
+                        '<p class="text-slate-300 font-mono text-[10px]">' + (h.deco_serie ? 'Deco/STB: ' + (h.deco_modelo || '') + ' (' + h.deco_serie + ')' : '') + '</p>' +
+                        (h.fungibles_catalogo ? '<p class="text-amber-300 text-[10px] mt-1">🔌 Accesorio: ' + h.fungibles_catalogo + '</p>' : '') +
+                    '</div>' +
+                '</div>';
             }).join('');
 
-            document.getElementById('tecMontoPagosTotal').innerText = `Bs. ${totalMonto.toFixed(2)}`;
+            document.getElementById('tecMontoPagosTotal').innerText = 'Bs. ' + totalMonto.toFixed(2);
         }
 
         function cambiarTabMobile(tab) {
@@ -1100,52 +1089,48 @@
 
         function agregarFilaEquipoDinamicamente(tipoDefault = 'DECODER', modelo = '', serie = '') {
             contadorEquiposDinamicos++;
-            const idFila = `equipoRow_${contadorEquiposDinamicos}`;
+            const idFila = 'equipoRow_' + contadorEquiposDinamicos;
             const container = document.getElementById('contenedorEquiposDinamicos');
 
-            const rowHtml = `
-                <div id="${idFila}" class="bg-slate-900/60 p-2.5 rounded-xl border border-sky-500/20 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <select class="tipoEquipoSelect bg-slate-950 text-sky-300 font-bold text-[10px] border border-sky-500/30 rounded-lg p-1">
-                            <option value="MODEM" ${tipoDefault === 'MODEM' ? 'selected' : ''}>📟 MÓDEM / ONT</option>
-                            <option value="DECODER" ${tipoDefault === 'DECODER' ? 'selected' : ''}>📺 DECODER (STB)</option>
-                            <option value="ROUTER" ${tipoDefault === 'ROUTER' ? 'selected' : ''}>📶 ROUTER / EXTENDER</option>
-                        </select>
-                        <div class="flex items-center gap-1.5">
-                            <label class="cursor-pointer bg-sky-700 hover:bg-sky-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-bold">
-                                📷 OCR
-                                <input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiquetaFila(this, '${idFila}')" />
-                            </label>
-                            <button type="button" onclick="eliminarFilaElemento('${idFila}')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5 py-0.5">✕</button>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" class="modeloInput p-1.5 tech-input rounded-xl text-xs" value="${modelo}" placeholder="Modelo" />
-                        <input type="text" class="serieInput p-1.5 tech-input rounded-xl text-xs font-mono" value="${serie}" placeholder="Serie / MAC / CAS" />
-                    </div>
-                </div>
-            `;
+            const rowHtml = '<div id="' + idFila + '" class="bg-slate-900/60 p-2.5 rounded-xl border border-sky-500/20 space-y-2">' +
+                '<div class="flex justify-between items-center">' +
+                    '<select class="tipoEquipoSelect bg-slate-950 text-sky-300 font-bold text-[10px] border border-sky-500/30 rounded-lg p-1">' +
+                        '<option value="MODEM" ' + (tipoDefault === 'MODEM' ? 'selected' : '') + '>📟 MÓDEM / ONT</option>' +
+                        '<option value="DECODER" ' + (tipoDefault === 'DECODER' ? 'selected' : '') + '>📺 DECODER (STB)</option>' +
+                        '<option value="ROUTER" ' + (tipoDefault === 'ROUTER' ? 'selected' : '') + '>📶 ROUTER / EXTENDER</option>' +
+                    '</select>' +
+                    '<div class="flex items-center gap-1.5">' +
+                        '<label class="cursor-pointer bg-sky-700 hover:bg-sky-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-bold">' +
+                            '📷 OCR' +
+                            '<input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiquetaFila(this, \'' + idFila + '\')" />' +
+                        '</label>' +
+                        '<button type="button" onclick="eliminarFilaElemento(\'' + idFila + '\')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5 py-0.5">✕</button>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="grid grid-cols-2 gap-2">' +
+                    '<input type="text" class="modeloInput p-1.5 tech-input rounded-xl text-xs" value="' + modelo + '" placeholder="Modelo" />' +
+                    '<input type="text" class="serieInput p-1.5 tech-input rounded-xl text-xs font-mono" value="' + serie + '" placeholder="Serie / MAC / CAS" />' +
+                '</div>' +
+            '</div>';
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
         function agregarFilaFungibleCat() {
             contadorFungiblesCat++;
-            const idFila = `fungibleRow_${contadorFungiblesCat}`;
+            const idFila = 'fungibleRow_' + contadorFungiblesCat;
             const container = document.getElementById('contenedorFungiblesCatalogo');
 
-            const optionsCat = CATALOGO_FUNGIBLES.map(c => `
-                <option value="${c.siga}">[SIGA ${c.siga}] ${c.nombre}</option>
-            `).join('');
+            const optionsCat = CATALOGO_FUNGIBLES.map(c => 
+                '<option value="' + c.siga + '">[SIGA ' + c.siga + '] ' + c.nombre + '</option>'
+            ).join('');
 
-            const rowHtml = `
-                <div id="${idFila}" class="flex items-center gap-2 bg-slate-950 p-2 rounded-lg border border-slate-800">
-                    <select class="fungibleSelect bg-slate-900 text-slate-200 text-xs rounded-lg p-1.5 w-full border border-sky-500/20">
-                        ${optionsCat}
-                    </select>
-                    <input type="number" value="1" min="1" class="fungibleCantInput w-16 p-1.5 tech-input rounded-lg text-xs text-center font-bold" />
-                    <button type="button" onclick="eliminarFilaElemento('${idFila}')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5">✕</button>
-                </div>
-            `;
+            const rowHtml = '<div id="' + idFila + '" class="flex items-center gap-2 bg-slate-950 p-2 rounded-lg border border-slate-800">' +
+                '<select class="fungibleSelect bg-slate-900 text-slate-200 text-xs rounded-lg p-1.5 w-full border border-sky-500/20">' +
+                    optionsCat +
+                '</select>' +
+                '<input type="number" value="1" min="1" class="fungibleCantInput w-16 p-1.5 tech-input rounded-lg text-xs text-center font-bold" />' +
+                '<button type="button" onclick="eliminarFilaElemento(\'' + idFila + '\')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5">✕</button>' +
+            '</div>';
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
@@ -1181,7 +1166,7 @@
 
         async function marcarComoPagadoModal() {
             if (!ordenSeleccionadaGestion) return;
-            if (confirm(`¿Confirmar que el cliente ${ordenSeleccionadaGestion.cliente_nro} PAGÓ su deuda?`)) {
+            if (confirm('¿Confirmar que el cliente ' + ordenSeleccionadaGestion.cliente_nro + ' PAGÓ su deuda?')) {
                 await supabaseClient.from('ordenes_retiro').update({ estado: 'PAGADO' }).eq('id', ordenSeleccionadaGestion.id);
                 cerrarModalGestion();
                 if (['Tecnico', 'Técnico'].includes(usuarioActual.rol)) {
@@ -1202,7 +1187,7 @@
                 const text = result.data.text;
                 const snMatch = text.match(/(?:SN|S\/N|SERIAL|CAS|MAC)[:\s]*([A-Za-z0-9\-]+)/i);
                 if (snMatch && snMatch[1]) {
-                    document.querySelector(`#${idFila} .serieInput`).value = snMatch[1].trim();
+                    document.querySelector('#' + idFila + ' .serieInput').value = snMatch[1].trim();
                     statusDiv.innerText = "✅ Serie detectada e insertada automáticamente.";
                 } else {
                     statusDiv.innerText = "⚠️ No se detectó un patrón de serie claro. Ingrésalo manualmente.";
@@ -1227,8 +1212,8 @@
                 const ser = fila.querySelector('.serieInput').value.trim();
 
                 if (ser) {
-                    if (tipo === 'MODEM') modemsArray.push(`${mod} (${ser})`);
-                    else decosArray.push(`${mod} (${ser})`);
+                    if (tipo === 'MODEM') modemsArray.push(mod + ' (' + ser + ')');
+                    else decosArray.push(mod + ' (' + ser + ')');
                 }
             });
 
@@ -1239,7 +1224,7 @@
                 const cant = f.querySelector('.fungibleCantInput').value;
                 const itemObj = CATALOGO_FUNGIBLES.find(c => c.siga === siga);
                 if (itemObj) {
-                    fungiblesCatArray.push(`[SIGA ${siga}] ${itemObj.tipo} x${cant}`);
+                    fungiblesCatArray.push('[SIGA ' + siga + '] ' + itemObj.tipo + ' x' + cant);
                 }
             });
 
@@ -1262,7 +1247,7 @@
                 precio_unitario: precioUnit,
                 es_feriado: esFeriado,
                 fungibles_catalogo: fungiblesCatArray.join(', '),
-                materiales_fungibles: `Cable: ${matCable}m, Conectores: ${matConectores}, Splitters: ${matSplitters}, Precintos: ${matPrecintos}`,
+                materiales_fungibles: 'Cable: ' + matCable + 'm, Conectores: ' + matConectores + ', Splitters: ' + matSplitters + ', Precintos: ' + matPrecintos,
                 tecnico_nombre: usuarioActual.nombre,
                 ciudad: ordenSeleccionadaGestion.ciudad,
                 tecnologia: ordenSeleccionadaGestion.tecnologia,
@@ -1302,7 +1287,7 @@
         async function cargarListaTecnicosSelects() {
             const { data } = await supabaseClient.from('usuarios').select('nombre').order('nombre');
             if (data) {
-                const options = '<option value="">-- Seleccionar Técnico --</option>' + data.map(t => `<option value="${t.nombre}">${t.nombre}</option>`).join('');
+                const options = '<option value="">-- Seleccionar Técnico --</option>' + data.map(t => '<option value="' + t.nombre + '">' + t.nombre + '</option>').join('');
                 document.getElementById('batchTecnicoSelect').innerHTML = options;
             }
         }
@@ -1331,7 +1316,7 @@
             if (error) {
                 alert('Error al asignar: ' + error.message);
             } else {
-                alert(`Se asignaron ${data ? data.length : idsProcessed.length} órdenes a ${tecnico}.`);
+                alert('Se asignaron ' + (data ? data.length : idsProcessed.length) + ' órdenes a ' + tecnico + '.');
                 cerrarModalAsignacionMasiva();
                 await cargarOrdenesAdminDesdeSupabase();
             }
