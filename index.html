@@ -72,7 +72,7 @@
         </div>
     </div>
 
-    <!-- 2. PANELES INTERNOS DE LA APLICACIÓN (DISEÑO OSCURO FUTURISTA) -->
+    <!-- 2. PANELES INTERNOS DE LA APLICACIÓN -->
     <div id="appContent" class="hidden">
         
         <!-- Header Principal -->
@@ -289,12 +289,14 @@
                     </div>
                 </div>
 
+                <div id="gestionStatusOutput" class="text-xs font-bold text-center min-h-[1.25rem]"></div>
+
             </div>
 
             <!-- ACCIONES Y WHATSAPP -->
             <div class="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t border-sky-500/20">
                 <button onclick="cerrarModalGestion()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700">Cancelar</button>
-                <button onclick="enviarReporteAWhatsApp()" class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold flex items-center justify-center gap-2 shadow-lg">
+                <button id="btnGuardarWhatsApp" onclick="enviarReporteAWhatsApp()" class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold flex items-center justify-center gap-2 shadow-lg">
                     📲 Enviar Reporte a WhatsApp
                 </button>
             </div>
@@ -302,7 +304,7 @@
         </div>
     </div>
 
-    <!-- SCRIPTS Y PERSISTENCIA -->
+    <!-- SCRIPTS Y LÓGICA CON GUARDADO EN SUPABASE -->
     <script>
         const BASE_URL = "https://darcifsfttemivwssbqd.supabase.co";
         const SUPABASE_URL = BASE_URL.split('/rest')[0].replace(/\/$/, "");
@@ -315,7 +317,6 @@
         let ordenSeleccionadaGestion = null;
         let fotosAdjuntadasArchivos = [];
 
-        // Inicialización y recuperación de sesión desde localStorage
         window.onload = function() {
             const savedUser = localStorage.getItem('datared_active_user');
             if (savedUser) {
@@ -328,7 +329,6 @@
             }
         };
 
-        // Iniciar Sesión con Usuario y Contraseña
         async function iniciarSesion(event) {
             event.preventDefault();
             const usernameInput = document.getElementById('loginUsernameInput').value.trim();
@@ -351,7 +351,6 @@
             usuarioActual = data;
             localStorage.setItem('datared_active_user', JSON.stringify(usuarioActual));
             status.innerText = "";
-            
             aplicarSesionIniciada();
         }
 
@@ -362,7 +361,6 @@
             document.getElementById('currentUserName').innerText = usuarioActual.nombre;
             document.getElementById('currentUserRole').innerText = `${usuarioActual.rol} - ${usuarioActual.ciudad || 'BOLIVIA'}`;
 
-            // Ocultar carga masiva a técnicos
             if (['Tecnico', 'Técnico'].includes(usuarioActual.rol)) {
                 document.getElementById('adminModules').classList.add('hidden');
             } else {
@@ -380,7 +378,6 @@
             document.getElementById('loginOverlay').classList.remove('hidden');
         }
 
-        // Cargar Órdenes desde Supabase y filtrar por perfil
         async function cargarOrdenesDesdeSupabase() {
             const tbody = document.getElementById('tablaOrdenesBody');
             const totalTexto = document.getElementById('totalRegistrosTexto');
@@ -388,7 +385,6 @@
 
             let query = supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
 
-            // Si es Técnico, mostrar solo las asignadas a él
             if (['Tecnico', 'Técnico'].includes(usuarioActual.rol)) {
                 query = query.eq('tecnico_asignado', usuarioActual.nombre);
             }
@@ -410,7 +406,11 @@
 
             totalTexto.innerText = `${ordenesCargadas.length} órdenes registradas en total`;
 
-            tbody.innerHTML = ordenesCargadas.map(o => `
+            tbody.innerHTML = ordenesCargadas.map(o => {
+                let badgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/30";
+                if (o.estado === 'RETIRADO') badgeClass = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+
+                return `
                 <tr class="hover:bg-slate-900/50 border-b border-slate-800">
                     <td class="p-3"><input type="checkbox" class="rowCheckbox" value="${o.id}" onchange="actualizarConteoSeleccionados()" /></td>
                     <td class="p-3 font-bold text-sky-300">${o.cliente_nro}<br><span class="font-normal text-slate-300">${o.cliente_nombre}</span></td>
@@ -418,15 +418,14 @@
                     <td class="p-3 text-slate-300">${o.direccion}<br><span class="text-slate-400 text-[10px]">${o.referencia || ''}</span></td>
                     <td class="p-3 font-semibold text-sky-200">${o.tecnologia}</td>
                     <td class="p-3 text-slate-400">${o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>'}</td>
-                    <td class="p-3"><span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">${o.estado}</span></td>
+                    <td class="p-3"><span class="${badgeClass} border text-[10px] px-2 py-0.5 rounded-full font-bold">${o.estado}</span></td>
                     <td class="p-3 text-center">
                         <button onclick="abrirModalGestion(${o.id})" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold shadow">Gestionar</button>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
-        // Selección Masiva
         function toggleSelectAll(master) {
             document.querySelectorAll('.rowCheckbox').forEach(cb => cb.checked = master.checked);
             actualizarConteoSeleccionados();
@@ -479,7 +478,6 @@
             }
         }
 
-        // Modal de Gestión
         function abrirModalGestion(id) {
             ordenSeleccionadaGestion = ordenesCargadas.find(o => o.id === id);
             if (!ordenSeleccionadaGestion) return;
@@ -507,6 +505,7 @@
             
             fotosAdjuntadasArchivos = [];
             document.getElementById('previewFotosContainer').innerHTML = '<p class="text-slate-500 italic text-[11px]">No se han seleccionado fotos aún.</p>';
+            document.getElementById('gestionStatusOutput').innerText = "";
 
             document.getElementById('modalGestion').classList.remove('hidden');
         }
@@ -573,7 +572,15 @@
             vistaPreviaFotos({ files: [] });
         }
 
-        function enviarReporteAWhatsApp() {
+        // GUARDAR EN SUPABASE, SUBIR FOTOS Y ABRIR WHATSAPP
+        async function enviarReporteAWhatsApp() {
+            const statusDiv = document.getElementById('gestionStatusOutput');
+            const btnGuardar = document.getElementById('btnGuardarWhatsApp');
+
+            btnGuardar.disabled = true;
+            statusDiv.className = "text-xs font-bold text-center text-sky-400 min-h-[1.25rem]";
+            statusDiv.innerText = "⏳ Subiendo evidencias y guardando gestión en la base de datos...";
+
             const codigoNombre = `${ordenSeleccionadaGestion.cliente_nro} - ${ordenSeleccionadaGestion.cliente_nombre}`;
             const ot = document.getElementById('gestionOt').value || 'S/OT';
             const nodo = document.getElementById('gestionNodo').value;
@@ -595,6 +602,50 @@
 
             const tecnicoNombre = usuarioActual ? usuarioActual.nombre : (ordenSeleccionadaGestion.tecnico_asignado || 'TÉCNICO DATARED');
 
+            // 1. Subir fotos al Storage de Supabase
+            let uploadedPhotosUrls = [];
+            for (let i = 0; i < fotosAdjuntadasArchivos.length; i++) {
+                const file = fotosAdjuntadasArchivos[i];
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${ordenSeleccionadaGestion.cliente_nro}_${Date.now()}_${i}.${fileExt}`;
+
+                const { data: storageData, error: storageError } = await supabaseClient.storage
+                    .from('evidencias-retiros')
+                    .upload(fileName, file);
+
+                if (!storageError) {
+                    const { data: publicUrlData } = supabaseClient.storage
+                        .from('evidencias-retiros')
+                        .getPublicUrl(fileName);
+                    if (publicUrlData) uploadedPhotosUrls.push(publicUrlData.publicUrl);
+                }
+            }
+
+            // 2. Guardar en historial_gestiones
+            const { error: histError } = await supabaseClient.from('historial_gestiones').insert([{
+                orden_id: ordenSeleccionadaGestion.id,
+                cliente_nro: ordenSeleccionadaGestion.cliente_nro,
+                ot: ot,
+                nodo: nodo,
+                referencia: ref,
+                coordenadas: geo,
+                modem_modelo: modemMod,
+                modem_serie: modemSer,
+                deco_modelo: decoMod,
+                deco_serie: decoSer,
+                accesorios: accsTxt,
+                tecnico_nombre: tecnicoNombre,
+                estado_final: 'RETIRADO',
+                fotos_urls: uploadedPhotosUrls
+            }]);
+
+            // 3. Actualizar estado de la orden principal
+            await supabaseClient.from('ordenes_retiro').update({ estado: 'RETIRADO' }).eq('id', ordenSeleccionadaGestion.id);
+
+            statusDiv.className = "text-xs font-bold text-center text-emerald-400 min-h-[1.25rem]";
+            statusDiv.innerText = "¡Gestión guardada exitosamente! Abriendo WhatsApp...";
+
+            // 4. Armar mensaje y abrir WhatsApp
             const mensajeWhatsApp = 
 `CODIGO: ${codigoNombre}
 
@@ -615,7 +666,12 @@ Accesorios: ${accsTxt}
 
 TECNICO: ${tecnicoNombre}`;
 
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
+            setTimeout(() => {
+                btnGuardar.disabled = false;
+                cerrarModalGestion();
+                cargarOrdenesDesdeSupabase();
+                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
+            }, 1000);
         }
 
         // Carga Masiva Pendientes
