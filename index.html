@@ -94,6 +94,26 @@
 
         <main class="max-w-6xl mx-auto p-4 space-y-6">
 
+            <!-- DASHBOARD DE TARJETAS DE CONTEO -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div onclick="filtrarPorTab('TODOS')" class="tech-card p-4 rounded-2xl cursor-pointer hover:border-sky-400 transition-all">
+                    <p class="text-[11px] font-bold text-slate-400">TOTAL ÓRDENES</p>
+                    <p class="text-2xl font-black text-white mt-1" id="countTotal">0</p>
+                </div>
+                <div onclick="filtrarPorTab('SIN_ASIGNAR')" class="tech-card p-4 rounded-2xl cursor-pointer hover:border-rose-400 transition-all border-rose-500/30">
+                    <p class="text-[11px] font-bold text-rose-400">⚠️ SIN ASIGNAR</p>
+                    <p class="text-2xl font-black text-rose-200 mt-1" id="countSinAsignar">0</p>
+                </div>
+                <div onclick="filtrarPorTab('PENDIENTES')" class="tech-card p-4 rounded-2xl cursor-pointer hover:border-amber-400 transition-all border-amber-500/30">
+                    <p class="text-[11px] font-bold text-amber-400">🟡 ASIGNADAS PENDIENTES</p>
+                    <p class="text-2xl font-black text-amber-200 mt-1" id="countPendientes">0</p>
+                </div>
+                <div onclick="filtrarPorTab('RETIRADOS')" class="tech-card p-4 rounded-2xl cursor-pointer hover:border-emerald-400 transition-all border-emerald-500/30">
+                    <p class="text-[11px] font-bold text-emerald-400">🟢 RETIRADOS</p>
+                    <p class="text-2xl font-black text-emerald-200 mt-1" id="countRetirados">0</p>
+                </div>
+            </div>
+
             <!-- MÓDULOS ADMINISTRATIVOS -->
             <div id="adminModules" class="space-y-6">
                 <!-- Carga Masiva de Pendientes -->
@@ -129,23 +149,33 @@
                 </section>
             </div>
 
-            <!-- TABLA Y ASIGNACIÓN DE ÓRDENES -->
-            <section class="tech-card p-6 rounded-2xl">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-sky-300">📋 Órdenes de Retiro Asignadas</h2>
-                        <p class="text-xs text-slate-400" id="totalRegistrosTexto">Cargando datos...</p>
+            <!-- TABLA Y FILTROS DIVERSIFICADOS -->
+            <section class="tech-card p-6 rounded-2xl space-y-4">
+                
+                <!-- BARRA DE CONTROLES Y FILTROS DINÁMICOS -->
+                <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 pb-3 border-b border-sky-500/20">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button id="tabAll" onclick="filtrarPorTab('TODOS')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/40">Todos</button>
+                        <button id="tabSinAsignar" onclick="filtrarPorTab('SIN_ASIGNAR')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 hover:text-white">Sin Asignar</button>
+                        <button id="tabPendientes" onclick="filtrarPorTab('PENDIENTES')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 hover:text-white">Asignadas Pendientes</button>
+                        <button id="tabRetirados" onclick="filtrarPorTab('RETIRADOS')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 hover:text-white">Retirados</button>
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button id="btnAsignacionMasiva" onclick="abrirModalAsignacionMasiva()" class="hidden text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3.5 py-2 rounded-xl transition-all shadow">
+
+                    <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
+                        <input type="text" id="searchInput" onkeyup="aplicarFiltrosLocales()" placeholder="🔍 Buscar cliente, código o dir..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-48" />
+                        <select id="ciudadSelectFilter" onchange="aplicarFiltrosLocales()" class="tech-input rounded-xl p-2 text-xs">
+                            <option value="">-- Todas las Ciudades --</option>
+                        </select>
+                        <button id="btnAsignacionMasiva" onclick="abrirModalAsignacionMasiva()" class="hidden text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap shadow">
                             ⚡ Asignar Seleccionados (<span id="selectedCount">0</span>)
                         </button>
-                        <button onclick="cargarOrdenesDesdeSupabase()" class="text-xs bg-slate-800 hover:bg-slate-700 text-sky-300 px-3.5 py-2 rounded-xl border border-sky-500/30 transition-all">
-                            🔄 Actualizar Tabla
+                        <button onclick="cargarOrdenesDesdeSupabase()" class="text-xs bg-slate-800 hover:bg-slate-700 text-sky-300 px-3 py-2 rounded-xl border border-sky-500/30 whitespace-nowrap">
+                            🔄 Actualizar
                         </button>
                     </div>
                 </div>
 
+                <!-- TABLA PRINCIPAL DE ÓRDENES -->
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
                         <thead>
@@ -304,7 +334,7 @@
         </div>
     </div>
 
-    <!-- SCRIPTS Y LÓGICA DE ASIGNACIÓN -->
+    <!-- SCRIPTS Y LÓGICA CON FILTROS Y DASHBOARD -->
     <script>
         const BASE_URL = "https://darcifsfttemivwssbqd.supabase.co";
         const SUPABASE_URL = BASE_URL.split('/rest')[0].replace(/\/$/, "");
@@ -313,7 +343,8 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let usuarioActual = null;
-        let ordenesCargadas = [];
+        let ordenesGlobales = [];
+        let tabActual = 'TODOS';
         let ordenSeleccionadaGestion = null;
         let fotosAdjuntadasArchivos = [];
 
@@ -380,7 +411,6 @@
 
         async function cargarOrdenesDesdeSupabase() {
             const tbody = document.getElementById('tablaOrdenesBody');
-            const totalTexto = document.getElementById('totalRegistrosTexto');
             tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Cargando órdenes desde Supabase...</td></tr>';
 
             let query = supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
@@ -396,17 +426,86 @@
                 return;
             }
 
-            ordenesCargadas = data || [];
+            ordenesGlobales = data || [];
+            
+            poblarFiltroCiudades();
+            actualizarContadoresDashboard();
+            aplicarFiltrosLocales();
+        }
 
-            if (ordenesCargadas.length === 0) {
-                totalTexto.innerText = "0 órdenes encontradas";
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay órdenes registradas o asignadas a tu perfil.</td></tr>';
+        function poblarFiltroCiudades() {
+            const ciudades = Array.from(new Set(ordenesGlobales.map(o => o.ciudad).filter(Boolean))).sort();
+            const select = document.getElementById('ciudadSelectFilter');
+            select.innerHTML = '<option value="">-- Todas las Ciudades --</option>' + 
+                ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        function actualizarContadoresDashboard() {
+            document.getElementById('countTotal').innerText = ordenesGlobales.length;
+            document.getElementById('countSinAsignar').innerText = ordenesGlobales.filter(o => !o.tecnico_asignado && o.estado !== 'RETIRADO').length;
+            document.getElementById('countPendientes').innerText = ordenesGlobales.filter(o => o.tecnico_asignado && o.estado !== 'RETIRADO').length;
+            document.getElementById('countRetirados').innerText = ordenesGlobales.filter(o => o.estado === 'RETIRADO').length;
+        }
+
+        function filtrarPorTab(tab) {
+            tabActual = tab;
+            
+            // Actualizar estilo de botones
+            const btnMap = {
+                'TODOS': 'tabAll',
+                'SIN_ASIGNAR': 'tabSinAsignar',
+                'PENDIENTES': 'tabPendientes',
+                'RETIRADOS': 'tabRetirados'
+            };
+
+            Object.keys(btnMap).forEach(key => {
+                const elem = document.getElementById(btnMap[key]);
+                if (key === tab) {
+                    elem.className = "text-xs font-bold px-3 py-1.5 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/40";
+                } else {
+                    elem.className = "text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 hover:text-white";
+                }
+            });
+
+            aplicarFiltrosLocales();
+        }
+
+        function aplicarFiltrosLocales() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
+            const ciudadFiltro = document.getElementById('ciudadSelectFilter').value;
+
+            let filtrados = ordenesGlobales.filter(o => {
+                // 1. Filtro de Tab
+                if (tabActual === 'SIN_ASIGNAR' && (o.tecnico_asignado || o.estado === 'RETIRADO')) return false;
+                if (tabActual === 'PENDIENTES' && (!o.tecnico_asignado || o.estado === 'RETIRADO')) return false;
+                if (tabActual === 'RETIRADOS' && o.estado !== 'RETIRADO') return false;
+
+                // 2. Filtro de Ciudad
+                if (ciudadFiltro && o.ciudad !== ciudadFiltro) return false;
+
+                // 3. Filtro de Búsqueda
+                if (searchText) {
+                    const matchCodigo = o.cliente_nro && o.cliente_nro.toLowerCase().includes(searchText);
+                    const matchNombre = o.cliente_nombre && o.cliente_nombre.toLowerCase().includes(searchText);
+                    const matchDir = o.direccion && o.direccion.toLowerCase().includes(searchText);
+                    if (!matchCodigo && !matchNombre && !matchDir) return false;
+                }
+
+                return true;
+            });
+
+            renderizarTabla(filtrados);
+        }
+
+        function renderizarTabla(lista) {
+            const tbody = document.getElementById('tablaOrdenesBody');
+
+            if (lista.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay órdenes que coincidan con los filtros aplicados.</td></tr>';
                 return;
             }
 
-            totalTexto.innerText = `${ordenesCargadas.length} órdenes registradas en total`;
-
-            tbody.innerHTML = ordenesCargadas.map(o => {
+            tbody.innerHTML = lista.map(o => {
                 let badgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/30";
                 if (o.estado === 'RETIRADO') badgeClass = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
 
@@ -459,7 +558,6 @@
             document.getElementById('modalAsignacionMasiva').classList.add('hidden');
         }
 
-        // ASIGNACIÓN CORREGIDA SOPORTANDO STRING O NUMBER
         async function ejecutarAsignacionMasiva() {
             const tecnico = document.getElementById('batchTecnicoSelect').value;
             if (!tecnico) return alert('Selecciona un técnico.');
@@ -467,7 +565,6 @@
             const rawIds = Array.from(document.querySelectorAll('.rowCheckbox:checked')).map(cb => cb.value);
             if (rawIds.length === 0) return alert('No hay órdenes seleccionadas.');
 
-            // Convertir a número si los IDs son numéricos, mantener string si son UUID
             const idsProcessed = rawIds.map(id => !isNaN(id) ? Number(id) : id);
 
             const { data, error } = await supabaseClient
@@ -486,7 +583,7 @@
         }
 
         function abrirModalGestion(id) {
-            ordenSeleccionadaGestion = ordenesCargadas.find(o => String(o.id) === String(id));
+            ordenSeleccionadaGestion = ordenesGlobales.find(o => String(o.id) === String(id));
             if (!ordenSeleccionadaGestion) return;
 
             document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tecnologia;
