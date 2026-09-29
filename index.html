@@ -41,11 +41,21 @@
             height: 220px;
             width: 100%;
             border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+            position: relative;
+            z-index: 10; /* Corregido para no tapar modales */
         }
         #adminMapContainer {
             height: 280px;
             width: 100%;
             border-radius: 1rem;
+            position: relative;
+            z-index: 10;
+        }
+        .leaflet-pane {
+            z-index: 10 !important;
+        }
+        .leaflet-top, .leaflet-bottom {
+            z-index: 15 !important;
         }
     </style>
 </head>
@@ -374,16 +384,16 @@
         </nav>
     </div>
 
-    <!-- MODAL GESTIÓN COMPARTIDO -->
-    <div id="modalGestion" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="tech-card max-w-lg w-full rounded-2xl p-5 space-y-4 my-6">
-            <div class="flex justify-between items-start border-b border-sky-500/20 pb-2">
+    <!-- MODAL GESTIÓN COMPARTIDO CON MÚLTIPLES EQUIPOS Y FUNGIBLES -->
+    <div id="modalGestion" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="tech-card max-w-xl w-full rounded-2xl p-5 space-y-4 my-6 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start border-b border-sky-500/20 pb-2 sticky top-0 bg-slate-950/95 z-20 py-1">
                 <div>
                     <span class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full font-bold" id="gestionTecnologia">HFC</span>
                     <h3 class="font-bold text-base text-white mt-1" id="gestionClienteNombre">Cliente</h3>
                     <p class="text-xs text-slate-400">Código: <span id="gestionClienteCodigo" class="font-semibold text-sky-300">-</span></p>
                 </div>
-                <button onclick="cerrarModalGestion()" class="text-slate-400 hover:text-white text-xl font-bold">✕</button>
+                <button onclick="cerrarModalGestion()" class="text-slate-400 hover:text-white text-2xl font-bold p-1">✕</button>
             </div>
 
             <div id="observacionAlertaDiv" class="hidden bg-amber-950/40 border border-amber-500/50 p-2.5 rounded-xl text-xs space-y-1">
@@ -396,13 +406,14 @@
                     <p class="font-bold text-rose-300">💳 CLIENTE PAGÓ LA DEUDA</p>
                     <p class="text-[10px] text-slate-400">Cancela el retiro si el cliente liquidó deuda.</p>
                 </div>
-                <button onclick="marcarComoPagadoModal()" class="bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs">🔴 Marcar PAGADO</button>
+                <button onclick="marcarComoPagadoModal()" class="bg-rose-700 hover:bg-rose-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs">🔴 Marcar PAGADO</button>
             </div>
 
-            <div class="space-y-3 text-xs">
+            <div class="space-y-4 text-xs">
+                <!-- DATOS PRINCIPALES DE ORDEN -->
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="font-bold text-sky-300">OT / ORDEN TRABAJO:</label>
+                        <label class="font-bold text-sky-300">OT Principal (OT 0):</label>
                         <input type="text" id="gestionOt" placeholder="Ej: 29552297" class="w-full mt-1 p-2 tech-input rounded-xl text-xs" />
                     </div>
                     <div>
@@ -418,40 +429,53 @@
                     </label>
                 </div>
 
-                <div class="bg-slate-900/60 p-3 rounded-xl border border-sky-500/20 space-y-2">
+                <!-- CONTENEDOR DINÁMICO DE EQUIPOS RECUPERADOS (MÓDEMS Y MÚLTIPLES DECOS) -->
+                <div class="space-y-3">
                     <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-sky-300">📟 MÓDEM / ONT</h4>
-                        <label class="cursor-pointer bg-sky-700 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold">
-                            📷 OCR Serie
-                            <input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiqueta(this, 'modem')" />
-                        </label>
+                        <h4 class="font-bold text-sky-300 flex items-center gap-1.5">
+                            📟 EQUIPOS RECUPERADOS (MÓDEMS / DECODIFICADORES)
+                        </h4>
+                        <button onclick="agregarFilaEquipoDinamicamente()" type="button" class="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
+                            ➕ Agregar Otro Equipo
+                        </button>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="modemModelo" placeholder="Modelo Módem" class="p-2 tech-input rounded-xl text-xs" />
-                        <input type="text" id="modemSerie" placeholder="Serie / MAC" class="p-2 tech-input rounded-xl text-xs" />
+
+                    <div id="contenedorEquiposDinamicos" class="space-y-2">
+                        <!-- Filas de equipos generadas dinámicamente -->
                     </div>
                 </div>
 
-                <div class="bg-slate-900/60 p-3 rounded-xl border border-sky-500/20 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-amber-300">📺 DECODER (STB)</h4>
-                        <label class="cursor-pointer bg-amber-800 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold">
-                            📷 OCR Serie
-                            <input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiqueta(this, 'deco')" />
-                        </label>
-                    </div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="text" id="decoModelo" placeholder="Modelo Deco" class="p-2 tech-input rounded-xl text-xs" />
-                        <input type="text" id="decoSerie" placeholder="Serie / CAS ID" class="p-2 tech-input rounded-xl text-xs" />
+                <!-- CONTENEDOR DE MATERIALES FUNGIBLES -->
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-sky-500/20 space-y-2">
+                    <h4 class="font-bold text-amber-300 flex items-center gap-1">
+                        🛠️ MATERIALES FUNGIBLES Y ACCESORIOS RECUPERADOS
+                    </h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-300">Cable (Metros):</label>
+                            <input type="number" id="matCableMetros" value="0" placeholder="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-300">Conectores (Cant):</label>
+                            <input type="number" id="matConectores" value="0" placeholder="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-300">Splitters / TAPs:</label>
+                            <input type="number" id="matSplitters" value="0" placeholder="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-300">Precintos / Faja:</label>
+                            <input type="number" id="matPrecintos" value="0" placeholder="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
+                        </div>
                     </div>
                 </div>
 
                 <div id="gestionStatusOutput" class="text-xs font-bold text-center min-h-[1rem]"></div>
             </div>
 
-            <div class="flex justify-end gap-2 pt-2 border-t border-sky-500/20">
+            <div class="flex justify-end gap-2 pt-2 border-t border-sky-500/20 sticky bottom-0 bg-slate-950/95 py-2">
                 <button onclick="cerrarModalGestion()" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Cancelar</button>
-                <button onclick="enviarReporteAWhatsApp()" class="px-4 py-2 rounded-xl bg-emerald-700 text-white text-xs font-bold">📲 Finalizar Retiro</button>
+                <button onclick="enviarReporteAWhatsApp()" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow">📲 Finalizar Retiro</button>
             </div>
         </div>
     </div>
@@ -487,6 +511,7 @@
         let historialRetiros = [];
         let tabActualAdmin = 'TODOS';
         let ordenSeleccionadaGestion = null;
+        let contadorEquiposDinamicos = 0;
         
         let fechaSeleccionadaTecnico = new Date().toISOString().slice(0, 10);
         let mobileMap = null;
@@ -728,7 +753,7 @@
             `}).join('');
         }
 
-        // CONCILIACIÓN CON FORMATO EXACTO OFICIAL
+        // CONCILIACIÓN
         async function renderizarConciliacionPagosAdmin() {
             const { data: gestiones } = await supabaseClient.from('historial_gestiones').select('*').order('fecha_gestion', { ascending: false });
             const container = document.getElementById('contenedorResumenPagosTecnicos');
@@ -777,7 +802,7 @@
             const esDomingo = d.getDay() === 0;
 
             if (esDomingo || esFeriadoManual) {
-                return base * 1.5; // +50% extra
+                return base * 1.5;
             }
             return base;
         }
@@ -801,8 +826,8 @@
                     'FECHA': fechaFormateada,
                     'NOMBRE': g.nodo || 'CLIENTE',
                     'OT 0': g.ot || '',
-                    'OT 1': '',
-                    'OT 2': '',
+                    'OT 1': g.ot1 || '',
+                    'OT 2': g.ot2 || '',
                     'OT 3 ': '',
                     'OT 4': '',
                     'OT 5': '',
@@ -1041,17 +1066,10 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
-                            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                                <p class="font-bold text-sky-300">📟 MÓDEM / ONT:</p>
-                                <p class="text-slate-200">${h.modem_modelo || 'N/A'}</p>
-                                <p class="text-[10px] text-slate-400 font-mono">SN/MAC: ${h.modem_serie || 'NO REGISTRADO'}</p>
-                            </div>
-                            <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800">
-                                <p class="font-bold text-amber-300">📺 DECODER (STB):</p>
-                                <p class="text-slate-200">${h.deco_modelo || 'N/A'}</p>
-                                <p class="text-[10px] text-slate-400 font-mono">SN/CAS: ${h.deco_serie || 'NO REGISTRADO'}</p>
-                            </div>
+                        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-[11px]">
+                            <p class="font-bold text-sky-300 mb-1">📟 EQUIPOS / SERIALES REGISTRADOS:</p>
+                            <p class="text-slate-300 font-mono text-[10px]">${h.modem_serie ? `Módem/ONT: ${h.modem_modelo \vert{}\vert{} ''} (${h.modem_serie})` : ''}</p>
+                            <p class="text-slate-300 font-mono text-[10px]">${h.deco_serie ? `Deco/STB: ${h.deco_modelo \vert{}\vert{} ''} (${h.deco_serie})` : ''}</p>
                         </div>
                     </div>
                 `;
@@ -1079,6 +1097,42 @@
             }
         }
 
+        // AGREGAR EQUIPOS DINÁMICAMENTE EN EL MODAL DE GESTIÓN
+        function agregarFilaEquipoDinamicamente(tipoDefault = 'DECODER', modelo = '', serie = '') {
+            contadorEquiposDinamicos++;
+            const idFila = `equipoRow_${contadorEquiposDinamicos}`;
+            const container = document.getElementById('contenedorEquiposDinamicos');
+
+            const rowHtml = `
+                <div id="${idFila}" class="bg-slate-900/60 p-2.5 rounded-xl border border-sky-500/20 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <select class="tipoEquipoSelect bg-slate-950 text-sky-300 font-bold text-[10px] border border-sky-500/30 rounded-lg p-1">
+                            <option value="MODEM" ${tipoDefault === 'MODEM' ? 'selected' : ''}>📟 MÓDEM / ONT</option>
+                            <option value="DECODER" ${tipoDefault === 'DECODER' ? 'selected' : ''}>📺 DECODER (STB)</option>
+                            <option value="ROUTER" ${tipoDefault === 'ROUTER' ? 'selected' : ''}>📶 ROUTER / EXTENDER</option>
+                        </select>
+                        <div class="flex items-center gap-1.5">
+                            <label class="cursor-pointer bg-sky-700 hover:bg-sky-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-bold">
+                                📷 OCR
+                                <input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiquetaFila(this, '${idFila}')" />
+                            </label>
+                            <button type="button" onclick="eliminarFilaEquipo('${idFila}')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5 py-0.5">✕</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" class="modeloInput p-1.5 tech-input rounded-xl text-xs" value="${modelo}" placeholder="Modelo" />
+                        <input type="text" class="serieInput p-1.5 tech-input rounded-xl text-xs font-mono" value="${serie}" placeholder="Serie / MAC / CAS" />
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function eliminarFilaEquipo(idFila) {
+            const el = document.getElementById(idFila);
+            if (el) el.remove();
+        }
+
         function abrirModalGestionTecnico(id) {
             ordenSeleccionadaGestion = ordenesTecnico.find(o => String(o.id) === String(id));
             if (!ordenSeleccionadaGestion) return;
@@ -1086,6 +1140,13 @@
             document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tecnologia;
             document.getElementById('gestionClienteNombre').innerText = ordenSeleccionadaGestion.cliente_nombre;
             document.getElementById('gestionClienteCodigo').innerText = ordenSeleccionadaGestion.cliente_nro;
+
+            // Limpiar y cargar equipos iniciales
+            document.getElementById('contenedorEquiposDinamicos').innerHTML = '';
+            contadorEquiposDinamicos = 0;
+            agregarFilaEquipoDinamicamente('MODEM', '', '');
+            agregarFilaEquipoDinamicamente('DECODER', '', '');
+
             document.getElementById('modalGestion').classList.remove('hidden');
         }
 
@@ -1106,7 +1167,7 @@
             }
         }
 
-        async function escaneoInteligenteEtiqueta(input, tipo) {
+        async function escaneoInteligenteEtiquetaFila(input, idFila) {
             if (!input.files || !input.files[0]) return;
             const statusDiv = document.getElementById('gestionStatusOutput');
             statusDiv.innerText = "⏳ Leyendo etiqueta con OCR inteligente...";
@@ -1116,7 +1177,7 @@
                 const text = result.data.text;
                 const snMatch = text.match(/(?:SN|S\/N|SERIAL|CAS|MAC)[:\s]*([A-Za-z0-9\-]+)/i);
                 if (snMatch && snMatch[1]) {
-                    document.getElementById(tipo === 'modem' ? 'modemSerie' : 'decoSerie').value = snMatch[1].trim();
+                    document.querySelector(`#${idFila} .serieInput`).value = snMatch[1].trim();
                     statusDiv.innerText = "✅ Serie detectada e insertada automáticamente.";
                 } else {
                     statusDiv.innerText = "⚠️ No se detectó un patrón de serie claro. Ingrésalo manualmente.";
@@ -1127,13 +1188,31 @@
         }
 
         async function enviarReporteAWhatsApp() {
-            const modemMod = document.getElementById('modemModelo').value;
-            const modemSer = document.getElementById('modemSerie').value;
-            const decoMod = document.getElementById('decoModelo').value;
-            const decoSer = document.getElementById('decoSerie').value;
             const ot = document.getElementById('gestionOt').value || 'S/OT';
             const precioUnit = parseFloat(document.getElementById('gestionPrecioUnit').value) || 45;
             const esFeriado = document.getElementById('gestionEsFeriado').checked;
+
+            // Recopilar múltiples equipos de las filas dinámicas
+            const filasEquipos = document.querySelectorAll('#contenedorEquiposDinamicos > div');
+            let modemsArray = [];
+            let decosArray = [];
+
+            filasEquipos.forEach(fila => {
+                const tipo = fila.querySelector('.tipoEquipoSelect').value;
+                const mod = fila.querySelector('.modeloInput').value.trim();
+                const ser = fila.querySelector('.serieInput').value.trim();
+
+                if (ser) {
+                    if (tipo === 'MODEM') modemsArray.push(`${mod} (${ser})`);
+                    else decosArray.push(`${mod} (${ser})`);
+                }
+            });
+
+            // Materiales fungibles
+            const matCable = document.getElementById('matCableMetros').value || 0;
+            const matConectores = document.getElementById('matConectores').value || 0;
+            const matSplitters = document.getElementById('matSplitters').value || 0;
+            const matPrecintos = document.getElementById('matPrecintos').value || 0;
 
             const targetId = !isNaN(ordenSeleccionadaGestion.id) ? Number(ordenSeleccionadaGestion.id) : ordenSeleccionadaGestion.id;
 
@@ -1142,12 +1221,13 @@
                 cliente_nro: ordenSeleccionadaGestion.cliente_nro,
                 nodo: ordenSeleccionadaGestion.cliente_nombre,
                 ot: ot,
-                modem_modelo: modemMod,
-                modem_serie: modemSer,
-                deco_modelo: decoMod,
-                deco_serie: decoSer,
+                modem_modelo: modemsArray.join(', '),
+                modem_serie: modemsArray.length > 0 ? modemsArray[0] : 'S/N',
+                deco_modelo: decosArray.join(', '),
+                deco_serie: decosArray.join(' | '),
                 precio_unitario: precioUnit,
                 es_feriado: esFeriado,
+                materiales_fungibles: `Cable: ${matCable}m, Conectores: ${matConectores}, Splitters: ${matSplitters}, Precintos: ${matPrecintos}`,
                 tecnico_nombre: usuarioActual.nombre,
                 ciudad: ordenSeleccionadaGestion.ciudad,
                 tecnologia: ordenSeleccionadaGestion.tecnologia,
@@ -1165,7 +1245,7 @@
             } else {
                 await cargarOrdenesAdminDesdeSupabase();
             }
-            alert("¡Retiro registrado y añadido a tu planilla de cobro!");
+            alert("¡Retiro registrado con éxito y sumado a tu planilla!");
         }
 
         function toggleSelectAll(master) {
