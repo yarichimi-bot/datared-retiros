@@ -42,7 +42,7 @@
             width: 100%;
             border-bottom: 1px solid rgba(56, 189, 248, 0.2);
             position: relative;
-            z-index: 10; /* Corregido para no tapar modales */
+            z-index: 10;
         }
         #adminMapContainer {
             height: 280px;
@@ -278,7 +278,7 @@
         </main>
     </div>
 
-    <!-- 3. VISTA B: TÉCNICO EN CAMPO (EXCLUSIVO PARA TÉCNICOS) -->
+    <!-- 3. VISTA B: TÉCNICO EN CAMPO -->
     <div id="appTecnicoContent" class="hidden pb-20">
         <header class="field-service-header p-3 text-white space-y-2 sticky top-0 z-30 shadow-lg">
             <div class="flex justify-between items-center text-[10px] tracking-wider text-sky-300 border-b border-sky-500/20 pb-1.5">
@@ -293,11 +293,10 @@
                 </div>
             </div>
 
-            <!-- CALENDARIO MES COMPLETO -->
             <div class="flex items-center gap-1.5 pt-1 text-center text-xs overflow-x-auto pb-1" id="barCalendarioHorizontal"></div>
         </header>
 
-        <!-- SECCIÓN TÉCNICO 1: PROGRAMAR (MAPA + LISTA) -->
+        <!-- SECCIÓN TÉCNICO 1: PROGRAMAR -->
         <div id="tecTabProgramar" class="space-y-3">
             <div id="mobileMapContainer"></div>
 
@@ -319,7 +318,7 @@
             </div>
         </div>
 
-        <!-- SECCIÓN TÉCNICO 2: INVENTARIO DE EQUIPOS Y EXPORTACIÓN DE PLANILLA DE PAGO -->
+        <!-- SECCIÓN TÉCNICO 2: INVENTARIO & PLANILLA -->
         <div id="tecTabInventario" class="hidden p-4 space-y-4">
             <div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -384,7 +383,7 @@
         </nav>
     </div>
 
-    <!-- MODAL GESTIÓN COMPARTIDO CON MÚLTIPLES EQUIPOS Y FUNGIBLES -->
+    <!-- MODAL GESTIÓN COMPARTIDO CON MÚLTIPLES EQUIPOS Y FUNGIBLES Y CATALOGO CODIFICADO -->
     <div id="modalGestion" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
         <div class="tech-card max-w-xl w-full rounded-2xl p-5 space-y-4 my-6 relative max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start border-b border-sky-500/20 pb-2 sticky top-0 bg-slate-950/95 z-20 py-1">
@@ -410,7 +409,6 @@
             </div>
 
             <div class="space-y-4 text-xs">
-                <!-- DATOS PRINCIPALES DE ORDEN -->
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="font-bold text-sky-300">OT Principal (OT 0):</label>
@@ -429,7 +427,7 @@
                     </label>
                 </div>
 
-                <!-- CONTENEDOR DINÁMICO DE EQUIPOS RECUPERADOS (MÓDEMS Y MÚLTIPLES DECOS) -->
+                <!-- CONTENEDOR DINÁMICO DE EQUIPOS -->
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
                         <h4 class="font-bold text-sky-300 flex items-center gap-1.5">
@@ -441,31 +439,41 @@
                     </div>
 
                     <div id="contenedorEquiposDinamicos" class="space-y-2">
-                        <!-- Filas de equipos generadas dinámicamente -->
+                        <!-- Filas de equipos -->
                     </div>
                 </div>
 
-                <!-- CONTENEDOR DE MATERIALES FUNGIBLES -->
-                <div class="bg-slate-900/80 p-3 rounded-xl border border-sky-500/20 space-y-2">
-                    <h4 class="font-bold text-amber-300 flex items-center gap-1">
-                        🛠️ MATERIALES FUNGIBLES Y ACCESORIOS RECUPERADOS
-                    </h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <!-- SECCIÓN CATÁLOGO DE CONTROLES, FUENTES Y CABLES (FUNGIBLES OFICIALES) -->
+                <div class="bg-slate-900/80 p-3.5 rounded-xl border border-amber-500/30 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h4 class="font-bold text-amber-300 flex items-center gap-1">
+                            🔌 CONTROLES, FUENTES Y ACCESORIOS RECUPERADOS (CATÁLOGO SIGA)
+                        </h4>
+                        <button onclick="agregarFilaFungibleCat()" type="button" class="bg-amber-700 hover:bg-amber-600 text-white text-[10px] font-bold px-2 py-1 rounded-lg">
+                            ➕ Agregar Accesorio
+                        </button>
+                    </div>
+
+                    <div id="contenedorFungiblesCatalogo" class="space-y-2">
+                        <!-- Filas dinámicas del catálogo SIGA/MAGIC -->
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <div>
-                            <label class="text-[10px] text-slate-300">Cable (Metros):</label>
-                            <input type="number" id="matCableMetros" value="0" placeholder="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
+                            <label class="text-[10px] text-slate-300">Cable Coaxial/FO (m):</label>
+                            <input type="number" id="matCableMetros" value="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
                         </div>
                         <div>
                             <label class="text-[10px] text-slate-300">Conectores (Cant):</label>
-                            <input type="number" id="matConectores" value="0" placeholder="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
+                            <input type="number" id="matConectores" value="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
                         </div>
                         <div>
                             <label class="text-[10px] text-slate-300">Splitters / TAPs:</label>
-                            <input type="number" id="matSplitters" value="0" placeholder="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
+                            <input type="number" id="matSplitters" value="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
                         </div>
                         <div>
                             <label class="text-[10px] text-slate-300">Precintos / Faja:</label>
-                            <input type="number" id="matPrecintos" value="0" placeholder="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
+                            <input type="number" id="matPrecintos" value="0" class="p-1.5 tech-input rounded-lg text-xs w-full" />
                         </div>
                     </div>
                 </div>
@@ -504,6 +512,25 @@
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // CATÁLOGO DE CONTROLES, FUENTES Y ACCESORIOS DEL PDF ENVIADO
+        const CATALOGO_FUNGIBLES = [
+            { magic: 'INSCTR0003', siga: '3002', nombre: 'CONTROL REMOTO UNIVERSAL SMK PRO14', tipo: 'Control Remoto' },
+            { magic: 'INSCTR0004', siga: '3006', nombre: 'CRS-211EMLC KAON REMOTE CONTROL', tipo: 'Control Remoto' },
+            { magic: 'INSCTR0005', siga: '3053', nombre: 'TIVO SERIES 4 REMOTE CONTROL (W/BATTERIES)', tipo: 'Control Remoto' },
+            { magic: 'INSCTR0006', siga: '3054', nombre: 'SMK PRO14.1 UNIVERSAL REMOTE CONTROL', tipo: 'Control Remoto' },
+            { magic: 'INSCTR0007', siga: '3055', nombre: 'UEI TIVO CREEK ANDROID VOICE REMOTE', tipo: 'Control Remoto' },
+            { magic: 'INSCTR0008', siga: '3056', nombre: 'BASIC RCU WITH LOGO NO MANUAL WITH BATTERIES', tipo: 'Control Remoto' },
+            { magic: 'INSFUE0002', siga: '3019', nombre: 'POWER SUPPLY 1 AMPERE', tipo: 'Fuentes' },
+            { magic: 'INSFUE0003', siga: '3020', nombre: 'POWER SUPPLY 1.25 AMPERE', tipo: 'Fuentes' },
+            { magic: 'INSFUE0004', siga: '3021', nombre: 'POWER SUPPLY 1.5 AMPERE', tipo: 'Fuentes' },
+            { magic: 'INSFUE0005', siga: '3022', nombre: 'POWER SUPPLY 2 AMPERE', tipo: 'Fuentes' },
+            { magic: 'INSFUE0006', siga: '3023', nombre: 'POWER SUPPLY 2.5 AMPERE', tipo: 'Fuentes' },
+            { magic: 'INSACC0010', siga: '3067', nombre: 'ELECTRIC POWER CORD', tipo: 'Cable de Poder' },
+            { magic: 'INSACC0003', siga: '1026', nombre: '6 FT JUMPER CABLE HDMI TO HDMI', tipo: 'HDMI' },
+            { magic: 'INSACC0011', siga: '3030', nombre: 'JUMPER CABLE HDMI PREMIUM 6FT', tipo: 'HDMI' },
+            { magic: 'INSACC0002', siga: '1025', nombre: '6 FT JUMPER CABLE RCA TO RCA', tipo: 'RCA' }
+        ];
+
         let usuarioActual = null;
         let ordenesGlobalesAdmin = [];
         let ordenesFiltradasAdmin = [];
@@ -512,6 +539,7 @@
         let tabActualAdmin = 'TODOS';
         let ordenSeleccionadaGestion = null;
         let contadorEquiposDinamicos = 0;
+        let contadorFungiblesCat = 0;
         
         let fechaSeleccionadaTecnico = new Date().toISOString().slice(0, 10);
         let mobileMap = null;
@@ -753,7 +781,6 @@
             `}).join('');
         }
 
-        // CONCILIACIÓN
         async function renderizarConciliacionPagosAdmin() {
             const { data: gestiones } = await supabaseClient.from('historial_gestiones').select('*').order('fecha_gestion', { ascending: false });
             const container = document.getElementById('contenedorResumenPagosTecnicos');
@@ -888,7 +915,7 @@
             XLSX.writeFile(workbook, `Planilla_Pago_${usuarioActual.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // LÓGICA VISTA TÉCNICO
+        // VISTA TÉCNICO
         function generarCalendarioHorizontal() {
             const container = document.getElementById('barCalendarioHorizontal');
             const diasSemana = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
@@ -1067,9 +1094,10 @@
                         </div>
 
                         <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-[11px]">
-                            <p class="font-bold text-sky-300 mb-1">📟 EQUIPOS / SERIALES REGISTRADOS:</p>
+                            <p class="font-bold text-sky-300 mb-1">📟 EQUIPOS REGISTRADOS:</p>
                             <p class="text-slate-300 font-mono text-[10px]">${h.modem_serie ? `Módem/ONT: ${h.modem_modelo \vert{}\vert{} ''} (${h.modem_serie})` : ''}</p>
                             <p class="text-slate-300 font-mono text-[10px]">${h.deco_serie ? `Deco/STB: ${h.deco_modelo \vert{}\vert{} ''} (${h.deco_serie})` : ''}</p>
+                            ${h.fungibles_catalogo ? `<p class="text-amber-300 text-[10px] mt-1">🔌 Accesorio: ${h.fungibles_catalogo}</p>` : ''}
                         </div>
                     </div>
                 `;
@@ -1097,7 +1125,7 @@
             }
         }
 
-        // AGREGAR EQUIPOS DINÁMICAMENTE EN EL MODAL DE GESTIÓN
+        // AGREGAR FILAS DE EQUIPOS Y FUNGIBLES DINÁMICAMENTE
         function agregarFilaEquipoDinamicamente(tipoDefault = 'DECODER', modelo = '', serie = '') {
             contadorEquiposDinamicos++;
             const idFila = `equipoRow_${contadorEquiposDinamicos}`;
@@ -1116,7 +1144,7 @@
                                 📷 OCR
                                 <input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiquetaFila(this, '${idFila}')" />
                             </label>
-                            <button type="button" onclick="eliminarFilaEquipo('${idFila}')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5 py-0.5">✕</button>
+                            <button type="button" onclick="eliminarFilaElemento('${idFila}')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5 py-0.5">✕</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2">
@@ -1128,7 +1156,28 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        function eliminarFilaEquipo(idFila) {
+        function agregarFilaFungibleCat() {
+            contadorFungiblesCat++;
+            const idFila = `fungibleRow_${contadorFungiblesCat}`;
+            const container = document.getElementById('contenedorFungiblesCatalogo');
+
+            const optionsCat = CATALOGO_FUNGIBLES.map(c => `
+                <option value="${c.siga}">[SIGA ${c.siga}] ${c.nombre}</option>
+            `).join('');
+
+            const rowHtml = `
+                <div id="${idFila}" class="flex items-center gap-2 bg-slate-950 p-2 rounded-lg border border-slate-800">
+                    <select class="fungibleSelect bg-slate-900 text-slate-200 text-xs rounded-lg p-1.5 w-full border border-sky-500/20">
+                        ${optionsCat}
+                    </select>
+                    <input type="number" value="1" min="1" class="fungibleCantInput w-16 p-1.5 tech-input rounded-lg text-xs text-center font-bold" />
+                    <button type="button" onclick="eliminarFilaElemento('${idFila}')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5">✕</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function eliminarFilaElemento(idFila) {
             const el = document.getElementById(idFila);
             if (el) el.remove();
         }
@@ -1141,11 +1190,14 @@
             document.getElementById('gestionClienteNombre').innerText = ordenSeleccionadaGestion.cliente_nombre;
             document.getElementById('gestionClienteCodigo').innerText = ordenSeleccionadaGestion.cliente_nro;
 
-            // Limpiar y cargar equipos iniciales
             document.getElementById('contenedorEquiposDinamicos').innerHTML = '';
+            document.getElementById('contenedorFungiblesCatalogo').innerHTML = '';
             contadorEquiposDinamicos = 0;
+            contadorFungiblesCat = 0;
+
             agregarFilaEquipoDinamicamente('MODEM', '', '');
             agregarFilaEquipoDinamicamente('DECODER', '', '');
+            agregarFilaFungibleCat();
 
             document.getElementById('modalGestion').classList.remove('hidden');
         }
@@ -1192,7 +1244,6 @@
             const precioUnit = parseFloat(document.getElementById('gestionPrecioUnit').value) || 45;
             const esFeriado = document.getElementById('gestionEsFeriado').checked;
 
-            // Recopilar múltiples equipos de las filas dinámicas
             const filasEquipos = document.querySelectorAll('#contenedorEquiposDinamicos > div');
             let modemsArray = [];
             let decosArray = [];
@@ -1208,7 +1259,18 @@
                 }
             });
 
-            // Materiales fungibles
+            // Recopilar fungibles del catálogo SIGA
+            const filasFungiblesCat = document.querySelectorAll('#contenedorFungiblesCatalogo > div');
+            let fungiblesCatArray = [];
+            filasFungiblesCat.forEach(f => {
+                const siga = f.querySelector('.fungibleSelect').value;
+                const cant = f.querySelector('.fungibleCantInput').value;
+                const itemObj = CATALOGO_FUNGIBLES.find(c => c.siga === siga);
+                if (itemObj) {
+                    fungiblesCatArray.push(`[SIGA ${siga}] ${itemObj.tipo} x${cant}`);
+                }
+            });
+
             const matCable = document.getElementById('matCableMetros').value || 0;
             const matConectores = document.getElementById('matConectores').value || 0;
             const matSplitters = document.getElementById('matSplitters').value || 0;
@@ -1227,6 +1289,7 @@
                 deco_serie: decosArray.join(' | '),
                 precio_unitario: precioUnit,
                 es_feriado: esFeriado,
+                fungibles_catalogo: fungiblesCatArray.join(', '),
                 materiales_fungibles: `Cable: ${matCable}m, Conectores: ${matConectores}, Splitters: ${matSplitters}, Precintos: ${matPrecintos}`,
                 tecnico_nombre: usuarioActual.nombre,
                 ciudad: ordenSeleccionadaGestion.ciudad,
