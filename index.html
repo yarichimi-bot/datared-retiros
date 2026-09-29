@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DATARED - Control y Gestión de Retiros DTH/HFC/FTTH</title>
+    <title>DATARED - Control y Gestión Operativa DTH/HFC/FTTH</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <!-- Librería de Mapas Interactivos (Leaflet) -->
+    <!-- Leaflet para Mapas -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
@@ -36,24 +36,18 @@
             background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
             box-shadow: 0 0 15px rgba(2, 132, 199, 0.4);
         }
-        .tech-button:hover {
-            box-shadow: 0 0 25px rgba(56, 189, 248, 0.6);
-        }
         #mapContainer {
-            height: 280px;
+            height: 350px;
             width: 100%;
             border-radius: 1rem;
-            z-index: 10;
         }
     </style>
 </head>
 <body class="min-h-screen font-sans antialiased">
 
-    <!-- 1. PANTALLA FUTURISTA DE LOGIN -->
+    <!-- 1. LOGIN -->
     <div id="loginOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950">
         <div class="tech-card w-full max-w-md p-8 rounded-2xl text-white space-y-6 relative overflow-hidden">
-            <div class="absolute -top-10 -right-10 w-32 h-32 bg-sky-500/20 rounded-full blur-2xl"></div>
-            
             <div class="text-center space-y-2">
                 <div class="inline-block p-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400 mb-1">
                     📡 DATARED OPERATIVO
@@ -81,26 +75,31 @@
         </div>
     </div>
 
-    <!-- 2. PANELES INTERNOS DE LA APLICACIÓN -->
+    <!-- 2. PANELES Y NAVEGACIÓN -->
     <div id="appContent" class="hidden">
         
-        <!-- Header Principal con Menú Estructurado -->
         <header class="bg-slate-900/90 border-b border-sky-500/20 p-4 shadow-lg backdrop-blur flex flex-col md:flex-row justify-between items-center gap-3">
             <div>
                 <h1 class="font-black text-xl tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-200">DATARED BOLIVIA</h1>
                 <p class="text-xs text-sky-300/70">Control Operativo de Retiros DTH / HFC / FTTH</p>
             </div>
 
-            <!-- Navegación por Menú Principal -->
-            <nav class="flex items-center gap-2 bg-slate-950 p-1 rounded-xl border border-sky-500/20">
-                <button id="navBtnDashboard" onclick="cambiarSeccionNavegacion('dashboard')" class="text-xs font-bold px-3.5 py-2 rounded-lg bg-sky-500/20 text-sky-300">
-                    📋 Operaciones
+            <!-- NAVEGACIÓN PRINCIPAL -->
+            <nav class="flex flex-wrap items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-sky-500/20">
+                <button id="navBtnCodigos" onclick="cambiarSeccionNavegacion('codigos')" class="text-xs font-bold px-3.5 py-2 rounded-lg bg-sky-500/20 text-sky-300">
+                    📋 Clientes / Códigos
                 </button>
-                <button id="navBtnCarga" onclick="cambiarSeccionNavegacion('carga')" class="text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white">
-                    📂 Importar Pendientes
+                <button id="navBtnMapa" onclick="cambiarSeccionNavegacion('mapa')" class="text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white">
+                    📍 Ruteo GPS Técnico
                 </button>
-                <button id="navBtnUsuarios" onclick="cambiarSeccionNavegacion('usuarios')" class="text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white adminOnly">
-                    👥 Personal
+                <button id="navBtnAgenda" onclick="cambiarSeccionNavegacion('agenda')" class="text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white adminOnly">
+                    📅 Agenda & Tracking
+                </button>
+                <button id="navBtnDigitacion" onclick="cambiarSeccionNavegacion('digitacion')" class="text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white adminOnly">
+                    🖥 Back Office / Digitación
+                </button>
+                <button id="navBtnCarga" onclick="cambiarSeccionNavegacion('carga')" class="text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white adminOnly">
+                    📂 Carga Excel
                 </button>
             </nav>
 
@@ -117,75 +116,56 @@
 
         <main class="max-w-7xl mx-auto p-4 space-y-6">
 
-            <!-- SECCIÓN 1: PANEL OPERATIVO PRINCIPAL (TABLA + MAPA) -->
-            <div id="seccionDashboard" class="space-y-6">
-
+            <!-- PESTAÑA 1: VISTA PRINCIPAL DE CÓDIGOS Y CLIENTES -->
+            <div id="seccionCodigos" class="space-y-6">
                 <!-- TARJETAS CONTEO DE RUTA -->
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div onclick="filtrarPorTab('TODOS')" class="tech-card p-3.5 rounded-2xl cursor-pointer hover:border-sky-400 transition-all">
-                        <p class="text-[11px] font-bold text-slate-400">TOTAL ÓRDENES</p>
-                        <p class="text-2xl font-black text-white mt-0.5" id="countTotal">0</p>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                    <div onclick="filtrarPorTab('TODOS')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-sky-400 transition-all">
+                        <p class="text-[10px] font-bold text-slate-400">TOTAL CÓDIGOS</p>
+                        <p class="text-xl font-black text-white mt-0.5" id="countTotal">0</p>
                     </div>
-                    <div onclick="filtrarPorTab('SIN_ASIGNAR')" class="tech-card p-3.5 rounded-2xl cursor-pointer hover:border-rose-400 transition-all border-rose-500/30">
-                        <p class="text-[11px] font-bold text-rose-400">⚠️ SIN ASIGNAR</p>
-                        <p class="text-2xl font-black text-rose-200 mt-0.5" id="countSinAsignar">0</p>
+                    <div onclick="filtrarPorTab('SIN_ASIGNAR')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-amber-400 transition-all border-amber-500/30">
+                        <p class="text-[10px] font-bold text-amber-400">⚠️ SIN ASIGNAR</p>
+                        <p class="text-xl font-black text-amber-200 mt-0.5" id="countSinAsignar">0</p>
                     </div>
-                    <div onclick="filtrarPorTab('PENDIENTES')" class="tech-card p-3.5 rounded-2xl cursor-pointer hover:border-amber-400 transition-all border-amber-500/30">
-                        <p class="text-[11px] font-bold text-amber-400">🟡 PENDIENTES EN RUTA</p>
-                        <p class="text-2xl font-black text-amber-200 mt-0.5" id="countPendientes">0</p>
+                    <div onclick="filtrarPorTab('PENDIENTES')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-sky-400 transition-all border-sky-500/30">
+                        <p class="text-[10px] font-bold text-sky-400">🟡 EN RUTA TÉCNICA</p>
+                        <p class="text-xl font-black text-sky-200 mt-0.5" id="countPendientes">0</p>
                     </div>
-                    <div onclick="filtrarPorTab('RETIRADOS')" class="tech-card p-3.5 rounded-2xl cursor-pointer hover:border-emerald-400 transition-all border-emerald-500/30">
-                        <p class="text-[11px] font-bold text-emerald-400">🟢 RETIRADOS</p>
-                        <p class="text-2xl font-black text-emerald-200 mt-0.5" id="countRetirados">0</p>
+                    <div onclick="filtrarPorTab('RETIRADOS')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-emerald-400 transition-all border-emerald-500/30">
+                        <p class="text-[10px] font-bold text-emerald-400">🟢 RETIRADOS</p>
+                        <p class="text-xl font-black text-emerald-200 mt-0.5" id="countRetirados">0</p>
+                    </div>
+                    <div onclick="filtrarPorTab('PAGADO')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-rose-500 transition-all border-rose-500/50 bg-rose-950/20">
+                        <p class="text-[10px] font-bold text-rose-400">🔴 CLIENTES PAGADOS</p>
+                        <p class="text-xl font-black text-rose-200 mt-0.5" id="countPagados">0</p>
                     </div>
                 </div>
 
-                <!-- MINIMAPA DE RUTEO GPS -->
-                <section class="tech-card p-4 rounded-2xl space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-sky-300 text-xs flex items-center gap-1.5">
-                            🗺️ RUTEO GPS DE CLIENTES EN CAMPO
-                        </h3>
-                        <button onclick="toggleMapaVisibilidad()" id="btnToggleMapa" class="text-[10px] bg-slate-800 text-sky-300 px-2.5 py-1 rounded-lg border border-sky-500/30">
-                            Ocultar Mapa 👁️
-                        </button>
-                    </div>
-                    <div id="mapWrapper">
-                        <div id="mapContainer"></div>
-                    </div>
-                </section>
-
-                <!-- CONTROLES, FILTROS Y TABLA COMPLETA -->
                 <section class="tech-card p-6 rounded-2xl space-y-4">
-                    
                     <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 pb-3 border-b border-sky-500/20">
-                        <!-- Filtros por pestaña de estado -->
                         <div class="flex flex-wrap items-center gap-2">
                             <button id="tabAll" onclick="filtrarPorTab('TODOS')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/40">Todos</button>
                             <button id="tabSinAsignar" onclick="filtrarPorTab('SIN_ASIGNAR')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 hover:text-white">Sin Asignar</button>
-                            <button id="tabPendientes" onclick="filtrarPorTab('PENDIENTES')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 hover:text-white">Mis Pendientes</button>
+                            <button id="tabPendientes" onclick="filtrarPorTab('PENDIENTES')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 hover:text-white">En Ruta</button>
                             <button id="tabRetirados" onclick="filtrarPorTab('RETIRADOS')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 hover:text-white">Retirados</button>
+                            <button id="tabPagado" onclick="filtrarPorTab('PAGADO')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-rose-900/40 text-rose-300 border border-rose-500/40">Pagados</button>
                         </div>
 
-                        <!-- Búsqueda, Filtro Ciudad y Exportación Excel -->
                         <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
-                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosLocales()" placeholder="🔍 Buscar cliente, código o dir..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-44" />
+                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosLocales()" placeholder="🔍 Código, cliente o dirección..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-48" />
                             <select id="ciudadSelectFilter" onchange="aplicarFiltrosLocales()" class="tech-input rounded-xl p-2 text-xs">
                                 <option value="">-- Ciudad --</option>
                             </select>
                             <button onclick="exportarExcelConsolidado()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap shadow flex items-center gap-1">
-                                📊 Exportar Excel
+                                📊 Exportar
                             </button>
                             <button id="btnAsignacionMasiva" onclick="abrirModalAsignacionMasiva()" class="hidden text-xs bg-sky-700 hover:bg-sky-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap shadow">
                                 ⚡ Asignar (<span id="selectedCount">0</span>)
                             </button>
-                            <button onclick="cargarOrdenesDesdeSupabase()" class="text-xs bg-slate-800 hover:bg-slate-700 text-sky-300 px-3 py-2 rounded-xl border border-sky-500/30 whitespace-nowrap">
-                                🔄
-                            </button>
                         </div>
                     </div>
 
-                    <!-- TABLA DEDICADA EXPANDIDA -->
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs border-collapse">
                             <thead>
@@ -197,7 +177,7 @@
                                     <th class="p-3">Tecnología</th>
                                     <th class="p-3">Técnico Asignado</th>
                                     <th class="p-3">Estado</th>
-                                    <th class="p-3 text-center">Navegación / Gestión</th>
+                                    <th class="p-3 text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaOrdenesBody" class="divide-y divide-slate-800 text-slate-300">
@@ -210,16 +190,81 @@
                 </section>
             </div>
 
-            <!-- SECCIÓN 2: CARGA MASIVA DE PENDIENTES (.XLSX) -->
+            <!-- PESTAÑA 2: RUTEO GPS EXCLUSIVO TÉCNICOS EN TIEMPO REAL -->
+            <div id="seccionMapa" class="hidden space-y-4">
+                <section class="tech-card p-4 rounded-2xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-sky-300 text-sm flex items-center gap-1.5">
+                                📍 RUTEO GPS TÉCNICO EN TIEMPO REAL
+                            </h3>
+                            <p class="text-xs text-slate-400">Muestra tu ubicación GPS actual (punto azul) y los clientes asignados en tu ruta.</p>
+                        </div>
+                        <button onclick="centrarEnMiGps()" class="text-xs bg-sky-500/20 text-sky-300 border border-sky-500/40 px-3 py-1.5 rounded-xl font-bold hover:bg-sky-500/30">
+                            🎯 Centrar en mi GPS
+                        </button>
+                    </div>
+                    <div id="mapContainer"></div>
+                </section>
+            </div>
+
+            <!-- PESTAÑA 3: AGENDA Y SEGUIMIENTO DE CONTROL -->
+            <div id="seccionAgenda" class="hidden space-y-6">
+                <section class="tech-card p-6 rounded-2xl space-y-4">
+                    <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">
+                        📅 Agenda de Seguimiento y Control Diario
+                    </h2>
+                    <p class="text-xs text-slate-400">Filtra la productividad por fechas para auditorías y reuniones ejecutivas.</p>
+                    
+                    <div class="flex flex-wrap gap-3 items-center bg-slate-900/60 p-4 rounded-xl border border-sky-500/20">
+                        <div>
+                            <label class="block text-[11px] font-bold text-sky-300 mb-1">FECHA FILTRO:</label>
+                            <input type="date" id="agendaFechaFilter" onchange="calcularResumenAgenda()" class="tech-input rounded-xl p-2 text-xs" />
+                        </div>
+                        <button onclick="calcularResumenAgenda()" class="tech-button text-white text-xs font-bold px-4 py-2 rounded-xl mt-4">
+                            🔍 Consultar Fecha
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="p-4 bg-slate-900/80 rounded-xl border border-emerald-500/30">
+                            <p class="text-xs font-bold text-emerald-400">EJECUTADOS EL DÍA</p>
+                            <p class="text-3xl font-black text-emerald-200 mt-1" id="agendaEjecutados">0</p>
+                        </div>
+                        <div class="p-4 bg-slate-900/80 rounded-xl border border-amber-500/30">
+                            <p class="text-xs font-bold text-amber-400">PENDIENTES EL DÍA</p>
+                            <p class="text-3xl font-black text-amber-200 mt-1" id="agendaPendientes">0</p>
+                        </div>
+                        <div class="p-4 bg-slate-900/80 rounded-xl border border-sky-500/30">
+                            <p class="text-xs font-bold text-sky-400">CON REPORTE TÉCNICO</p>
+                            <p class="text-3xl font-black text-sky-200 mt-1" id="agendaConReporte">0</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- PESTAÑA 4: PANEL DE DIGITACIÓN / BACK OFFICE CON OBSERVACIONES -->
+            <div id="seccionDigitacion" class="hidden space-y-6">
+                <section class="tech-card p-6 rounded-2xl space-y-4">
+                    <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">
+                        🖥️ Panel de Digitación & Validación Back Office
+                    </h2>
+                    <p class="text-xs text-slate-400">Valida la información ingresada por los técnicos en campo. Puedes aprobar la orden o rebotarla con una observación para corrección del técnico.</p>
+                    
+                    <div id="contenedorDigitacionOrdenes" class="space-y-3">
+                        <p class="text-slate-500 text-xs text-center italic py-4">No hay órdenes pendientes de digitación o revisión.</p>
+                    </div>
+                </section>
+            </div>
+
+            <!-- PESTAÑA 5: CARGA EXCEL -->
             <div id="seccionCarga" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl max-w-3xl mx-auto">
                     <h2 class="text-lg font-bold text-sky-300 mb-2 flex items-center gap-2">
                         📂 Importar Pendientes desde Excel (.xlsx)
                     </h2>
-                    <p class="text-xs text-slate-400 mb-4">Sube el archivo Excel oficial de pendientes para procesar automáticamente las pestañas (HFC/FTTH/DTH).</p>
-                    
                     <div class="flex flex-col sm:flex-row gap-3 items-center">
-                        <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-500/10 file:text-sky-300 hover:file:bg-sky-500/20 tech-input rounded-xl p-1" />
+                        <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-400 tech-input rounded-xl p-1" />
                         <button onclick="procesarYSubirExcel()" class="w-full sm:w-auto tech-button text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all whitespace-nowrap">
                             🚀 Cargar Pendientes
                         </button>
@@ -228,51 +273,12 @@
                 </section>
             </div>
 
-            <!-- SECCIÓN 3: GESTIÓN DE PERSONAL / USUARIOS (.XLSX) -->
-            <div id="seccionUsuarios" class="hidden space-y-6">
-                <section class="tech-card p-6 rounded-2xl max-w-3xl mx-auto">
-                    <h2 class="text-lg font-bold text-sky-300 mb-2 flex items-center gap-2">
-                        👥 Registro Masivo de Personal (GESTIONES_NPS.xlsx)
-                    </h2>
-                    <p class="text-xs text-slate-400 mb-4">Actualiza el catálogo de usuarios, técnicos, supervisores u operadores registrados en Supabase.</p>
-                    
-                    <div class="flex flex-col sm:flex-row gap-3 items-center">
-                        <input type="file" id="usersFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/10 file:text-emerald-300 hover:file:bg-emerald-500/20 tech-input rounded-xl p-1" />
-                        <button onclick="procesarYSubirUsuarios()" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all whitespace-nowrap">
-                            👤 Cargar Usuarios
-                        </button>
-                    </div>
-                    <div id="statusUsersOutput" class="mt-3 text-xs font-semibold"></div>
-                </section>
-            </div>
-
         </main>
     </div>
 
-    <!-- MODAL 1: ASIGNACIÓN MASIVA DE TÉCNICO -->
-    <div id="modalAsignacionMasiva" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
-        <div class="tech-card max-w-md w-full rounded-2xl p-6 space-y-4">
-            <h3 class="font-bold text-lg text-sky-300">⚡ Asignación Masiva de Técnico</h3>
-            <p class="text-xs text-slate-400">Selecciona el técnico para asignarle las órdenes marcadas.</p>
-            
-            <div>
-                <label class="block text-xs font-semibold text-sky-300 mb-1">TÉCNICO DESTINO</label>
-                <select id="batchTecnicoSelect" class="w-full tech-input rounded-xl p-3 text-xs">
-                    <option value="">Cargando lista de técnicos...</option>
-                </select>
-            </div>
-
-            <div class="flex justify-end gap-2 pt-2">
-                <button onclick="cerrarModalAsignacionMasiva()" class="text-xs px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700">Cancelar</button>
-                <button onclick="ejecutarAsignacionMasiva()" class="text-xs px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold">Guardar Asignación</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL 2: FORMULARIO DE GESTIÓN Y RETIRO DE EQUIPOS -->
+    <!-- MODAL GESTIÓN CÓDIGO CON MARCADO DE PAGADO HABILITADO A TÉCNICOS -->
     <div id="modalGestion" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
         <div class="tech-card max-w-2xl w-full rounded-2xl p-6 space-y-6 my-8">
-            
             <div class="flex justify-between items-start border-b border-sky-500/20 pb-3">
                 <div>
                     <span class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full font-bold" id="gestionTecnologia">HFC</span>
@@ -282,9 +288,24 @@
                 <button onclick="cerrarModalGestion()" class="text-slate-400 hover:text-white text-xl font-bold">✕</button>
             </div>
 
+            <!-- ALERTA DE OBSERVACIÓN BACK OFFICE SI EXISTE -->
+            <div id="observacionAlertaDiv" class="hidden bg-amber-950/40 border border-amber-500/50 p-3 rounded-xl space-y-1">
+                <p class="text-xs font-bold text-amber-300 flex items-center gap-1">⚠️ OBSERVACIÓN DE BACK OFFICE / DIGITACIÓN:</p>
+                <p class="text-xs text-slate-200" id="observacionTextoMsg"></p>
+            </div>
+
             <div class="space-y-4 text-xs">
-                
-                <!-- Datos Operativos Editables -->
+                <!-- Opción Marcar PAGADO (Habilitado para Técnico y Back Office) -->
+                <div class="bg-rose-950/30 border border-rose-500/40 p-3.5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <p class="font-bold text-rose-300 text-xs">💳 ¿EL CLIENTE CANCELÓ SU DEUDA EN LUGAR DE DEVOLVER EQUIPOS?</p>
+                        <p class="text-[10px] text-slate-400">Presiona aquí si el cliente muestra comprobante o liquida su deuda para suspender el retiro.</p>
+                    </div>
+                    <button onclick="marcarComoPagadoModal()" class="bg-rose-700 hover:bg-rose-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs whitespace-nowrap shadow">
+                        🔴 Marcar PAGADO
+                    </button>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/60 p-4 rounded-xl border border-sky-500/20">
                     <div>
                         <label class="font-bold text-sky-300">Nº ORDEN DE TRABAJO (OT):</label>
@@ -307,81 +328,52 @@
                     </div>
                 </div>
 
-                <!-- Escaneo / Registro de MÓDEM / ONT -->
+                <!-- Equipos -->
                 <div class="bg-slate-900/60 p-4 rounded-xl border border-sky-500/20 space-y-3">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-sky-300 flex items-center gap-1">📟 MÓDEM / ONT</h4>
-                        <label class="cursor-pointer tech-button text-white px-3 py-1 rounded-lg text-[10px] font-bold">
-                            📷 Foto / Escanear Etiqueta
-                            <input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiqueta(this, 'modem')" />
-                        </label>
-                    </div>
+                    <h4 class="font-bold text-sky-300">📟 MÓDEM / ONT</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input type="text" id="modemModelo" placeholder="Modelo Módem" class="p-2.5 tech-input rounded-xl" />
                         <input type="text" id="modemSerie" placeholder="Nº Serie / MAC" class="p-2.5 tech-input rounded-xl" />
                     </div>
-                    <p id="modemOcrStatus" class="text-[10px] text-sky-400 font-semibold min-h-[1rem]"></p>
                 </div>
 
-                <!-- Escaneo / Registro de DECODER (STB) -->
                 <div class="bg-slate-900/60 p-4 rounded-xl border border-sky-500/20 space-y-3">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-amber-300 flex items-center gap-1">📺 DECODER (STB)</h4>
-                        <label class="cursor-pointer bg-amber-800 hover:bg-amber-700 text-white px-3 py-1 rounded-lg text-[10px] font-bold">
-                            📷 Foto / Escanear Etiqueta
-                            <input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiqueta(this, 'deco')" />
-                        </label>
-                    </div>
+                    <h4 class="font-bold text-amber-300">📺 DECODER (STB)</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input type="text" id="decoModelo" placeholder="Modelo Deco" class="p-2.5 tech-input rounded-xl" />
                         <input type="text" id="decoSerie" placeholder="Nº Serie / CAS ID" class="p-2.5 tech-input rounded-xl" />
                     </div>
-                    <p id="decoOcrStatus" class="text-[10px] text-amber-400 font-semibold min-h-[1rem]"></p>
-                </div>
-
-                <!-- ACCESORIOS RETIRADOS -->
-                <div class="bg-slate-900/60 p-4 rounded-xl border border-sky-500/20 space-y-2">
-                    <h4 class="font-bold text-sky-300">🔌 ACCESORIOS RETIRADOS</h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] text-slate-300">
-                        <label class="flex items-center gap-1.5"><input type="checkbox" value="Transformador 12V" class="accCheck" /> Transformador/Fuente</label>
-                        <label class="flex items-center gap-1.5"><input type="checkbox" value="Control Remoto" class="accCheck" /> Control Remoto</label>
-                        <label class="flex items-center gap-1.5"><input type="checkbox" value="Cable HDMI" class="accCheck" /> Cable HDMI</label>
-                        <label class="flex items-center gap-1.5"><input type="checkbox" value="Cable UTP/Patchcord" class="accCheck" /> Cable Patchcord</label>
-                        <label class="flex items-center gap-1.5"><input type="checkbox" value="Splitter / Fiel" class="accCheck" /> Splitter Coaxial</label>
-                    </div>
-                    <input type="text" id="gestionOtrosAccesorios" placeholder="Otros accesorios o detalles..." class="w-full p-2.5 tech-input rounded-xl mt-2" />
-                </div>
-
-                <!-- SUBIDA MÚLTIPLE DE FOTOS -->
-                <div class="bg-slate-900/60 p-4 rounded-xl border border-sky-500/20 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-sky-300">🖼️ FOTOS Y EVIDENCIAS DE CAMPO</h4>
-                        <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 border border-sky-500/30 text-sky-300 px-3 py-1.5 rounded-xl text-xs font-bold">
-                            ➕ Adjuntar Fotos (Ilimitadas)
-                            <input type="file" id="fotosEvidenciaInput" multiple accept="image/*" class="hidden" onchange="vistaPreviaFotos(this)" />
-                        </label>
-                    </div>
-                    <div id="previewFotosContainer" class="flex flex-wrap gap-2 pt-2">
-                        <p class="text-slate-500 italic text-[11px]">No se han seleccionado fotos aún.</p>
-                    </div>
                 </div>
 
                 <div id="gestionStatusOutput" class="text-xs font-bold text-center min-h-[1.25rem]"></div>
-
             </div>
 
-            <!-- ACCIONES Y WHATSAPP -->
             <div class="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t border-sky-500/20">
                 <button onclick="cerrarModalGestion()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700">Cancelar</button>
-                <button id="btnGuardarWhatsApp" onclick="enviarReporteAWhatsApp()" class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold flex items-center justify-center gap-2 shadow-lg">
-                    📲 Enviar Reporte a WhatsApp
+                <button id="btnGuardarWhatsApp" onclick="enviarReporteAWhatsApp()" class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold shadow-lg">
+                    📲 Enviar / Actualizar Reporte
                 </button>
             </div>
-
         </div>
     </div>
 
-    <!-- SCRIPTS Y LÓGICA GENERAL -->
+    <!-- MODAL ASIGNACIÓN MASIVA -->
+    <div id="modalAsignacionMasiva" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="tech-card max-w-md w-full rounded-2xl p-6 space-y-4">
+            <h3 class="font-bold text-lg text-sky-300">⚡ Asignación / Reasignación de Técnico</h3>
+            <div>
+                <label class="block text-xs font-semibold text-sky-300 mb-1">TÉCNICO DESTINO</label>
+                <select id="batchTecnicoSelect" class="w-full tech-input rounded-xl p-3 text-xs">
+                    <option value="">Cargando lista...</option>
+                </select>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="cerrarModalAsignacionMasiva()" class="text-xs px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Cancelar</button>
+                <button onclick="ejecutarAsignacionMasiva()" class="text-xs px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold">Guardar Asignación</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const BASE_URL = "https://darcifsfttemivwssbqd.supabase.co";
         const SUPABASE_URL = BASE_URL.split('/rest')[0].replace(/\/$/, "");
@@ -394,9 +386,8 @@
         let ordenesFiltradasActualmente = [];
         let tabActual = 'TODOS';
         let ordenSeleccionadaGestion = null;
-        let fotosAdjuntadasArchivos = [];
         let leafletMap = null;
-        let markersGroup = null;
+        let miUbicacionMarker = null;
 
         window.onload = function() {
             const savedUser = localStorage.getItem('datared_active_user');
@@ -410,27 +401,20 @@
             }
         };
 
-        // Navegación por Menú
         function cambiarSeccionNavegacion(seccion) {
-            document.getElementById('seccionDashboard').classList.add('hidden');
-            document.getElementById('seccionCarga').classList.add('hidden');
-            document.getElementById('seccionUsuarios').classList.add('hidden');
+            ['seccionCodigos', 'seccionMapa', 'seccionAgenda', 'seccionDigitacion', 'seccionCarga'].forEach(s => document.getElementById(s).classList.add('hidden'));
 
-            document.getElementById('navBtnDashboard').className = "text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white";
-            document.getElementById('navBtnCarga').className = "text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white";
-            document.getElementById('navBtnUsuarios').className = "text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white adminOnly";
-
-            if (seccion === 'dashboard') {
-                document.getElementById('seccionDashboard').classList.remove('hidden');
-                document.getElementById('navBtnDashboard').className = "text-xs font-bold px-3.5 py-2 rounded-lg bg-sky-500/20 text-sky-300";
+            if (seccion === 'codigos') document.getElementById('seccionCodigos').classList.remove('hidden');
+            if (seccion === 'mapa') {
+                document.getElementById('seccionMapa').classList.remove('hidden');
                 setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 300);
-            } else if (seccion === 'carga') {
-                document.getElementById('seccionCarga').classList.remove('hidden');
-                document.getElementById('navBtnCarga').className = "text-xs font-bold px-3.5 py-2 rounded-lg bg-sky-500/20 text-sky-300";
-            } else if (seccion === 'usuarios') {
-                document.getElementById('seccionUsuarios').classList.remove('hidden');
-                document.getElementById('navBtnUsuarios').className = "text-xs font-bold px-3.5 py-2 rounded-lg bg-sky-500/20 text-sky-300 adminOnly";
             }
+            if (seccion === 'agenda') document.getElementById('seccionAgenda').classList.remove('hidden');
+            if (seccion === 'digitacion') {
+                document.getElementById('seccionDigitacion').classList.remove('hidden');
+                renderizarDigitacion();
+            }
+            if (seccion === 'carga') document.getElementById('seccionCarga').classList.remove('hidden');
         }
 
         async function iniciarSesion(event) {
@@ -485,24 +469,28 @@
 
         function inicializarMapaLeaflet() {
             if (leafletMap) return;
-            // Centro por defecto en Bolivia
             leafletMap = L.map('mapContainer').setView([-21.96, -63.67], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap DATARED'
-            }).addTo(leafletMap);
-            markersGroup = L.layerGroup().addTo(leafletMap);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(leafletMap);
+
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+
+                    if (miUbicacionMarker) {
+                        miUbicacionMarker.setLatLng([lat, lng]);
+                    } else {
+                        miUbicacionMarker = L.circleMarker([lat, lng], { radius: 8, color: '#38bdf8', fillColor: '#0284c7', fillOpacity: 0.9 }).addTo(leafletMap).bindPopup("<b>📍 Tu ubicación actual</b>");
+                    }
+                });
+            }
         }
 
-        function toggleMapaVisibilidad() {
-            const wrapper = document.getElementById('mapWrapper');
-            const btn = document.getElementById('btnToggleMapa');
-            if (wrapper.classList.contains('hidden')) {
-                wrapper.classList.remove('hidden');
-                btn.innerText = "Ocultar Mapa 👁️";
-                setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 200);
+        function centrarEnMiGps() {
+            if (miUbicacionMarker && leafletMap) {
+                leafletMap.setView(miUbicacionMarker.getLatLng(), 15);
             } else {
-                wrapper.classList.add('hidden');
-                btn.innerText = "Mostrar Mapa 🗺️";
+                alert('Obteniendo posición GPS...');
             }
         }
 
@@ -517,163 +505,186 @@
             }
 
             const { data, error } = await query;
-
-            if (error) {
-                tbody.innerHTML = `<tr><td colspan="8" class="p-4 text-center text-rose-500">Error al consultar Supabase: ${error.message}</td></tr>`;
-                return;
-            }
+            if (error) return;
 
             ordenesGlobales = data || [];
-            
-            poblarFiltroCiudades();
             actualizarContadoresDashboard();
             aplicarFiltrosLocales();
         }
 
-        function poblarFiltroCiudades() {
-            const ciudades = Array.from(new Set(ordenesGlobales.map(o => o.ciudad).filter(Boolean))).sort();
-            const select = document.getElementById('ciudadSelectFilter');
-            select.innerHTML = '<option value="">-- Ciudad --</option>' + 
-                ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
-        }
-
         function actualizarContadoresDashboard() {
             document.getElementById('countTotal').innerText = ordenesGlobales.length;
-            document.getElementById('countSinAsignar').innerText = ordenesGlobales.filter(o => !o.tecnico_asignado && o.estado !== 'RETIRADO').length;
-            document.getElementById('countPendientes').innerText = ordenesGlobales.filter(o => o.tecnico_asignado && o.estado !== 'RETIRADO').length;
+            document.getElementById('countSinAsignar').innerText = ordenesGlobales.filter(o => !o.tecnico_asignado && o.estado !== 'RETIRADO' && o.estado !== 'PAGADO').length;
+            document.getElementById('countPendientes').innerText = ordenesGlobales.filter(o => o.tecnico_asignado && o.estado !== 'RETIRADO' && o.estado !== 'PAGADO').length;
             document.getElementById('countRetirados').innerText = ordenesGlobales.filter(o => o.estado === 'RETIRADO').length;
+            document.getElementById('countPagados').innerText = ordenesGlobales.filter(o => o.estado === 'PAGADO').length;
         }
 
         function filtrarPorTab(tab) {
             tabActual = tab;
-            const btnMap = { 'TODOS': 'tabAll', 'SIN_ASIGNAR': 'tabSinAsignar', 'PENDIENTES': 'tabPendientes', 'RETIRADOS': 'tabRetirados' };
-
-            Object.keys(btnMap).forEach(key => {
-                const elem = document.getElementById(btnMap[key]);
-                if (key === tab) {
-                    elem.className = "text-xs font-bold px-3 py-1.5 rounded-xl bg-sky-500/20 text-sky-300 border border-sky-500/40";
-                } else {
-                    elem.className = "text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900 text-slate-400 hover:text-white";
-                }
-            });
-
             aplicarFiltrosLocales();
         }
 
         function aplicarFiltrosLocales() {
             const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
-            const ciudadFiltro = document.getElementById('ciudadSelectFilter').value;
 
             ordenesFiltradasActualmente = ordenesGlobales.filter(o => {
-                if (tabActual === 'SIN_ASIGNAR' && (o.tecnico_asignado || o.estado === 'RETIRADO')) return false;
-                if (tabActual === 'PENDIENTES' && (!o.tecnico_asignado || o.estado === 'RETIRADO')) return false;
+                if (tabActual === 'SIN_ASIGNAR' && (o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
+                if (tabActual === 'PENDIENTES' && (!o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
                 if (tabActual === 'RETIRADOS' && o.estado !== 'RETIRADO') return false;
-                if (ciudadFiltro && o.ciudad !== ciudadFiltro) return false;
+                if (tabActual === 'PAGADO' && o.estado !== 'PAGADO') return false;
 
                 if (searchText) {
                     const matchCodigo = o.cliente_nro && o.cliente_nro.toLowerCase().includes(searchText);
                     const matchNombre = o.cliente_nombre && o.cliente_nombre.toLowerCase().includes(searchText);
-                    const matchDir = o.direccion && o.direccion.toLowerCase().includes(searchText);
-                    if (!matchCodigo && !matchNombre && !matchDir) return false;
+                    if (!matchCodigo && !matchNombre) return false;
                 }
                 return true;
             });
 
             renderizarTabla(ordenesFiltradasActualmente);
-            actualizarPinesMapa(ordenesFiltradasActualmente);
         }
 
         function renderizarTabla(lista) {
             const tbody = document.getElementById('tablaOrdenesBody');
-
             if (lista.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay registros para mostrar.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay códigos para mostrar.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = lista.map(o => {
-                let badgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/30";
+                let badgeClass = "bg-sky-500/20 text-sky-300 border-sky-500/30";
                 if (o.estado === 'RETIRADO') badgeClass = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+                if (o.estado === 'OBSERVADO') badgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/30 font-bold animate-pulse";
+                if (o.estado === 'PAGADO') badgeClass = "bg-rose-600 text-white font-bold border-rose-500 animate-pulse";
 
-                let mapsUrl = null;
-                if (o.coordenada_x && o.coordenada_y) {
-                    mapsUrl = `https://www.google.com/maps/search/?api=1&query=${o.coordenada_x},${o.coordenada_y}`;
-                }
+                let mapsUrl = o.coordenada_x && o.coordenada_y ? `https://www.google.com/maps/search/?api=1&query=${o.coordenada_x},${o.coordenada_y}` : null;
 
                 return `
-                <tr class="hover:bg-slate-900/50 border-b border-slate-800">
+                <tr class="hover:bg-slate-900/50 border-b border-slate-800 ${o.estado === 'PAGADO' ? 'bg-rose-950/20' : ''}">
                     <td class="p-3"><input type="checkbox" class="rowCheckbox" value="${o.id}" onchange="actualizarConteoSeleccionados()" /></td>
                     <td class="p-3 font-bold text-sky-300">${o.cliente_nro}<br><span class="font-normal text-slate-300">${o.cliente_nombre}</span></td>
                     <td class="p-3">${o.ciudad}<br><span class="text-slate-400 text-[10px]">${o.zona_nodo_tap || ''}</span></td>
-                    <td class="p-3 text-slate-300">${o.direccion}<br><span class="text-slate-400 text-[10px]">${o.referencia || ''}</span></td>
+                    <td class="p-3 text-slate-300">${o.direccion}</td>
                     <td class="p-3 font-semibold text-sky-200">${o.tecnologia}</td>
                     <td class="p-3 text-slate-400">${o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>'}</td>
-                    <td class="p-3"><span class="${badgeClass} border text-[10px] px-2 py-0.5 rounded-full font-bold">${o.estado}</span></td>
+                    <td class="p-3"><span class="${badgeClass} border text-[10px] px-2 py-0.5 rounded-full">${o.estado}</span></td>
                     <td class="p-3 text-center">
                         <div class="flex items-center justify-center gap-1.5">
-                            ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" class="bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/40 text-[10px] px-2.5 py-1 rounded-lg font-bold">🗺️ Ir GPS</a>` : ''}
-                            <button onclick="abrirModalGestion('${o.id}')" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold shadow">Gestionar</button>
+                            ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" class="bg-emerald-900/60 text-emerald-300 border border-emerald-500/40 text-[10px] px-2 py-1 rounded-lg font-bold">🗺️ Ir</a>` : ''}
+                            ${o.estado !== 'PAGADO' ? `<button onclick="abrirModalGestion('${o.id}')" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold">Gestionar</button>` : '<span class="text-rose-400 text-[10px] font-bold">BLOQUEADO</span>'}
                         </div>
                     </td>
                 </tr>
             `}).join('');
         }
 
-        function actualizarPinesMapa(lista) {
-            if (!leafletMap || !markersGroup) return;
-            markersGroup.clearLayers();
-
-            let bounds = [];
-            lista.forEach(o => {
-                if (o.coordenada_x && o.coordenada_y) {
-                    const lat = parseFloat(o.coordenada_x);
-                    const lng = parseFloat(o.coordenada_y);
-                    if (!isNaN(lat) && !isNaN(lng)) {
-                        bounds.push([lat, lng]);
-                        const marker = L.marker([lat, lng]).bindPopup(`
-                            <div class="text-xs text-slate-800 font-sans">
-                                <b>${o.cliente_nro}</b> - ${o.cliente_nombre}<br>
-                                📍 ${o.direccion}<br>
-                                <a href="https://www.google.com/maps/search/?api=1&query=${lat},${lng}" target="_blank" style="color:#0284c7;font-weight:bold;">Navegar con Google Maps 🚀</a>
-                            </div>
-                        `);
-                        markersGroup.addLayer(marker);
-                    }
-                }
-            });
-
-            if (bounds.length > 0) {
-                leafletMap.fitBounds(bounds, { padding: [20, 20], maxZoom: 15 });
+        async function marcarComoPagadoModal() {
+            if (!ordenSeleccionadaGestion) return;
+            const confirmacion = confirm(`¿Confirmar que el cliente ${ordenSeleccionadaGestion.cliente_nro} CANCELÓ / PAGÓ su deuda?`);
+            if (confirmacion) {
+                await supabaseClient.from('ordenes_retiro').update({ estado: 'PAGADO' }).eq('id', ordenSeleccionadaGestion.id);
+                cerrarModalGestion();
+                await cargarOrdenesDesdeSupabase();
             }
         }
 
-        // Exportar a Excel
-        function exportarExcelConsolidado() {
-            if (ordenesFiltradasActualmente.length === 0) {
-                alert('No hay datos en la tabla para exportar.');
+        function abrirModalGestion(id) {
+            ordenSeleccionadaGestion = ordenesGlobales.find(o => String(o.id) === String(id));
+            if (!ordenSeleccionadaGestion) return;
+
+            document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tecnologia;
+            document.getElementById('gestionClienteNombre').innerText = ordenSeleccionadaGestion.cliente_nombre;
+            document.getElementById('gestionClienteCodigo').innerText = ordenSeleccionadaGestion.cliente_nro;
+
+            const divObs = document.getElementById('observacionAlertaDiv');
+            if (ordenSeleccionadaGestion.observacion_backoffice) {
+                document.getElementById('observacionTextoMsg').innerText = ordenSeleccionadaGestion.observacion_backoffice;
+                divObs.classList.remove('hidden');
+            } else {
+                divObs.classList.add('hidden');
+            }
+
+            document.getElementById('modalGestion').classList.remove('hidden');
+        }
+
+        function cerrarModalGestion() {
+            document.getElementById('modalGestion').classList.add('hidden');
+        }
+
+        function renderizarDigitacion() {
+            const container = document.getElementById('contenedorDigitacionOrdenes');
+            const revisables = ordenesGlobales.filter(o => o.estado === 'RETIRADO' || o.estado === 'OBSERVADO');
+
+            if (revisables.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-xs text-center italic py-4">No hay códigos ejecutados listos para revisión de Back Office.</p>';
                 return;
             }
 
+            container.innerHTML = revisables.map(r => `
+                <div class="bg-slate-900/80 p-4 rounded-xl border border-sky-500/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                        <p class="font-bold text-sky-300 text-xs">${r.cliente_nro} - ${r.cliente_nombre}</p>
+                        <p class="text-[11px] text-slate-400">Técnico: ${r.tecnico_asignado || 'N/A'} | Estado actual: <span class="text-amber-300 font-bold">${r.estado}</span></p>
+                        ${r.observacion_backoffice ? `<p class="text-[10px] text-rose-300 italic">Última observación: ${r.observacion_backoffice}</p>` : ''}
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="observarOrdenBackoffice('${r.id}')" class="bg-amber-800/80 hover:bg-amber-700 text-amber-200 border border-amber-500/40 text-xs px-3 py-1.5 rounded-xl font-bold">⚠️ Observar y Recomendar Corrección</button>
+                        <button onclick="aprobarOrdenBackoffice('${r.id}')" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold">✅ Aprobar Digitación</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function observarOrdenBackoffice(id) {
+            const nota = prompt("Escribe el comentario de observación para que el técnico corrija:");
+            if (!nota) return;
+
+            await supabaseClient.from('ordenes_retiro').update({
+                estado: 'OBSERVADO',
+                observacion_backoffice: nota
+            }).eq('id', id);
+
+            alert("Orden devuelta al técnico para corrección.");
+            await cargarOrdenesDesdeSupabase();
+            renderizarDigitacion();
+        }
+
+        async function aprobarOrdenBackoffice(id) {
+            await supabaseClient.from('ordenes_retiro').update({
+                estado: 'DIGITADO_OK',
+                observacion_backoffice: null
+            }).eq('id', id);
+
+            alert("Orden aprobada y cerrada en Back Office.");
+            await cargarOrdenesDesdeSupabase();
+            renderizarDigitacion();
+        }
+
+        function exportarExcelConsolidado() {
             const excelRows = ordenesFiltradasActualmente.map(o => ({
                 'CODIGO CLIENTE': o.cliente_nro,
                 'NOMBRE CLIENTE': o.cliente_nombre,
-                'DEPARTAMENTO': o.departamento,
                 'CIUDAD': o.ciudad,
-                'ZONA / NODO': o.zona_nodo_tap,
                 'DIRECCION': o.direccion,
-                'REFERENCIA': o.referencia,
                 'TECNOLOGIA': o.tecnologia,
                 'TECNICO ASIGNADO': o.tecnico_asignado || 'Sin Asignar',
-                'ESTADO': o.estado,
-                'COORDENADA X': o.coordenada_x,
-                'COORDENADA Y': o.coordenada_y,
-                'FECHA REGISTRO': o.fecha_registro
+                'ESTADO': o.estado
             }));
-
             const worksheet = XLSX.utils.json_to_sheet(excelRows);
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Ordenes_Retiro");
-            XLSX.writeFile(workbook, `DATARED_Reporte_Retiros_${new Date().toISOString().slice(0,10)}.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Ordenes");
+            XLSX.writeFile(workbook, `DATARED_Retiros_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function calcularResumenAgenda() {
+            const fechaSelect = document.getElementById('agendaFechaFilter').value;
+            if (!fechaSelect) return;
+
+            const filtrados = ordenesGlobales.filter(o => o.fecha_registro && o.fecha_registro.startsWith(fechaSelect));
+            document.getElementById('agendaEjecutados').innerText = filtrados.filter(o => o.estado === 'RETIRADO' || o.estado === 'DIGITADO_OK').length;
+            document.getElementById('agendaPendientes').innerText = filtrados.filter(o => o.estado === 'PENDIENTES' || o.estado === 'PENDIENTE' || o.estado === 'OBSERVADO').length;
+            document.getElementById('agendaConReporte').innerText = filtrados.filter(o => o.tecnico_asignado).length;
         }
 
         function toggleSelectAll(master) {
@@ -714,8 +725,6 @@
             if (!tecnico) return alert('Selecciona un técnico.');
 
             const rawIds = Array.from(document.querySelectorAll('.rowCheckbox:checked')).map(cb => cb.value);
-            if (rawIds.length === 0) return alert('No hay órdenes seleccionadas.');
-
             const idsProcessed = rawIds.map(id => !isNaN(id) ? Number(id) : id);
 
             const { data, error } = await supabaseClient
@@ -727,289 +736,10 @@
             if (error) {
                 alert('Error al asignar: ' + error.message);
             } else {
-                alert(`¡Éxito! Se asignaron ${data ? data.length : idsProcessed.length} órdenes a ${tecnico}.`);
+                alert(`Se asignaron ${data ? data.length : idsProcessed.length} órdenes a ${tecnico}.`);
                 cerrarModalAsignacionMasiva();
                 await cargarOrdenesDesdeSupabase();
             }
-        }
-
-        function abrirModalGestion(id) {
-            ordenSeleccionadaGestion = ordenesGlobales.find(o => String(o.id) === String(id));
-            if (!ordenSeleccionadaGestion) return;
-
-            document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tecnologia;
-            document.getElementById('gestionClienteNombre').innerText = ordenSeleccionadaGestion.cliente_nombre;
-            document.getElementById('gestionClienteCodigo').innerText = ordenSeleccionadaGestion.cliente_nro;
-
-            document.getElementById('gestionOt').value = "";
-            document.getElementById('gestionNodo').value = `${ordenSeleccionadaGestion.ciudad} / ${ordenSeleccionadaGestion.zona_nodo_tap || ''}`;
-            document.getElementById('gestionRefDomicilio').value = ordenSeleccionadaGestion.referencia || ordenSeleccionadaGestion.direccion;
-            
-            let geoStr = "";
-            if (ordenSeleccionadaGestion.coordenada_x && ordenSeleccionadaGestion.coordenada_y) {
-                geoStr = `${ordenSeleccionadaGestion.coordenada_x}, ${ordenSeleccionadaGestion.coordenada_y}`;
-            }
-            document.getElementById('gestionGeo').value = geoStr;
-
-            document.getElementById('modemModelo').value = "";
-            document.getElementById('modemSerie').value = "";
-            document.getElementById('decoModelo').value = "";
-            document.getElementById('decoSerie').value = "";
-            document.querySelectorAll('.accCheck').forEach(cb => cb.checked = false);
-            document.getElementById('gestionOtrosAccesorios').value = "";
-            
-            fotosAdjuntadasArchivos = [];
-            document.getElementById('previewFotosContainer').innerHTML = '<p class="text-slate-500 italic text-[11px]">No se han seleccionado fotos aún.</p>';
-            document.getElementById('gestionStatusOutput').innerText = "";
-
-            document.getElementById('modalGestion').classList.remove('hidden');
-        }
-
-        function cerrarModalGestion() {
-            document.getElementById('modalGestion').classList.add('hidden');
-        }
-
-        function capturarGpsActual() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    document.getElementById('gestionGeo').value = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
-                }, err => alert('No se pudo obtener GPS: ' + err.message));
-            } else {
-                alert('Geolocalización no soportada.');
-            }
-        }
-
-        async function escaneoInteligenteEtiqueta(input, tipo) {
-            if (!input.files || !input.files[0]) return;
-            const file = input.files[0];
-            const statusElem = document.getElementById(tipo === 'modem' ? 'modemOcrStatus' : 'decoOcrStatus');
-            statusElem.innerText = "🔍 Escaneando etiqueta del equipo...";
-
-            try {
-                const result = await Tesseract.recognize(file, 'eng');
-                const text = result.data.text;
-                const snMatch = text.match(/(?:SN|S\/N|SERIAL|CAS|MAC)[:\s]*([A-Za-z0-9\-]+)/i);
-                
-                if (snMatch && snMatch[1]) {
-                    document.getElementById(tipo === 'modem' ? 'modemSerie' : 'decoSerie').value = snMatch[1].trim();
-                    statusElem.innerText = "¡Serie detectada automáticamente!";
-                } else {
-                    statusElem.innerText = "Foto guardada. Ingrese la serie manualmente.";
-                }
-            } catch (err) {
-                statusElem.innerText = "Complete la serie manualmente.";
-            }
-        }
-
-        function vistaPreviaFotos(input) {
-            if (!input.files) return;
-            fotosAdjuntadasArchivos = fotosAdjuntadasArchivos.concat(Array.from(input.files));
-            const container = document.getElementById('previewFotosContainer');
-            container.innerHTML = "";
-
-            fotosAdjuntadasArchivos.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const div = document.createElement('div');
-                    div.className = "relative w-16 h-16 bg-slate-800 rounded-xl overflow-hidden border border-sky-500/30";
-                    div.innerHTML = `
-                        <img src="${e.target.result}" class="w-full h-full object-cover" />
-                        <button onclick="eliminarFoto(${index})" class="absolute top-0 right-0 bg-rose-600 text-white text-[10px] w-4 h-4 rounded-bl flex items-center justify-center">✕</button>
-                    `;
-                    container.appendChild(div);
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
-        function eliminarFoto(index) {
-            fotosAdjuntadasArchivos.splice(index, 1);
-            vistaPreviaFotos({ files: [] });
-        }
-
-        async function enviarReporteAWhatsApp() {
-            const statusDiv = document.getElementById('gestionStatusOutput');
-            const btnGuardar = document.getElementById('btnGuardarWhatsApp');
-
-            btnGuardar.disabled = true;
-            statusDiv.className = "text-xs font-bold text-center text-sky-400 min-h-[1.25rem]";
-            statusDiv.innerText = "⏳ Subiendo evidencias y guardando gestión en la base de datos...";
-
-            const codigoNombre = `${ordenSeleccionadaGestion.cliente_nro} - ${ordenSeleccionadaGestion.cliente_nombre}`;
-            const ot = document.getElementById('gestionOt').value || 'S/OT';
-            const nodo = document.getElementById('gestionNodo').value;
-            const geo = document.getElementById('gestionGeo').value || 'OK';
-            const ref = document.getElementById('gestionRefDomicilio').value;
-
-            const modemMod = document.getElementById('modemModelo').value;
-            const modemSer = document.getElementById('modemSerie').value;
-            const modemTxt = (modemMod || modemSer) ? `${modemMod} (SN: ${modemSer})` : 'NO APLICA / NO RETIRADO';
-
-            const decoMod = document.getElementById('decoModelo').value;
-            const decoSer = document.getElementById('decoSerie').value;
-            const decoTxt = (decoMod || decoSer) ? `${decoMod} (SN: ${decoSer})` : 'NO APLICA / NO RETIRADO';
-
-            const accs = Array.from(document.querySelectorAll('.accCheck:checked')).map(cb => cb.value);
-            const otrosAcc = document.getElementById('gestionOtrosAccesorios').value;
-            if (otrosAcc) accs.push(otrosAcc);
-            const accsTxt = accs.length > 0 ? accs.join(', ') : 'Ninguno';
-
-            const tecnicoNombre = usuarioActual ? usuarioActual.nombre : (ordenSeleccionadaGestion.tecnico_asignado || 'TÉCNICO DATARED');
-
-            let uploadedPhotosUrls = [];
-            for (let i = 0; i < fotosAdjuntadasArchivos.length; i++) {
-                const file = fotosAdjuntadasArchivos[i];
-                const fileExt = file.name.split('.').pop();
-                const fileName = `${ordenSeleccionadaGestion.cliente_nro}_${Date.now()}_${i}.${fileExt}`;
-
-                const { data: storageData, error: storageError } = await supabaseClient.storage
-                    .from('evidencias-retiros')
-                    .upload(fileName, file);
-
-                if (!storageError) {
-                    const { data: publicUrlData } = supabaseClient.storage
-                        .from('evidencias-retiros')
-                        .getPublicUrl(fileName);
-                    if (publicUrlData) uploadedPhotosUrls.push(publicUrlData.publicUrl);
-                }
-            }
-
-            const targetId = !isNaN(ordenSeleccionadaGestion.id) ? Number(ordenSeleccionadaGestion.id) : ordenSeleccionadaGestion.id;
-
-            await supabaseClient.from('historial_gestiones').insert([{
-                orden_id: targetId,
-                cliente_nro: ordenSeleccionadaGestion.cliente_nro,
-                ot: ot,
-                nodo: nodo,
-                referencia: ref,
-                coordenadas: geo,
-                modem_modelo: modemMod,
-                modem_serie: modemSer,
-                deco_modelo: decoMod,
-                deco_serie: decoSer,
-                accesorios: accsTxt,
-                tecnico_nombre: tecnicoNombre,
-                estado_final: 'RETIRADO',
-                fotos_urls: uploadedPhotosUrls
-            }]);
-
-            await supabaseClient.from('ordenes_retiro').update({ estado: 'RETIRADO' }).eq('id', targetId);
-
-            statusDiv.className = "text-xs font-bold text-center text-emerald-400 min-h-[1.25rem]";
-            statusDiv.innerText = "¡Gestión guardada exitosamente! Abriendo WhatsApp...";
-
-            const mensajeWhatsApp = 
-`CODIGO: ${codigoNombre}
-
-OT: ${ot}
-
-NODO: ${nodo}
-
-Geo.: ${geo}
-
-REF. DEL DOMICILIO: 
-${ref}
-
-OBSERVACION: 
-Retiro exitoso de:
-MODEN: ${modemTxt}
-DECO: ${decoTxt}
-Accesorios: ${accsTxt}
-
-TECNICO: ${tecnicoNombre}`;
-
-            setTimeout(() => {
-                btnGuardar.disabled = false;
-                cerrarModalGestion();
-                cargarOrdenesDesdeSupabase();
-                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
-            }, 1000);
-        }
-
-        async function procesarYSubirExcel() {
-            const fileInput = document.getElementById('excelFileInput');
-            const statusOutput = document.getElementById('statusOutput');
-            if (!fileInput.files.length) return alert('Seleccione un Excel.');
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            statusOutput.innerText = 'Procesando...';
-
-            reader.onload = async function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                let totalCargados = 0;
-
-                for (const sheetName of workbook.SheetNames) {
-                    const jsonRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
-                    for (const row of jsonRows) {
-                        const cliente_nro = row.cliente_nro || row.cliente || row.CODIGO || "";
-                        const cliente_nombre = row.cliente_nombre_completo || row.cliente_nombre || row.NOMBRE || "";
-                        if (!cliente_nro && !cliente_nombre) continue;
-
-                        const ordenPayload = {
-                            departamento: String(row.departament || row.departamento || "TARIJA").trim(),
-                            ciudad: String(row.ciudad || "YACUIBA").trim(),
-                            cliente_nro: String(cliente_nro).trim(),
-                            cliente_nombre: String(cliente_nombre).trim(),
-                            tecnologia: ['FTTH', 'HFC', 'DTH'].includes(sheetName) ? sheetName : 'HFC',
-                            zona_nodo_tap: row.zona_tap || row.zona_grupo || null,
-                            direccion: String(row.direccion || "Domicilio Urbano").trim(),
-                            referencia: row.referencia ? String(row.referencia).trim() : null,
-                            cliente_telefono: row.cliente_telefono ? String(row.cliente_telefono).trim() : null,
-                            coordenada_x: row.cliente_coordenada_x ? String(row.cliente_coordenada_x).trim() : null,
-                            coordenada_y: row.cliente_coordenada_y ? String(row.cliente_coordenada_y).replace(/\s+/g, '').trim() : null,
-                            estado: 'PENDIENTE'
-                        };
-
-                        const { error } = await supabaseClient.from('ordenes_retiro').insert([ordenPayload]);
-                        if (!error) totalCargados++;
-                    }
-                }
-                statusOutput.innerText = `¡Éxito! Se cargaron ${totalCargados} órdenes.`;
-                cargarOrdenesDesdeSupabase();
-            };
-            reader.readAsArrayBuffer(file);
-        }
-
-        async function procesarYSubirUsuarios() {
-            const fileInput = document.getElementById('usersFileInput');
-            const statusOutput = document.getElementById('statusUsersOutput');
-            if (!fileInput.files.length) return alert('Seleccione GESTIONES_NPS.xlsx.');
-
-            const file = fileInput.files[0];
-            const reader = new FileReader();
-            statusOutput.innerText = 'Registrando usuarios...';
-
-            reader.onload = async function(e) {
-                const jsonRows = XLSX.utils.sheet_to_json(XLSX.read(new Uint8Array(e.target.result), { type: 'array' }).Sheets[XLSX.read(new Uint8Array(e.target.result), { type: 'array' }).SheetNames[0]], { defval: "" });
-                let totalCargados = 0;
-
-                for (const row of jsonRows) {
-                    const usuario = row.usuario || row.USUARIO || "";
-                    const nombre = row.nombre || row.NOMBRE || "";
-                    if (!usuario || !nombre) continue;
-
-                    const userPayload = {
-                        usuario: String(usuario).trim(),
-                        password: String(row.password || "12345").trim(),
-                        nombre: String(nombre).trim(),
-                        rol: row.rol ? String(row.rol).trim() : "Tecnico",
-                        area: row.area ? String(row.area).trim() : "Tecnico",
-                        departamento: row.departamento ? String(row.departamento).trim() : null,
-                        ciudad: row.ciudad ? String(row.ciudad).trim() : null,
-                        telefono: row.telefono ? String(row.telefono).trim() : null,
-                        ci: row.ci ? String(row.ci).trim() : null,
-                        placa: row.placa ? String(row.placa).trim() : null,
-                        foto_perfil: row.foto_perfil ? String(row.foto_perfil).trim() : null
-                    };
-
-                    const { error } = await supabaseClient.from('usuarios').upsert([userPayload], { onConflict: 'usuario' });
-                    if (!error) totalCargados++;
-                }
-                statusOutput.innerText = `¡Éxito! Se registraron ${totalCargados} usuarios.`;
-            };
-            reader.readAsArrayBuffer(file);
         }
     </script>
 </body>
