@@ -91,7 +91,7 @@
         </div>
     </div>
 
-    <!-- 2. VISTA A: PANEL ADMINISTRATIVO / DIGITACIÓN / BACK OFFICE -->
+    <!-- 2. VISTA A: PANEL ADMINISTRATIVO -->
     <div id="appAdminContent" class="hidden pb-10">
         <header class="bg-slate-900/90 border-b border-sky-500/20 p-4 shadow-lg backdrop-blur flex flex-col md:flex-row justify-between items-center gap-3">
             <div>
@@ -129,8 +129,6 @@
         </header>
 
         <main class="max-w-7xl mx-auto p-4 space-y-6">
-
-            <!-- PESTAÑA ADMIN 1: CÓDIGOS Y TABLA GENERAL -->
             <div id="seccionAdminCodigos" class="space-y-6">
                 <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div onclick="filtrarPorTabAdmin('TODOS')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-sky-400 transition-all">
@@ -216,7 +214,6 @@
                 </section>
             </div>
 
-            <!-- PESTAÑA ADMIN 2: CONCILIACIÓN Y PLANILLA TOTAL DE PAGOS -->
             <div id="seccionAdminPagos" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-sky-500/20">
@@ -231,20 +228,17 @@
                         </button>
                     </div>
 
-                    <div id="contenedorResumenPagosTecnicos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <!-- Tarjetas de resumen por técnico -->
-                    </div>
+                    <div id="contenedorResumenPagosTecnicos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </section>
             </div>
 
-            <!-- PESTAÑA ADMIN 3: AGENDA Y TRACKING -->
             <div id="seccionAdminAgenda" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl space-y-4">
                     <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">
                         📅 Agenda de Seguimiento y Control Diario
                     </h2>
                     <div class="flex flex-wrap gap-3 items-center bg-slate-900/60 p-4 rounded-xl border border-sky-500/20">
-                        <input type="date" id="agendaFechaFilter" onchange="calcularResumenAgenda()" class="tech-input rounded-xl p-2 text-xs" />
+                        <input type="date" id="agendaFechaFilter" class="tech-input rounded-xl p-2 text-xs" />
                         <button onclick="calcularResumenAgenda()" class="tech-button text-white text-xs font-bold px-4 py-2 rounded-xl">🔍 Consultar Fecha</button>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -255,7 +249,6 @@
                 </section>
             </div>
 
-            <!-- PESTAÑA ADMIN 4: BACK OFFICE Y VALIDACIÓN -->
             <div id="seccionAdminDigitacion" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl space-y-4">
                     <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">🖥️ Panel de Digitación & Validación Back Office</h2>
@@ -263,7 +256,6 @@
                 </section>
             </div>
 
-            <!-- PESTAÑA ADMIN 5: CARGA EXCEL -->
             <div id="seccionAdminCarga" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl max-w-3xl mx-auto">
                     <h2 class="text-lg font-bold text-sky-300 mb-2 flex items-center gap-2">📂 Importar Pendientes desde Excel (.xlsx)</h2>
@@ -274,7 +266,6 @@
                     <div id="statusOutput" class="mt-3 text-xs font-semibold"></div>
                 </section>
             </div>
-
         </main>
     </div>
 
@@ -296,7 +287,6 @@
             <div class="flex items-center gap-1.5 pt-1 text-center text-xs overflow-x-auto pb-1" id="barCalendarioHorizontal"></div>
         </header>
 
-        <!-- SECCIÓN TÉCNICO 1: PROGRAMAR -->
         <div id="tecTabProgramar" class="space-y-3">
             <div id="mobileMapContainer"></div>
 
@@ -312,13 +302,10 @@
                     </button>
                 </div>
 
-                <div id="listaCitasDiaContainer" class="space-y-2.5">
-                    <!-- Tarjetas de retiros -->
-                </div>
+                <div id="listaCitasDiaContainer" class="space-y-2.5"></div>
             </div>
         </div>
 
-        <!-- SECCIÓN TÉCNICO 2: INVENTARIO & PLANILLA -->
         <div id="tecTabInventario" class="hidden p-4 space-y-4">
             <div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-3">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -339,12 +326,9 @@
                 </div>
             </div>
 
-            <div id="contenedorInventarioEquipos" class="space-y-3">
-                <!-- Tarjetas de inventario -->
-            </div>
+            <div id="contenedorInventarioEquipos" class="space-y-3"></div>
         </div>
 
-        <!-- SECCIÓN TÉCNICO 3: NOTIFICACIONES -->
         <div id="tecTabNotificaciones" class="hidden p-4 space-y-4 text-center">
             <div class="py-12 space-y-3">
                 <div class="inline-block p-4 rounded-full bg-slate-900 text-sky-400 text-3xl">🔔</div>
@@ -355,7 +339,6 @@
             </div>
         </div>
 
-        <!-- SECCIÓN TÉCNICO 4: PERFIL -->
         <div id="tecTabPerfil" class="hidden p-4 space-y-4">
             <div class="tech-card p-6 rounded-2xl space-y-4 text-center">
                 <div class="w-20 h-20 bg-sky-500/20 border-2 border-sky-400 rounded-full mx-auto flex items-center justify-center text-3xl">👤</div>
@@ -374,7 +357,6 @@
             </div>
         </div>
 
-        <!-- BOTTOM NAV BAR TÉCNICO -->
         <nav class="fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-sky-500/20 px-4 py-2 flex justify-around items-center z-40 text-center">
             <button onclick="cambiarTabMobile('programar')" id="navMobProgramar" class="text-sky-400 flex flex-col items-center text-[10px] font-bold"><span class="text-lg">📅</span> Programar</button>
             <button onclick="cambiarTabMobile('inventario')" id="navMobInventario" class="text-slate-400 flex flex-col items-center text-[10px] font-bold"><span class="text-lg">📦</span> Inventario</button>
@@ -383,7 +365,7 @@
         </nav>
     </div>
 
-    <!-- MODAL GESTIÓN COMPARTIDO CON MÚLTIPLES EQUIPOS Y FUNGIBLES Y CATALOGO CODIFICADO -->
+    <!-- MODAL GESTIÓN COMPARTIDO -->
     <div id="modalGestion" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
         <div class="tech-card max-w-xl w-full rounded-2xl p-5 space-y-4 my-6 relative max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-start border-b border-sky-500/20 pb-2 sticky top-0 bg-slate-950/95 z-20 py-1">
@@ -427,7 +409,6 @@
                     </label>
                 </div>
 
-                <!-- CONTENEDOR DINÁMICO DE EQUIPOS -->
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
                         <h4 class="font-bold text-sky-300 flex items-center gap-1.5">
@@ -438,25 +419,20 @@
                         </button>
                     </div>
 
-                    <div id="contenedorEquiposDinamicos" class="space-y-2">
-                        <!-- Filas de equipos -->
-                    </div>
+                    <div id="contenedorEquiposDinamicos" class="space-y-2"></div>
                 </div>
 
-                <!-- SECCIÓN CATÁLOGO DE CONTROLES, FUENTES Y CABLES (FUNGIBLES OFICIALES) -->
                 <div class="bg-slate-900/80 p-3.5 rounded-xl border border-amber-500/30 space-y-3">
                     <div class="flex justify-between items-center">
                         <h4 class="font-bold text-amber-300 flex items-center gap-1">
-                            🔌 CONTROLES, FUENTES Y ACCESORIOS RECUPERADOS (CATÁLOGO SIGA)
+                            🔌 CONTROLES, FUENTES Y ACCESORIOS (CATÁLOGO SIGA)
                         </h4>
                         <button onclick="agregarFilaFungibleCat()" type="button" class="bg-amber-700 hover:bg-amber-600 text-white text-[10px] font-bold px-2 py-1 rounded-lg">
                             ➕ Agregar Accesorio
                         </button>
                     </div>
 
-                    <div id="contenedorFungiblesCatalogo" class="space-y-2">
-                        <!-- Filas dinámicas del catálogo SIGA/MAGIC -->
-                    </div>
+                    <div id="contenedorFungiblesCatalogo" class="space-y-2"></div>
 
                     <div class="pt-2 border-t border-slate-800 grid grid-cols-2 sm:grid-cols-4 gap-2">
                         <div>
@@ -488,7 +464,7 @@
         </div>
     </div>
 
-    <!-- MODAL ASIGNACIÓN MASIVA PARA ADMINS -->
+    <!-- MODAL ASIGNACIÓN MASIVA -->
     <div id="modalAsignacionMasiva" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="tech-card max-w-md w-full rounded-2xl p-6 space-y-4">
             <h3 class="font-bold text-lg text-sky-300">⚡ Asignación / Reasignación de Técnico</h3>
@@ -512,7 +488,6 @@
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // CATÁLOGO DE CONTROLES, FUENTES Y ACCESORIOS DEL PDF ENVIADO
         const CATALOGO_FUNGIBLES = [
             { magic: 'INSCTR0003', siga: '3002', nombre: 'CONTROL REMOTO UNIVERSAL SMK PRO14', tipo: 'Control Remoto' },
             { magic: 'INSCTR0004', siga: '3006', nombre: 'CRS-211EMLC KAON REMOTE CONTROL', tipo: 'Control Remoto' },
@@ -647,7 +622,6 @@
             document.getElementById('loginOverlay').classList.remove('hidden');
         }
 
-        // VISTA ADMINISTRATIVA Y CONCILIACIÓN
         function cambiarSeccionAdmin(seccion) {
             ['seccionAdminCodigos', 'seccionAdminPagos', 'seccionAdminAgenda', 'seccionAdminDigitacion', 'seccionAdminCarga'].forEach(s => document.getElementById(s).classList.add('hidden'));
 
@@ -774,7 +748,7 @@
                     <td class="p-3 text-center">
                         <div class="flex items-center justify-center gap-1.5">
                             ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" class="bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/40 text-[10px] px-2.5 py-1 rounded-lg font-bold">🗺️ Ir</a>` : ''}
-                            ${o.estado !== 'PAGADO' ? `<button onclick="abrirModalGestionAdmin('${o.id}')" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold">Gestionar</button>` : '<span class="text-rose-400 text-[10px] font-bold">BLOQUEADO</span>'}
+                            ${o.estado !== 'PAGADO' ? `<button onclick="abrirModalGestionGenerico('${o.id}')" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold">Gestionar</button>` : '<span class="text-rose-400 text-[10px] font-bold">BLOQUEADO</span>'}
                         </div>
                     </td>
                 </tr>
@@ -915,7 +889,6 @@
             XLSX.writeFile(workbook, `Planilla_Pago_${usuarioActual.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // VISTA TÉCNICO
         function generarCalendarioHorizontal() {
             const container = document.getElementById('barCalendarioHorizontal');
             const diasSemana = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
@@ -1051,7 +1024,7 @@
                             <span class="text-slate-400">${o.tecnologia} • ${o.ciudad}</span>
                             <div class="flex gap-1.5">
                                 ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" class="bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold">🗺️ Ir GPS</a>` : ''}
-                                ${o.estado !== 'PAGADO' ? `<button onclick="abrirModalGestionTecnico('${o.id}')" class="bg-sky-600 text-white px-3 py-1 rounded-lg font-bold">Gestionar</button>` : ''}
+                                ${o.estado !== 'PAGADO' ? `<button onclick="abrirModalGestionGenerico('${o.id}')" class="bg-sky-600 text-white px-3 py-1 rounded-lg font-bold">Gestionar</button>` : ''}
                             </div>
                         </div>
                     </div>
@@ -1125,7 +1098,6 @@
             }
         }
 
-        // AGREGAR FILAS DE EQUIPOS Y FUNGIBLES DINÁMICAMENTE
         function agregarFilaEquipoDinamicamente(tipoDefault = 'DECODER', modelo = '', serie = '') {
             contadorEquiposDinamicos++;
             const idFila = `equipoRow_${contadorEquiposDinamicos}`;
@@ -1182,13 +1154,14 @@
             if (el) el.remove();
         }
 
-        function abrirModalGestionTecnico(id) {
-            ordenSeleccionadaGestion = ordenesTecnico.find(o => String(o.id) === String(id));
+        function abrirModalGestionGenerico(id) {
+            const listaBusqueda = ordenesGlobalesAdmin.concat(ordenesTecnico);
+            ordenSeleccionadaGestion = listaBusqueda.find(o => String(o.id) === String(id));
             if (!ordenSeleccionadaGestion) return;
 
-            document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tecnologia;
-            document.getElementById('gestionClienteNombre').innerText = ordenSeleccionadaGestion.cliente_nombre;
-            document.getElementById('gestionClienteCodigo').innerText = ordenSeleccionadaGestion.cliente_nro;
+            document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tecnologia || 'HFC';
+            document.getElementById('gestionClienteNombre').innerText = ordenSeleccionadaGestion.cliente_nombre || 'CLIENTE';
+            document.getElementById('gestionClienteCodigo').innerText = ordenSeleccionadaGestion.cliente_nro || '-';
 
             document.getElementById('contenedorEquiposDinamicos').innerHTML = '';
             document.getElementById('contenedorFungiblesCatalogo').innerHTML = '';
@@ -1259,7 +1232,6 @@
                 }
             });
 
-            // Recopilar fungibles del catálogo SIGA
             const filasFungiblesCat = document.querySelectorAll('#contenedorFungiblesCatalogo > div');
             let fungiblesCatArray = [];
             filasFungiblesCat.forEach(f => {
