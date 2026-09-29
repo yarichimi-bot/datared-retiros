@@ -243,7 +243,7 @@
                 </section>
             </div>
 
-            <!-- PESTAÑA 4: PANEL DE DIGITACIÓN / BACK OFFICE CON OBSERVACIONES -->
+            <!-- PESTAÑA 4: PANEL DE DIGITACIÓN / BACK OFFICE -->
             <div id="seccionDigitacion" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl space-y-4">
                     <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">
@@ -276,7 +276,7 @@
         </main>
     </div>
 
-    <!-- MODAL GESTIÓN CÓDIGO CON MARCADO DE PAGADO HABILITADO A TÉCNICOS -->
+    <!-- MODAL GESTIÓN CÓDIGO -->
     <div id="modalGestion" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
         <div class="tech-card max-w-2xl w-full rounded-2xl p-6 space-y-6 my-8">
             <div class="flex justify-between items-start border-b border-sky-500/20 pb-3">
@@ -288,14 +288,13 @@
                 <button onclick="cerrarModalGestion()" class="text-slate-400 hover:text-white text-xl font-bold">✕</button>
             </div>
 
-            <!-- ALERTA DE OBSERVACIÓN BACK OFFICE SI EXISTE -->
+            <!-- ALERTA DE OBSERVACIÓN BACK OFFICE -->
             <div id="observacionAlertaDiv" class="hidden bg-amber-950/40 border border-amber-500/50 p-3 rounded-xl space-y-1">
                 <p class="text-xs font-bold text-amber-300 flex items-center gap-1">⚠️ OBSERVACIÓN DE BACK OFFICE / DIGITACIÓN:</p>
                 <p class="text-xs text-slate-200" id="observacionTextoMsg"></p>
             </div>
 
             <div class="space-y-4 text-xs">
-                <!-- Opción Marcar PAGADO (Habilitado para Técnico y Back Office) -->
                 <div class="bg-rose-950/30 border border-rose-500/40 p-3.5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                     <div>
                         <p class="font-bold text-rose-300 text-xs">💳 ¿EL CLIENTE CANCELÓ SU DEUDA EN LUGAR DE DEVOLVER EQUIPOS?</p>
@@ -388,6 +387,28 @@
         let ordenSeleccionadaGestion = null;
         let leafletMap = null;
         let miUbicacionMarker = null;
+
+        // FUNCIÓN CLAVE: FORMATEADOR INTELIGENTE DE COORDENADAS GPS
+        function formatearCoordenadaGPS(val) {
+            if (!val) return null;
+            let str = String(val).trim().replace(/\s+/g, '');
+            if (!str) return null;
+
+            // Si ya contiene punto decimal, devolver tal cual
+            if (str.includes('.')) return str;
+
+            // Si no contiene punto y es un número entero largo (ej: -21996575 o -63669607)
+            const esNegativo = str.startsWith('-');
+            const numeros = str.replace('-', '');
+
+            if (numeros.length >= 4) {
+                const parteEntera = numeros.substring(0, 2);
+                const parteDecimal = numeros.substring(2);
+                return `${esNegativo ? '-' : ''}${parteEntera}.${parteDecimal}`;
+            }
+
+            return str;
+        }
 
         window.onload = function() {
             const savedUser = localStorage.getItem('datared_active_user');
@@ -558,7 +579,10 @@
                 if (o.estado === 'OBSERVADO') badgeClass = "bg-amber-500/20 text-amber-300 border-amber-500/30 font-bold animate-pulse";
                 if (o.estado === 'PAGADO') badgeClass = "bg-rose-600 text-white font-bold border-rose-500 animate-pulse";
 
-                let mapsUrl = o.coordenada_x && o.coordenada_y ? `https://www.google.com/maps/search/?api=1&query=${o.coordenada_x},${o.coordenada_y}` : null;
+                // Formateo correcto de GPS
+                const latFormatted = formatearCoordenadaGPS(o.coordenada_x);
+                const lngFormatted = formatearCoordenadaGPS(o.coordenada_y);
+                let mapsUrl = (latFormatted && lngFormatted) ? `https://www.google.com/maps/search/?api=1&query=${latFormatted},${lngFormatted}` : null;
 
                 return `
                 <tr class="hover:bg-slate-900/50 border-b border-slate-800 ${o.estado === 'PAGADO' ? 'bg-rose-950/20' : ''}">
@@ -571,7 +595,7 @@
                     <td class="p-3"><span class="${badgeClass} border text-[10px] px-2 py-0.5 rounded-full">${o.estado}</span></td>
                     <td class="p-3 text-center">
                         <div class="flex items-center justify-center gap-1.5">
-                            ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" class="bg-emerald-900/60 text-emerald-300 border border-emerald-500/40 text-[10px] px-2 py-1 rounded-lg font-bold">🗺️ Ir</a>` : ''}
+                            ${mapsUrl ? `<a href="${mapsUrl}" target="_blank" class="bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/40 text-[10px] px-2.5 py-1 rounded-lg font-bold">🗺️ Ir</a>` : ''}
                             ${o.estado !== 'PAGADO' ? `<button onclick="abrirModalGestion('${o.id}')" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold">Gestionar</button>` : '<span class="text-rose-400 text-[10px] font-bold">BLOQUEADO</span>'}
                         </div>
                     </td>
