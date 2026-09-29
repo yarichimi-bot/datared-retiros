@@ -304,7 +304,7 @@
         </div>
     </div>
 
-    <!-- SCRIPTS Y LÓGICA CON GUARDADO EN SUPABASE -->
+    <!-- SCRIPTS Y LÓGICA DE ASIGNACIÓN -->
     <script>
         const BASE_URL = "https://darcifsfttemivwssbqd.supabase.co";
         const SUPABASE_URL = BASE_URL.split('/rest')[0].replace(/\/$/, "");
@@ -459,22 +459,29 @@
             document.getElementById('modalAsignacionMasiva').classList.add('hidden');
         }
 
+        // ASIGNACIÓN CORREGIDA SOPORTANDO STRING O NUMBER
         async function ejecutarAsignacionMasiva() {
             const tecnico = document.getElementById('batchTecnicoSelect').value;
             if (!tecnico) return alert('Selecciona un técnico.');
 
-            const ids = Array.from(document.querySelectorAll('.rowCheckbox:checked')).map(cb => cb.value);
-            
-            const { error } = await supabaseClient
+            const rawIds = Array.from(document.querySelectorAll('.rowCheckbox:checked')).map(cb => cb.value);
+            if (rawIds.length === 0) return alert('No hay órdenes seleccionadas.');
+
+            // Convertir a número si los IDs son numéricos, mantener string si son UUID
+            const idsProcessed = rawIds.map(id => !isNaN(id) ? Number(id) : id);
+
+            const { data, error } = await supabaseClient
                 .from('ordenes_retiro')
                 .update({ tecnico_asignado: tecnico })
-                .in('id', ids);
+                .in('id', idsProcessed)
+                .select();
 
             if (error) {
                 alert('Error al asignar: ' + error.message);
             } else {
+                alert(`¡Éxito! Se asignaron ${data ? data.length : idsProcessed.length} órdenes a ${tecnico}.`);
                 cerrarModalAsignacionMasiva();
-                cargarOrdenesDesdeSupabase();
+                await cargarOrdenesDesdeSupabase();
             }
         }
 
@@ -572,7 +579,6 @@
             vistaPreviaFotos({ files: [] });
         }
 
-        // GUARDAR EN SUPABASE, SUBIR FOTOS Y ABRIR WHATSAPP
         async function enviarReporteAWhatsApp() {
             const statusDiv = document.getElementById('gestionStatusOutput');
             const btnGuardar = document.getElementById('btnGuardarWhatsApp');
@@ -602,7 +608,6 @@
 
             const tecnicoNombre = usuarioActual ? usuarioActual.nombre : (ordenSeleccionadaGestion.tecnico_asignado || 'TÉCNICO DATARED');
 
-            // 1. Subir fotos al Storage de Supabase
             let uploadedPhotosUrls = [];
             for (let i = 0; i < fotosAdjuntadasArchivos.length; i++) {
                 const file = fotosAdjuntadasArchivos[i];
@@ -621,9 +626,10 @@
                 }
             }
 
-            // 2. Guardar en historial_gestiones
-            const { error: histError } = await supabaseClient.from('historial_gestiones').insert([{
-                orden_id: ordenSeleccionadaGestion.id,
+            const targetId = !isNaN(ordenSeleccionadaGestion.id) ? Number(ordenSeleccionadaGestion.id) : ordenSeleccionadaGestion.id;
+
+            await supabaseClient.from('historial_gestiones').insert([{
+                orden_id: targetId,
                 cliente_nro: ordenSeleccionadaGestion.cliente_nro,
                 ot: ot,
                 nodo: nodo,
@@ -639,13 +645,11 @@
                 fotos_urls: uploadedPhotosUrls
             }]);
 
-            // 3. Actualizar estado de la orden principal
-            await supabaseClient.from('ordenes_retiro').update({ estado: 'RETIRADO' }).eq('id', ordenSeleccionadaGestion.id);
+            await supabaseClient.from('ordenes_retiro').update({ estado: 'RETIRADO' }).eq('id', targetId);
 
             statusDiv.className = "text-xs font-bold text-center text-emerald-400 min-h-[1.25rem]";
             statusDiv.innerText = "¡Gestión guardada exitosamente! Abriendo WhatsApp...";
 
-            // 4. Armar mensaje y abrir WhatsApp
             const mensajeWhatsApp = 
 `CODIGO: ${codigoNombre}
 
@@ -674,7 +678,6 @@ TECNICO: ${tecnicoNombre}`;
             }, 1000);
         }
 
-        // Carga Masiva Pendientes
         async function procesarYSubirExcel() {
             const fileInput = document.getElementById('excelFileInput');
             const statusOutput = document.getElementById('statusOutput');
@@ -721,7 +724,6 @@ TECNICO: ${tecnicoNombre}`;
             reader.readAsArrayBuffer(file);
         }
 
-        // Carga Masiva Usuarios
         async function procesarYSubirUsuarios() {
             const fileInput = document.getElementById('usersFileInput');
             const statusOutput = document.getElementById('statusUsersOutput');
