@@ -22,7 +22,7 @@
     <!-- Contenedor Principal -->
     <main class="max-w-6xl mx-auto p-4 space-y-6">
 
-        <!-- MÓDULO 1: Carga Masiva de Excel -->
+        <!-- MÓDULO 1: Carga Masiva de Pendientes (.xlsx) -->
         <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
             <h2 class="text-lg font-bold text-blue-900 mb-2 flex items-center gap-2">
                 📂 Carga Masiva de Pendientes (.xlsx)
@@ -32,18 +32,37 @@
             <div class="flex flex-col sm:flex-row gap-3 items-center">
                 <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-200 rounded-lg p-1" />
                 <button onclick="procesarYSubirExcel()" class="w-full sm:w-auto bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs px-5 py-2.5 rounded-lg shadow transition-all whitespace-nowrap">
-                    🚀 Cargar a Supabase
+                    🚀 Cargar Pendientes
                 </button>
             </div>
             <div id="statusOutput" class="mt-3 text-xs font-semibold"></div>
         </section>
 
-        <!-- MÓDULO 2: Panel de Gestión y Lista de Órdenes -->
+        <!-- MÓDULO 2: Carga Masiva de Usuarios / Técnicos (GESTIONES_NPS.xlsx) -->
         <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-blue-900">📋 Órdenes de Retiro Asignadas</h2>
+            <h2 class="text-lg font-bold text-blue-900 mb-2 flex items-center gap-2">
+                👥 Carga de Usuarios y Técnicos (.xlsx)
+            </h2>
+            <p class="text-xs text-slate-500 mb-4">Sube el archivo Excel de personal (GESTIONES_NPS) para registrar Administradores, Operadores y Técnicos.</p>
+            
+            <div class="flex flex-col sm:flex-row gap-3 items-center">
+                <input type="file" id="usersFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 border border-slate-200 rounded-lg p-1" />
+                <button onclick="procesarYSubirUsuarios()" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-5 py-2.5 rounded-lg shadow transition-all whitespace-nowrap">
+                    👤 Cargar Usuarios
+                </button>
+            </div>
+            <div id="statusUsersOutput" class="mt-3 text-xs font-semibold"></div>
+        </section>
+
+        <!-- MÓDULO 3: Panel de Gestión y Lista de Órdenes -->
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-blue-900">📋 Órdenes de Retiro Asignadas</h2>
+                    <p class="text-xs text-slate-500" id="totalRegistrosTexto">Cargando datos...</p>
+                </div>
                 <button onclick="cargarOrdenesDesdeSupabase()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md border border-slate-300">
-                    🔄 Actualizar
+                    🔄 Actualizar Tabla
                 </button>
             </div>
 
@@ -55,13 +74,14 @@
                             <th class="p-2.5">Ciudad / Zona</th>
                             <th class="p-2.5">Dirección / Ref.</th>
                             <th class="p-2.5">Tecnología</th>
+                            <th class="p-2.5">Técnico Asignado</th>
                             <th class="p-2.5">Estado</th>
                             <th class="p-2.5 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="tablaOrdenesBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="6" class="p-4 text-center text-slate-400">Cargando órdenes desde Supabase...</td>
+                            <td colspan="7" class="p-4 text-center text-slate-400">Cargando órdenes desde Supabase...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -70,23 +90,23 @@
 
     </main>
 
-    <!-- CONEXIÓN CON SANITIZACIÓN AUTOMÁTICA DE URL Y TOKEN JWT -->
+    <!-- CONEXIÓN CON SUPABASE Y LÓGICA GENERAL -->
     <script>
-        // Dirección base limpia
         const BASE_URL = "https://darcifsfttemivwssbqd.supabase.co";
         const SUPABASE_URL = BASE_URL.split('/rest')[0].replace(/\/$/, "");
         
-        // Pega aquí el token JWT de la pestaña "Legacy anon" que empieza por eyJhbGciOi...
+        // Token JWT (Legacy anon)
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhcmNpZnNmdHRlbWl2d3NzYnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1OTY5NjUsImV4cCI6MjEwNjE3Mjk2NX0.BpgHDsOIAvPaMJooaxpBj0Fuu5W_yg0lvj9Ga6GREnc"; 
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // 1. Cargar Pendientes Excel
         async function procesarYSubirExcel() {
             const fileInput = document.getElementById('excelFileInput');
             const statusOutput = document.getElementById('statusOutput');
 
             if (!fileInput.files.length) {
-                alert('Por favor, seleccione un archivo Excel primero.');
+                alert('Por favor, seleccione el archivo Excel de pendientes.');
                 return;
             }
 
@@ -115,9 +135,6 @@
                             
                             if (!cliente_nro && !cliente_nombre) continue;
 
-                            let coordX = row.cliente_coordenada_x ? String(row.cliente_coordenada_x).replace(',', '.') : null;
-                            let coordY = row.cliente_coordenada_y ? String(row.cliente_coordenada_y).replace(',', '.') : null;
-
                             const ordenPayload = {
                                 departamento: String(row.departament || row.departamento || "TARIJA").trim(),
                                 ciudad: String(row.ciudad || "YACUIBA").trim(),
@@ -129,8 +146,8 @@
                                 referencia: row.referencia ? String(row.referencia).trim() : null,
                                 cliente_telefono: row.cliente_telefono ? String(row.cliente_telefono).trim() : null,
                                 cliente_telefonos_referencia: row.cliente_telefonos_referencia ? String(row.cliente_telefonos_referencia).trim() : null,
-                                coordenada_x: coordX ? parseFloat(coordX) : null,
-                                coordenada_y: coordY ? parseFloat(coordY) : null,
+                                coordenada_x: row.cliente_coordenada_x ? String(row.cliente_coordenada_x).trim() : null,
+                                coordenada_y: row.cliente_coordenada_y ? String(row.cliente_coordenada_y).replace(/\s+/g, '').trim() : null,
                                 estado: 'PENDIENTE'
                             };
 
@@ -161,9 +178,81 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // 2. Cargar Usuarios / Técnicos (GESTIONES_NPS)
+        async function procesarYSubirUsuarios() {
+            const fileInput = document.getElementById('usersFileInput');
+            const statusOutput = document.getElementById('statusUsersOutput');
+
+            if (!fileInput.files.length) {
+                alert('Por favor, seleccione el archivo Excel GESTIONES_NPS.');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            statusOutput.className = "mt-3 text-xs font-semibold text-blue-700";
+            statusOutput.innerText = 'Leyendo y registrando usuarios... Por favor espere.';
+
+            reader.onload = async function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonRows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+                    let totalCargados = 0;
+                    let errores = [];
+
+                    for (const row of jsonRows) {
+                        const usuario = row.usuario || row.USUARIO || "";
+                        const nombre = row.nombre || row.NOMBRE || "";
+
+                        if (!usuario || !nombre) continue;
+
+                        const userPayload = {
+                            usuario: String(usuario).trim(),
+                            password: String(row.password || "12345").trim(),
+                            nombre: String(nombre).trim(),
+                            rol: row.rol ? String(row.rol).trim() : "Tecnico",
+                            area: row.area ? String(row.area).trim() : "Tecnico",
+                            departamento: row.departamento ? String(row.departamento).trim() : null,
+                            ciudad: row.ciudad ? String(row.ciudad).trim() : null,
+                            telefono: row.telefono ? String(row.telefono).trim() : null,
+                            ci: row.ci ? String(row.ci).trim() : null,
+                            placa: row.placa ? String(row.placa).trim() : null,
+                            foto_perfil: row.foto_perfil ? String(row.foto_perfil).trim() : null
+                        };
+
+                        const { error } = await supabaseClient.from('usuarios').upsert([userPayload], { onConflict: 'usuario' });
+                        if (!error) {
+                            totalCargados++;
+                        } else {
+                            errores.push(error.message);
+                        }
+                    }
+
+                    if (errores.length > 0) {
+                        statusOutput.className = "mt-3 text-xs font-semibold text-amber-600";
+                        statusOutput.innerText = `Se registraron ${totalCargados} usuarios. (Detalle: ${errores[0]})`;
+                    } else {
+                        statusOutput.className = "mt-3 text-xs font-semibold text-emerald-600";
+                        statusOutput.innerText = `¡Éxito! Se registraron/actualizaron ${totalCargados} usuarios en la base de datos.`;
+                    }
+                } catch (err) {
+                    statusOutput.className = "mt-3 text-xs font-semibold text-rose-600";
+                    statusOutput.innerText = `Error al procesar el archivo: ${err.message}`;
+                }
+            };
+
+            reader.readAsArrayBuffer(file);
+        }
+
+        // 3. Consultar y Mostrar Lista de Órdenes
         async function cargarOrdenesDesdeSupabase() {
             const tbody = document.getElementById('tablaOrdenesBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">Cargando órdenes desde Supabase...</td></tr>';
+            const totalTexto = document.getElementById('totalRegistrosTexto');
+            tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">Cargando órdenes desde Supabase...</td></tr>';
 
             const { data, error } = await supabaseClient
                 .from('ordenes_retiro')
@@ -171,14 +260,17 @@
                 .order('fecha_registro', { ascending: false });
 
             if (error) {
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-rose-500">Error al consultar Supabase: ${error.message}</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-rose-500">Error al consultar Supabase: ${error.message}</td></tr>`;
                 return;
             }
 
             if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-400">No hay órdenes registradas aún en la base de datos. Sube un archivo Excel arriba.</td></tr>';
+                totalTexto.innerText = "0 órdenes registradas";
+                tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-slate-400">No hay órdenes registradas aún en la base de datos. Sube un archivo Excel arriba.</td></tr>';
                 return;
             }
+
+            totalTexto.innerText = `${data.length} órdenes registradas en total`;
 
             tbody.innerHTML = data.map(o => `
                 <tr class="hover:bg-slate-50 border-b border-slate-100">
@@ -186,6 +278,7 @@
                     <td class="p-2.5">${o.ciudad}<br><span class="text-slate-400 text-[10px]">${o.zona_nodo_tap || ''}</span></td>
                     <td class="p-2.5 text-slate-600">${o.direccion}<br><span class="text-slate-400 text-[10px]">${o.referencia || ''}</span></td>
                     <td class="p-2.5 font-semibold">${o.tecnologia}</td>
+                    <td class="p-2.5 text-slate-500">${o.tecnico_asignado || '<span class="italic text-slate-400">Sin asignar</span>'}</td>
                     <td class="p-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">${o.estado}</span></td>
                     <td class="p-2.5 text-center">
                         <button class="bg-blue-900 text-white text-[10px] px-2.5 py-1 rounded hover:bg-blue-800 shadow-sm">Gestionar</button>
