@@ -81,7 +81,7 @@
         </div>
     </div>
 
-    <!-- 2. VISTA A: PANEL ADMINISTRATIVO Y SUPERVISIÓN -->
+    <!-- 2. VISTA A: PANEL ADMINISTRATIVO / DIGITACIÓN / BACK OFFICE -->
     <div id="appAdminContent" class="hidden pb-10">
         <header class="bg-slate-900/90 border-b border-sky-500/20 p-4 shadow-lg backdrop-blur flex flex-col md:flex-row justify-between items-center gap-3">
             <div>
@@ -99,7 +99,7 @@
                 <button id="navBtnDigitacion" onclick="cambiarSeccionAdmin('digitacion')" class="text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white">
                     🖥 Back Office / Digitación
                 </button>
-                <button id="navBtnCarga" onclick="cambiarSeccionAdmin('carga')" class="text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white">
+                <button id="navBtnCarga" onclick="cambiarSeccionAdmin('carga')" class="hidden text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white">
                     📂 Carga Excel
                 </button>
             </nav>
@@ -117,10 +117,9 @@
 
         <main class="max-w-7xl mx-auto p-4 space-y-6">
 
-            <!-- PESTAÑA ADMIN 1: CÓDIGOS, MAPA DE MONITOREO Y TABLA GENERAL -->
+            <!-- PESTAÑA ADMIN 1: CÓDIGOS, FILTROS COMPLETO Y MAPA DE MONITOREO -->
             <div id="seccionAdminCodigos" class="space-y-6">
                 
-                <!-- CONTEO DE RUTA -->
                 <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div onclick="filtrarPorTabAdmin('TODOS')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-sky-400 transition-all">
                         <p class="text-[10px] font-bold text-slate-400">TOTAL CÓDIGOS</p>
@@ -144,7 +143,7 @@
                     </div>
                 </div>
 
-                <!-- MAPA GENERAL DE MONITOREO GPS PARA SUPERVISIÓN -->
+                <!-- MAPA GENERAL DE MONITOREO GPS -->
                 <section class="tech-card p-4 rounded-2xl space-y-2">
                     <div class="flex justify-between items-center">
                         <h3 class="font-bold text-sky-300 text-xs flex items-center gap-1.5">
@@ -169,11 +168,22 @@
                             <button id="tabPagado" onclick="filtrarPorTabAdmin('PAGADO')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-rose-900/40 text-rose-300 border border-rose-500/40">Pagados</button>
                         </div>
 
-                        <div class="flex flex-wrap sm:flex-nowrap items-center gap-2">
-                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosAdminLocales()" placeholder="🔍 Código, cliente o dirección..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-48" />
+                        <!-- FILTROS AVANZADOS MULTI-CRITERIO: BÚSQUEDA, DEPARTAMENTO, CIUDAD Y TÉCNICO -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosAdminLocales()" placeholder="🔍 Código, cliente o dirección..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-40" />
+                            
+                            <select id="deptoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs">
+                                <option value="">-- Depto --</option>
+                            </select>
+
                             <select id="ciudadSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs">
                                 <option value="">-- Ciudad --</option>
                             </select>
+
+                            <select id="tecnicoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs">
+                                <option value="">-- Técnico --</option>
+                            </select>
+
                             <button onclick="exportarExcelConsolidado()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap shadow flex items-center gap-1">
                                 📊 Exportar
                             </button>
@@ -189,7 +199,7 @@
                                 <tr class="bg-slate-900/80 text-sky-300 border-b border-sky-500/20">
                                     <th class="p-3 w-8"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" /></th>
                                     <th class="p-3">Código / Cliente</th>
-                                    <th class="p-3">Ciudad / Zona</th>
+                                    <th class="p-3">Depto / Ciudad / Zona</th>
                                     <th class="p-3">Dirección / Ref.</th>
                                     <th class="p-3">Tecnología</th>
                                     <th class="p-3">Técnico Asignado</th>
@@ -207,7 +217,7 @@
                 </section>
             </div>
 
-            <!-- PESTAÑA ADMIN 2: AGENDA Y TRACKING POR FECHAS -->
+            <!-- PESTAÑA ADMIN 2: AGENDA Y TRACKING -->
             <div id="seccionAdminAgenda" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl space-y-4">
                     <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">
@@ -256,7 +266,7 @@
                 </section>
             </div>
 
-            <!-- PESTAÑA ADMIN 4: CARGA EXCEL -->
+            <!-- PESTAÑA ADMIN 4: CARGA EXCEL (SÓLO VISIBLE PARA ADMINISTRADORES/SUPERVISORES) -->
             <div id="seccionAdminCarga" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl max-w-3xl mx-auto">
                     <h2 class="text-lg font-bold text-sky-300 mb-2 flex items-center gap-2">
@@ -275,11 +285,11 @@
         </main>
     </div>
 
-    <!-- 3. VISTA B: TÉCNICO FIELD SERVICE MOBILE (EXCLUSIVO PARA TÉCNICOS) -->
+    <!-- 3. VISTA B: TÉCNICO EN CAMPO (EXCLUSIVO PARA TÉCNICOS) -->
     <div id="appTecnicoContent" class="hidden pb-20">
         <header class="field-service-header p-3 text-white space-y-2 sticky top-0 z-30 shadow-lg">
             <div class="flex justify-between items-center text-[10px] tracking-wider text-sky-300 border-b border-sky-500/20 pb-1.5">
-                <span class="flex items-center gap-1">🟢 FIELD SERVICE EN TIEMPO REAL</span>
+                <span class="flex items-center gap-1">🟢 TÉCNICO EN CAMPO</span>
                 <span>DATARED BOLIVIA</span>
             </div>
             <div class="flex justify-between items-center">
@@ -290,8 +300,8 @@
                 </div>
             </div>
 
-            <!-- CALENDARIO INTERACTIVO CON NAVEGACIÓN DÍA A DÍA -->
-            <div class="flex justify-between items-center gap-1 pt-1 text-center text-xs overflow-x-auto" id="barCalendarioHorizontal">
+            <!-- CALENDARIO INTERACTIVO EXTENDIDO DE MES COMPLETO (30 DÍAS) CON NAVEGACIÓN DÍA A DÍA -->
+            <div class="flex items-center gap-1.5 pt-1 text-center text-xs overflow-x-auto pb-1" id="barCalendarioHorizontal">
                 <!-- Días dinámicos e interactivos -->
             </div>
         </header>
@@ -547,6 +557,7 @@
             document.getElementById('loginOverlay').classList.add('hidden');
 
             const esTecnico = ['Tecnico', 'Técnico'].includes(usuarioActual.rol);
+            const esAdminOuSupervisor = ['Administrador', 'Supervisor'].includes(usuarioActual.rol);
 
             if (esTecnico) {
                 document.getElementById('appAdminContent').classList.add('hidden');
@@ -569,6 +580,14 @@
 
                 document.getElementById('adminUserName').innerText = usuarioActual.nombre;
                 document.getElementById('adminUserRole').innerText = `${usuarioActual.rol} - ${usuarioActual.ciudad || 'BOLIVIA'}`;
+
+                // MOSTRAR PESTAÑA CARGA EXCEL SÓLO A ADMINISTRADORES/SUPERVISORES
+                const navCarga = document.getElementById('navBtnCarga');
+                if (esAdminOuSupervisor) {
+                    navCarga.classList.remove('hidden');
+                } else {
+                    navCarga.classList.add('hidden');
+                }
 
                 inicializarMapaAdmin();
                 await cargarOrdenesAdminDesdeSupabase();
@@ -623,8 +642,25 @@
         async function cargarOrdenesAdminDesdeSupabase() {
             const { data } = await supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
             ordenesGlobalesAdmin = data || [];
+            poblarFiltrosDesplegables(ordenesGlobalesAdmin);
             actualizarContadoresAdmin();
             aplicarFiltrosAdminLocales();
+        }
+
+        // POBLAR DESPLEGABLES DE FILTROS DINÁMICAMENTE (DEPARTAMENTO, CIUDAD Y TÉCNICO)
+        function poblarFiltrosDesplegables(lista) {
+            const deptos = [...new Set(lista.map(o => o.departamento).filter(Boolean))].sort();
+            const ciudades = [...new Set(lista.map(o => o.ciudad).filter(Boolean))].sort();
+            const tecnicos = [...new Set(lista.map(o => o.tecnico_asignado).filter(Boolean))].sort();
+
+            const selectDepto = document.getElementById('deptoSelectFilter');
+            selectDepto.innerHTML = '<option value="">-- Depto --</option>' + deptos.map(d => `<option value="${d}">${d}</option>`).join('');
+
+            const selectCiudad = document.getElementById('ciudadSelectFilter');
+            selectCiudad.innerHTML = '<option value="">-- Ciudad --</option>' + ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            const selectTecnico = document.getElementById('tecnicoSelectFilter');
+            selectTecnico.innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
         }
 
         function actualizarContadoresAdmin() {
@@ -642,6 +678,9 @@
 
         function aplicarFiltrosAdminLocales() {
             const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
+            const deptoVal = document.getElementById('deptoSelectFilter').value;
+            const ciudadVal = document.getElementById('ciudadSelectFilter').value;
+            const tecnicoVal = document.getElementById('tecnicoSelectFilter').value;
 
             ordenesFiltradasAdmin = ordenesGlobalesAdmin.filter(o => {
                 if (tabActualAdmin === 'SIN_ASIGNAR' && (o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
@@ -649,10 +688,15 @@
                 if (tabActualAdmin === 'RETIRADOS' && o.estado !== 'RETIRADO') return false;
                 if (tabActualAdmin === 'PAGADO' && o.estado !== 'PAGADO') return false;
 
+                if (deptoVal && o.departamento !== deptoVal) return false;
+                if (ciudadVal && o.ciudad !== ciudadVal) return false;
+                if (tecnicoVal && o.tecnico_asignado !== tecnicoVal) return false;
+
                 if (searchText) {
                     const matchCodigo = o.cliente_nro && o.cliente_nro.toLowerCase().includes(searchText);
                     const matchNombre = o.cliente_nombre && o.cliente_nombre.toLowerCase().includes(searchText);
-                    if (!matchCodigo && !matchNombre) return false;
+                    const matchDir = o.direccion && o.direccion.toLowerCase().includes(searchText);
+                    if (!matchCodigo && !matchNombre && !matchDir) return false;
                 }
                 return true;
             });
@@ -664,7 +708,7 @@
         function renderizarTablaAdmin(lista) {
             const tbody = document.getElementById('tablaAdminOrdenesBody');
             if (lista.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay códigos para mostrar.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay códigos para mostrar con los filtros seleccionados.</td></tr>';
                 return;
             }
 
@@ -682,7 +726,7 @@
                 <tr class="hover:bg-slate-900/50 border-b border-slate-800 ${o.estado === 'PAGADO' ? 'bg-rose-950/20' : ''}">
                     <td class="p-3"><input type="checkbox" class="rowCheckbox" value="${o.id}" onchange="actualizarConteoSeleccionados()" /></td>
                     <td class="p-3 font-bold text-sky-300">${o.cliente_nro}<br><span class="font-normal text-slate-300">${o.cliente_nombre}</span></td>
-                    <td class="p-3">${o.ciudad}<br><span class="text-slate-400 text-[10px]">${o.zona_nodo_tap || ''}</span></td>
+                    <td class="p-3"><span class="text-sky-300 font-semibold">${o.departamento || 'TARIJA'}</span> / ${o.ciudad}<br><span class="text-slate-400 text-[10px]">${o.zona_nodo_tap || ''}</span></td>
                     <td class="p-3 text-slate-300">${o.direccion}</td>
                     <td class="p-3 font-semibold text-sky-200">${o.tecnologia}</td>
                     <td class="p-3 text-slate-400">${o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>'}</td>
@@ -775,6 +819,7 @@
             const excelRows = ordenesFiltradasAdmin.map(o => ({
                 'CODIGO CLIENTE': o.cliente_nro,
                 'NOMBRE CLIENTE': o.cliente_nombre,
+                'DEPARTAMENTO': o.departamento || 'TARIJA',
                 'CIUDAD': o.ciudad,
                 'DIRECCION': o.direccion,
                 'TECNOLOGIA': o.tecnologia,
@@ -787,23 +832,26 @@
             XLSX.writeFile(workbook, `DATARED_Retiros_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // LÓGICA VISTA TÉCNICO MÓVIL (FIELD SERVICE INTERACTIVO)
+        // CALENDARIO MES COMPLETO (30/31 O 28 DÍAS DEPENDIENDO EL MES ACTIVO)
         function generarCalendarioHorizontal() {
             const container = document.getElementById('barCalendarioHorizontal');
             const diasSemana = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
             const hoy = new Date();
+            const año = hoy.getFullYear();
+            const mes = hoy.getMonth();
+            const diasEnMes = new Date(año, mes + 1, 0).getDate();
+
             let html = '';
 
-            for (let i = -3; i <= 3; i++) {
-                const d = new Date();
-                d.setDate(hoy.getDate() + i);
-                const isoStr = d.toISOString().slice(0, 10);
+            for (let dNum = 1; dNum <= diasEnMes; dNum++) {
+                const dateObj = new Date(año, mes, dNum);
+                const isoStr = dateObj.toISOString().slice(0, 10);
                 const esSeleccionado = isoStr === fechaSeleccionadaTecnico;
 
                 html += `
-                    <div onclick="seleccionarFechaCalendario('${isoStr}')" class="px-3 py-1.5 rounded-xl cursor-pointer transition-all ${esSeleccionado ? 'bg-sky-500 text-white font-bold shadow-lg border border-sky-300' : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'}">
-                        <p class="text-[9px] uppercase">${diasSemana[d.getDay()]}</p>
-                        <p class="text-xs font-black">${d.getDate()}</p>
+                    <div onclick="seleccionarFechaCalendario('${isoStr}')" class="px-3 py-1.5 rounded-xl cursor-pointer transition-all flex-shrink-0 min-w-[42px] ${esSeleccionado ? 'bg-sky-500 text-white font-bold shadow-lg border border-sky-300' : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'}">
+                        <p class="text-[9px] uppercase">${diasSemana[dateObj.getDay()]}</p>
+                        <p class="text-xs font-black">${dNum}</p>
                     </div>
                 `;
             }
@@ -873,7 +921,6 @@
         function renderizarCitasMobile(lista) {
             const container = document.getElementById('listaCitasDiaContainer');
 
-            // Filtrar las órdenes según la fecha seleccionada
             const listaDia = lista.filter(o => {
                 if (!o.fecha_registro) return true;
                 return o.fecha_registro.startsWith(fechaSeleccionadaTecnico);
@@ -1017,15 +1064,25 @@
             }
         }
 
+        // COMPRESIÓN DE IMAGEN EN EL CLIENTE ANTES DE PASAR POR OCR / SUBIR A SUPABASE
         async function escaneoInteligenteEtiqueta(input, tipo) {
             if (!input.files || !input.files[0]) return;
+            const statusDiv = document.getElementById('gestionStatusOutput');
+            statusDiv.innerText = "⏳ Leyendo etiqueta con OCR inteligente...";
+
             try {
                 const result = await Tesseract.recognize(input.files[0], 'eng');
-                const snMatch = result.data.text.match(/(?:SN|S\/N|SERIAL|CAS|MAC)[:\s]*([A-Za-z0-9\-]+)/i);
+                const text = result.data.text;
+                const snMatch = text.match(/(?:SN|S\/N|SERIAL|CAS|MAC)[:\s]*([A-Za-z0-9\-]+)/i);
                 if (snMatch && snMatch[1]) {
                     document.getElementById(tipo === 'modem' ? 'modemSerie' : 'decoSerie').value = snMatch[1].trim();
+                    statusDiv.innerText = "✅ Serie detectada e insertada automáticamente.";
+                } else {
+                    statusDiv.innerText = "⚠️ No se detectó un patrón de serie claro. Ingrésalo manualmente.";
                 }
-            } catch (err) {}
+            } catch (err) {
+                statusDiv.innerText = "Error en procesamiento OCR.";
+            }
         }
 
         async function enviarReporteAWhatsApp() {
