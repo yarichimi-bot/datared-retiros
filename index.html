@@ -42,8 +42,8 @@
             width: 100%;
             border-bottom: 1px solid rgba(56, 189, 248, 0.2);
         }
-        #mapContainerAdmin {
-            height: 320px;
+        #adminMapContainer {
+            height: 280px;
             width: 100%;
             border-radius: 1rem;
         }
@@ -117,8 +117,10 @@
 
         <main class="max-w-7xl mx-auto p-4 space-y-6">
 
-            <!-- PESTAÑA ADMIN 1: CÓDIGOS Y TABLA GENERAL -->
+            <!-- PESTAÑA ADMIN 1: CÓDIGOS, MAPA DE MONITOREO Y TABLA GENERAL -->
             <div id="seccionAdminCodigos" class="space-y-6">
+                
+                <!-- CONTEO DE RUTA -->
                 <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div onclick="filtrarPorTabAdmin('TODOS')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-sky-400 transition-all">
                         <p class="text-[10px] font-bold text-slate-400">TOTAL CÓDIGOS</p>
@@ -141,6 +143,21 @@
                         <p class="text-xl font-black text-rose-200 mt-0.5" id="countPagados">0</p>
                     </div>
                 </div>
+
+                <!-- MAPA GENERAL DE MONITOREO GPS PARA SUPERVISIÓN -->
+                <section class="tech-card p-4 rounded-2xl space-y-2">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-sky-300 text-xs flex items-center gap-1.5">
+                            🗺️ MONITOREO GPS DE CLIENTES Y TÉCNICOS EN CAMPO
+                        </h3>
+                        <button onclick="toggleMapaAdmin()" id="btnToggleMapaAdmin" class="text-[10px] bg-slate-800 text-sky-300 px-2.5 py-1 rounded-lg border border-sky-500/30">
+                            Ocultar Mapa 👁️
+                        </button>
+                    </div>
+                    <div id="adminMapWrapper">
+                        <div id="adminMapContainer"></div>
+                    </div>
+                </section>
 
                 <section class="tech-card p-6 rounded-2xl space-y-4">
                     <div class="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 pb-3 border-b border-sky-500/20">
@@ -273,8 +290,9 @@
                 </div>
             </div>
 
+            <!-- CALENDARIO INTERACTIVO CON NAVEGACIÓN DÍA A DÍA -->
             <div class="flex justify-between items-center gap-1 pt-1 text-center text-xs overflow-x-auto" id="barCalendarioHorizontal">
-                <!-- Días dinámicos -->
+                <!-- Días dinámicos e interactivos -->
             </div>
         </header>
 
@@ -283,23 +301,24 @@
             <div id="mobileMapContainer"></div>
 
             <div class="p-3 space-y-3">
-                <div class="bg-slate-900/80 p-3 rounded-xl border border-sky-500/20 flex justify-between items-center">
-                    <div>
-                        <p class="text-xs font-bold text-white" id="fechaSeleccionadaTexto">Hoy • MARTES, 29 SEPT, 2026</p>
-                        <p class="text-[11px] text-sky-400 font-semibold" id="conteoCitasTexto">Tiene 0 Citas de servicio</p>
+                <div class="bg-slate-900/80 p-3 rounded-xl border border-sky-500/20 flex justify-between items-center gap-2">
+                    <div class="flex-1">
+                        <p class="text-xs font-bold text-white" id="fechaSeleccionadaTexto">Cargando fecha...</p>
+                        <p class="text-[11px] text-sky-400 font-semibold" id="conteoCitasTexto">Tiene 0 Cita(s) de servicio</p>
                     </div>
-                    <button onclick="centrarEnMiGps()" class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2.5 py-1 rounded-lg font-bold">
+                    <input type="date" id="tecFechaPickerInput" onchange="seleccionarFechaCalendario(this.value)" class="tech-input p-1 rounded-lg text-xs text-slate-300 w-28 bg-slate-950" />
+                    <button onclick="centrarEnMiGps()" class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-1 rounded-lg font-bold whitespace-nowrap">
                         🎯 Mi GPS
                     </button>
                 </div>
 
                 <div id="listaCitasDiaContainer" class="space-y-2.5">
-                    <!-- Tarjetas de retiros del técnico -->
+                    <!-- Tarjetas de retiros del técnico para el día seleccionado -->
                 </div>
             </div>
         </div>
 
-        <!-- SECCIÓN TÉCNICO 2: INVENTARIO DE EQUIPOS CON CLIENTE Y FECHA -->
+        <!-- SECCIÓN TÉCNICO 2: INVENTARIO DE EQUIPOS -->
         <div id="tecTabInventario" class="hidden p-4 space-y-4">
             <div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-1">
                 <h2 class="text-sm font-bold text-sky-300 flex items-center gap-2">
@@ -466,9 +485,13 @@
         let historialRetiros = [];
         let tabActualAdmin = 'TODOS';
         let ordenSeleccionadaGestion = null;
+        
+        let fechaSeleccionadaTecnico = new Date().toISOString().slice(0, 10);
         let mobileMap = null;
+        let adminMap = null;
         let miGpsMarker = null;
-        let markersGroup = null;
+        let mobileMarkersGroup = null;
+        let adminMarkersGroup = null;
 
         function formatearGPS(val) {
             if (!val) return null;
@@ -526,7 +549,6 @@
             const esTecnico = ['Tecnico', 'Técnico'].includes(usuarioActual.rol);
 
             if (esTecnico) {
-                // ACTIVAR VISTA FIELD SERVICE MÓVIL PARA TÉCNICOS
                 document.getElementById('appAdminContent').classList.add('hidden');
                 document.getElementById('appTecnicoContent').classList.remove('hidden');
 
@@ -542,13 +564,13 @@
                 inicializarMapaMobile();
                 await cargarDatosTecnico();
             } else {
-                // ACTIVAR VISTA PANEL DE CONTROL PARA ADMINISTRADORES/SUPERVISORES/BACK OFFICE
                 document.getElementById('appTecnicoContent').classList.add('hidden');
                 document.getElementById('appAdminContent').classList.remove('hidden');
 
                 document.getElementById('adminUserName').innerText = usuarioActual.nombre;
                 document.getElementById('adminUserRole').innerText = `${usuarioActual.rol} - ${usuarioActual.ciudad || 'BOLIVIA'}`;
 
+                inicializarMapaAdmin();
                 await cargarOrdenesAdminDesdeSupabase();
                 await cargarListaTecnicosSelects();
             }
@@ -562,17 +584,40 @@
             document.getElementById('loginOverlay').classList.remove('hidden');
         }
 
-        // LÓGICA VISTA ADMINISTRATIVA
+        // LÓGICA VISTA ADMINISTRATIVA Y MAPA DE MONITOREO
         function cambiarSeccionAdmin(seccion) {
             ['seccionAdminCodigos', 'seccionAdminAgenda', 'seccionAdminDigitacion', 'seccionAdminCarga'].forEach(s => document.getElementById(s).classList.add('hidden'));
 
-            if (seccion === 'codigos') document.getElementById('seccionAdminCodigos').classList.remove('hidden');
+            if (seccion === 'codigos') {
+                document.getElementById('seccionAdminCodigos').classList.remove('hidden');
+                setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 300);
+            }
             if (seccion === 'agenda') document.getElementById('seccionAdminAgenda').classList.remove('hidden');
             if (seccion === 'digitacion') {
                 document.getElementById('seccionAdminDigitacion').classList.remove('hidden');
                 renderizarDigitacionAdmin();
             }
             if (seccion === 'carga') document.getElementById('seccionAdminCarga').classList.remove('hidden');
+        }
+
+        function inicializarMapaAdmin() {
+            if (adminMap) return;
+            adminMap = L.map('adminMapContainer').setView([-21.96, -63.67], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(adminMap);
+            adminMarkersGroup = L.layerGroup().addTo(adminMap);
+        }
+
+        function toggleMapaAdmin() {
+            const wrapper = document.getElementById('adminMapWrapper');
+            const btn = document.getElementById('btnToggleMapaAdmin');
+            if (wrapper.classList.contains('hidden')) {
+                wrapper.classList.remove('hidden');
+                btn.innerText = "Ocultar Mapa 👁️";
+                setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
+            } else {
+                wrapper.classList.add('hidden');
+                btn.innerText = "Mostrar Mapa 🗺️";
+            }
         }
 
         async function cargarOrdenesAdminDesdeSupabase() {
@@ -613,6 +658,7 @@
             });
 
             renderizarTablaAdmin(ordenesFiltradasAdmin);
+            actualizarPinesMapaAdmin(ordenesFiltradasAdmin);
         }
 
         function renderizarTablaAdmin(lista) {
@@ -649,6 +695,30 @@
                     </td>
                 </tr>
             `}).join('');
+        }
+
+        function actualizarPinesMapaAdmin(lista) {
+            if (!adminMap || !adminMarkersGroup) return;
+            adminMarkersGroup.clearLayers();
+
+            let bounds = [];
+            lista.forEach(o => {
+                const lat = formatearGPS(o.coordenada_x);
+                const lng = formatearGPS(o.coordenada_y);
+                if (lat && lng) {
+                    const latNum = parseFloat(lat);
+                    const lngNum = parseFloat(lng);
+                    if (!isNaN(latNum) && !isNaN(lngNum)) {
+                        bounds.push([latNum, lngNum]);
+                        L.marker([latNum, lngNum]).addTo(adminMarkersGroup)
+                            .bindPopup(`<b>${o.cliente_nro}</b><br>${o.cliente_nombre}<br>Técnico: ${o.tecnico_asignado || 'Sin Asignar'}`);
+                    }
+                }
+            });
+
+            if (bounds.length > 0) {
+                adminMap.fitBounds(bounds, { padding: [20, 20], maxZoom: 15 });
+            }
         }
 
         function abrirModalGestionAdmin(id) {
@@ -717,33 +787,49 @@
             XLSX.writeFile(workbook, `DATARED_Retiros_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // LÓGICA VISTA TÉCNICO MÓVIL (FIELD SERVICE)
+        // LÓGICA VISTA TÉCNICO MÓVIL (FIELD SERVICE INTERACTIVO)
         function generarCalendarioHorizontal() {
             const container = document.getElementById('barCalendarioHorizontal');
             const diasSemana = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
             const hoy = new Date();
             let html = '';
 
-            for (let i = -2; i <= 4; i++) {
+            for (let i = -3; i <= 3; i++) {
                 const d = new Date();
                 d.setDate(hoy.getDate() + i);
-                const esHoy = i === 0;
+                const isoStr = d.toISOString().slice(0, 10);
+                const esSeleccionado = isoStr === fechaSeleccionadaTecnico;
 
                 html += `
-                    <div class="px-3 py-1.5 rounded-xl cursor-pointer ${esHoy ? 'bg-sky-500 text-white font-bold shadow' : 'bg-slate-900/60 text-slate-300'}">
+                    <div onclick="seleccionarFechaCalendario('${isoStr}')" class="px-3 py-1.5 rounded-xl cursor-pointer transition-all ${esSeleccionado ? 'bg-sky-500 text-white font-bold shadow-lg border border-sky-300' : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'}">
                         <p class="text-[9px] uppercase">${diasSemana[d.getDay()]}</p>
-                        <p class="text-xs">${d.getDate()}</p>
+                        <p class="text-xs font-black">${d.getDate()}</p>
                     </div>
                 `;
             }
             container.innerHTML = html;
+            document.getElementById('tecFechaPickerInput').value = fechaSeleccionadaTecnico;
+            actualizarTextoFechaCabecera();
+        }
+
+        function seleccionarFechaCalendario(fechaIso) {
+            fechaSeleccionadaTecnico = fechaIso;
+            generarCalendarioHorizontal();
+            renderizarCitasMobile(ordenesTecnico);
+        }
+
+        function actualizarTextoFechaCabecera() {
+            const partes = fechaSeleccionadaTecnico.split('-');
+            const dateObj = new Date(partes[0], partes[1] - 1, partes[2]);
+            const opciones = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' };
+            document.getElementById('fechaSeleccionadaTexto').innerText = dateObj.toLocaleDateString('es-ES', opciones).toUpperCase();
         }
 
         function inicializarMapaMobile() {
             if (mobileMap) return;
             mobileMap = L.map('mobileMapContainer').setView([-21.96, -63.67], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mobileMap);
-            markersGroup = L.layerGroup().addTo(mobileMap);
+            mobileMarkersGroup = L.layerGroup().addTo(mobileMap);
 
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition(pos => {
@@ -786,25 +872,32 @@
 
         function renderizarCitasMobile(lista) {
             const container = document.getElementById('listaCitasDiaContainer');
-            document.getElementById('conteoCitasTexto').innerText = `Tiene ${lista.length} Cita(s) de servicio`;
 
-            if (lista.length === 0) {
-                container.innerHTML = '<p class="text-slate-500 text-xs text-center py-6">No tienes órdenes asignadas para hoy.</p>';
-                if (markersGroup) markersGroup.clearLayers();
+            // Filtrar las órdenes según la fecha seleccionada
+            const listaDia = lista.filter(o => {
+                if (!o.fecha_registro) return true;
+                return o.fecha_registro.startsWith(fechaSeleccionadaTecnico);
+            });
+
+            document.getElementById('conteoCitasTexto').innerText = `Tiene ${listaDia.length} Cita(s) de servicio`;
+
+            if (listaDia.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 text-xs text-center py-6">No tienes citas o retiros programados para la fecha seleccionada (${fechaSeleccionadaTecnico}).</p>`;
+                if (mobileMarkersGroup) mobileMarkersGroup.clearLayers();
                 return;
             }
 
-            if (markersGroup) markersGroup.clearLayers();
+            if (mobileMarkersGroup) mobileMarkersGroup.clearLayers();
             let bounds = [];
 
-            container.innerHTML = lista.map((o) => {
+            container.innerHTML = listaDia.map((o) => {
                 const lat = formatearGPS(o.coordenada_x);
                 const lng = formatearGPS(o.coordenada_y);
                 const mapsUrl = (lat && lng) ? `https://www.google.com/maps/search/?api=1&query=${lat},${lng}` : null;
 
                 if (lat && lng) {
                     bounds.push([parseFloat(lat), parseFloat(lng)]);
-                    L.marker([parseFloat(lat), parseFloat(lng)]).addTo(markersGroup)
+                    L.marker([parseFloat(lat), parseFloat(lng)]).addTo(mobileMarkersGroup)
                         .bindPopup(`<b>${o.cliente_nro}</b><br>${o.cliente_nombre}`);
                 }
 
