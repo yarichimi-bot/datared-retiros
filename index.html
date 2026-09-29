@@ -7,17 +7,27 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- Librería OCR Tesseract para lectura de etiquetas de equipos -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
-        .tech-bg {
+        body {
             background: radial-gradient(circle at center, #0f172a 0%, #020617 100%);
+            color: #f8fafc;
         }
         .tech-card {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(12px);
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
             border: 1px solid rgba(56, 189, 248, 0.2);
-            box-shadow: 0 0 25px rgba(14, 165, 233, 0.15);
+            box-shadow: 0 0 25px rgba(14, 165, 233, 0.12);
+        }
+        .tech-input {
+            background-color: #020617;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            color: #ffffff;
+        }
+        .tech-input:focus {
+            outline: none;
+            border-color: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
         }
         .tech-button {
             background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
@@ -28,10 +38,10 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 font-sans">
+<body class="min-h-screen font-sans antialiased">
 
-    <!-- 1. PANTALLA FUTURISTA DE LOGIN / SELECCIÓN DE USUARIO -->
-    <div id="loginOverlay" class="fixed inset-0 z-50 tech-bg flex items-center justify-center p-4">
+    <!-- 1. PANTALLA FUTURISTA DE LOGIN -->
+    <div id="loginOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950">
         <div class="tech-card w-full max-w-md p-8 rounded-2xl text-white space-y-6 relative overflow-hidden">
             <div class="absolute -top-10 -right-10 w-32 h-32 bg-sky-500/20 rounded-full blur-2xl"></div>
             
@@ -45,40 +55,38 @@
                 <p class="text-xs text-slate-400">Plataforma Digital de Gestión DTH / HFC / FTTH</p>
             </div>
 
-            <div class="space-y-4">
+            <form onsubmit="iniciarSesion(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-sky-300 mb-1">SELECCIONAR USUARIO / TÉCNICO</label>
-                    <select id="loginUserSelect" class="w-full bg-slate-900 border border-sky-500/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-400">
-                        <option value="">Cargando usuarios desde Supabase...</option>
-                    </select>
+                    <label class="block text-xs font-semibold text-sky-300 mb-1">USUARIO / CORREO</label>
+                    <input type="text" id="loginUsernameInput" placeholder="ejemplo@gmail.com" required class="w-full tech-input rounded-xl p-3 text-xs" />
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-sky-300 mb-1">CONTRASEÑA</label>
-                    <input type="password" id="loginPasswordInput" placeholder="••••••••" class="w-full bg-slate-900 border border-sky-500/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-sky-400" />
+                    <input type="password" id="loginPasswordInput" placeholder="••••••••" required class="w-full tech-input rounded-xl p-3 text-xs" />
                 </div>
-                <button onclick="iniciarSesion()" class="w-full tech-button text-white font-bold text-xs py-3.5 rounded-xl transition-all tracking-wider">
+                <button type="submit" class="w-full tech-button text-white font-bold text-xs py-3.5 rounded-xl transition-all tracking-wider">
                     INGRESAR AL SISTEMA 🚀
                 </button>
                 <div id="loginStatus" class="text-xs text-rose-400 font-semibold text-center min-h-[1rem]"></div>
-            </div>
+            </form>
         </div>
     </div>
 
-    <!-- PANELES DE LA APLICACIÓN -->
+    <!-- 2. PANELES INTERNOS DE LA APLICACIÓN (DISEÑO OSCURO FUTURISTA) -->
     <div id="appContent" class="hidden">
         
         <!-- Header Principal -->
-        <header class="bg-blue-900 text-white p-4 shadow-md flex justify-between items-center">
+        <header class="bg-slate-900/90 border-b border-sky-500/20 p-4 shadow-lg backdrop-blur flex justify-between items-center">
             <div>
-                <h1 class="font-bold text-xl tracking-wide">DATARED BOLIVIA</h1>
-                <p class="text-xs text-blue-200">Control Operativo de Retiros DTH / HFC / FTTH</p>
+                <h1 class="font-black text-xl tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-200">DATARED BOLIVIA</h1>
+                <p class="text-xs text-sky-300/70">Control Operativo de Retiros DTH / HFC / FTTH</p>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-4">
                 <div class="text-right text-xs">
                     <p class="font-bold text-sky-300" id="currentUserName">Cargando...</p>
-                    <p class="text-[10px] text-blue-200" id="currentUserRole">-</p>
+                    <p class="text-[10px] text-slate-400" id="currentUserRole">-</p>
                 </div>
-                <button onclick="cerrarSesion()" class="bg-blue-800 hover:bg-blue-700 text-xs px-3 py-1.5 rounded-lg border border-blue-700">
+                <button onclick="cerrarSesion()" class="bg-rose-900/40 hover:bg-rose-800/60 border border-rose-500/40 text-rose-200 text-xs px-3.5 py-1.5 rounded-xl transition-all">
                     Salir 🚪
                 </button>
             </div>
@@ -86,18 +94,18 @@
 
         <main class="max-w-6xl mx-auto p-4 space-y-6">
 
-            <!-- MÓDULO ADMINISTRATIVO (Solo visible para Administrador/Encargado/Operador) -->
+            <!-- MÓDULOS ADMINISTRATIVOS -->
             <div id="adminModules" class="space-y-6">
                 <!-- Carga Masiva de Pendientes -->
-                <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-bold text-blue-900 mb-2 flex items-center gap-2">
+                <section class="tech-card p-6 rounded-2xl">
+                    <h2 class="text-lg font-bold text-sky-300 mb-2 flex items-center gap-2">
                         📂 Carga Masiva de Pendientes (.xlsx)
                     </h2>
-                    <p class="text-xs text-slate-500 mb-4">Sube el archivo Excel de retiros pendientes para procesar automáticamente las pestañas del documento.</p>
+                    <p class="text-xs text-slate-400 mb-4">Sube el archivo Excel de retiros pendientes para procesar automáticamente las pestañas del documento.</p>
                     
                     <div class="flex flex-col sm:flex-row gap-3 items-center">
-                        <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 border border-slate-200 rounded-lg p-1" />
-                        <button onclick="procesarYSubirExcel()" class="w-full sm:w-auto bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs px-5 py-2.5 rounded-lg shadow transition-all whitespace-nowrap">
+                        <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-500/10 file:text-sky-300 hover:file:bg-sky-500/20 tech-input rounded-xl p-1" />
+                        <button onclick="procesarYSubirExcel()" class="w-full sm:w-auto tech-button text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all whitespace-nowrap">
                             🚀 Cargar Pendientes
                         </button>
                     </div>
@@ -105,15 +113,15 @@
                 </section>
 
                 <!-- Carga Masiva de Usuarios / Técnicos -->
-                <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-lg font-bold text-blue-900 mb-2 flex items-center gap-2">
+                <section class="tech-card p-6 rounded-2xl">
+                    <h2 class="text-lg font-bold text-sky-300 mb-2 flex items-center gap-2">
                         👥 Carga de Usuarios y Técnicos (.xlsx)
                     </h2>
-                    <p class="text-xs text-slate-500 mb-4">Sube el archivo Excel de personal (GESTIONES_NPS) para registrar Administradores, Operadores y Técnicos.</p>
+                    <p class="text-xs text-slate-400 mb-4">Sube el archivo Excel de personal (GESTIONES_NPS) para registrar Administradores, Operadores y Técnicos.</p>
                     
                     <div class="flex flex-col sm:flex-row gap-3 items-center">
-                        <input type="file" id="usersFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 border border-slate-200 rounded-lg p-1" />
-                        <button onclick="procesarYSubirUsuarios()" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-5 py-2.5 rounded-lg shadow transition-all whitespace-nowrap">
+                        <input type="file" id="usersFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-emerald-500/10 file:text-emerald-300 hover:file:bg-emerald-500/20 tech-input rounded-xl p-1" />
+                        <button onclick="procesarYSubirUsuarios()" class="w-full sm:w-auto bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all whitespace-nowrap">
                             👤 Cargar Usuarios
                         </button>
                     </div>
@@ -121,18 +129,18 @@
                 </section>
             </div>
 
-            <!-- TABLA Y ASIGNACIÓN MASIVA DE ÓRDENES -->
-            <section class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <!-- TABLA Y ASIGNACIÓN DE ÓRDENES -->
+            <section class="tech-card p-6 rounded-2xl">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
                     <div>
-                        <h2 class="text-lg font-bold text-blue-900">📋 Órdenes de Retiro</h2>
-                        <p class="text-xs text-slate-500" id="totalRegistrosTexto">Cargando datos...</p>
+                        <h2 class="text-lg font-bold text-sky-300">📋 Órdenes de Retiro Asignadas</h2>
+                        <p class="text-xs text-slate-400" id="totalRegistrosTexto">Cargando datos...</p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <button id="btnAsignacionMasiva" onclick="abrirModalAsignacionMasiva()" class="hidden text-xs bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-md shadow">
+                        <button id="btnAsignacionMasiva" onclick="abrirModalAsignacionMasiva()" class="hidden text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3.5 py-2 rounded-xl transition-all shadow">
                             ⚡ Asignar Seleccionados (<span id="selectedCount">0</span>)
                         </button>
-                        <button onclick="cargarOrdenesDesdeSupabase()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-md border border-slate-300">
+                        <button onclick="cargarOrdenesDesdeSupabase()" class="text-xs bg-slate-800 hover:bg-slate-700 text-sky-300 px-3.5 py-2 rounded-xl border border-sky-500/30 transition-all">
                             🔄 Actualizar Tabla
                         </button>
                     </div>
@@ -141,20 +149,20 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs border-collapse">
                         <thead>
-                            <tr class="bg-slate-50 text-slate-600 border-b border-slate-200">
-                                <th class="p-2.5 w-8"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" /></th>
-                                <th class="p-2.5">Código / Cliente</th>
-                                <th class="p-2.5">Ciudad / Zona</th>
-                                <th class="p-2.5">Dirección / Ref.</th>
-                                <th class="p-2.5">Tecnología</th>
-                                <th class="p-2.5">Técnico Asignado</th>
-                                <th class="p-2.5">Estado</th>
-                                <th class="p-2.5 text-center">Acciones</th>
+                            <tr class="bg-slate-900/80 text-sky-300 border-b border-sky-500/20">
+                                <th class="p-3 w-8"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" /></th>
+                                <th class="p-3">Código / Cliente</th>
+                                <th class="p-3">Ciudad / Zona</th>
+                                <th class="p-3">Dirección / Ref.</th>
+                                <th class="p-3">Tecnología</th>
+                                <th class="p-3">Técnico Asignado</th>
+                                <th class="p-3">Estado</th>
+                                <th class="p-3 text-center">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody id="tablaOrdenesBody" class="divide-y divide-slate-100">
+                        <tbody id="tablaOrdenesBody" class="divide-y divide-slate-800 text-slate-300">
                             <tr>
-                                <td colspan="8" class="p-4 text-center text-slate-400">Cargando órdenes desde Supabase...</td>
+                                <td colspan="8" class="p-4 text-center text-slate-500">Cargando órdenes desde Supabase...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -165,128 +173,128 @@
     </div>
 
     <!-- MODAL 1: ASIGNACIÓN MASIVA DE TÉCNICO -->
-    <div id="modalAsignacionMasiva" class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-white max-w-md w-full rounded-2xl p-6 space-y-4 shadow-xl border border-slate-200">
-            <h3 class="font-bold text-lg text-blue-900">⚡ Asignación Masiva de Técnico</h3>
-            <p class="text-xs text-slate-500">Selecciona el técnico para asignarle las órdenes marcadas.</p>
+    <div id="modalAsignacionMasiva" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="tech-card max-w-md w-full rounded-2xl p-6 space-y-4">
+            <h3 class="font-bold text-lg text-sky-300">⚡ Asignación Masiva de Técnico</h3>
+            <p class="text-xs text-slate-400">Selecciona el técnico para asignarle las órdenes marcadas.</p>
             
             <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">TÉCNICO DESTINO</label>
-                <select id="batchTecnicoSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs">
+                <label class="block text-xs font-semibold text-sky-300 mb-1">TÉCNICO DESTINO</label>
+                <select id="batchTecnicoSelect" class="w-full tech-input rounded-xl p-3 text-xs">
                     <option value="">Cargando lista de técnicos...</option>
                 </select>
             </div>
 
             <div class="flex justify-end gap-2 pt-2">
-                <button onclick="cerrarModalAsignacionMasiva()" class="text-xs px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700">Cancelar</button>
-                <button onclick="ejecutarAsignacionMasiva()" class="text-xs px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-bold">Guardar Asignación</button>
+                <button onclick="cerrarModalAsignacionMasiva()" class="text-xs px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700">Cancelar</button>
+                <button onclick="ejecutarAsignacionMasiva()" class="text-xs px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold">Guardar Asignación</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL 2: FORMULARIO DE GESTIÓN Y RETIRO DE EQUIPOS -->
-    <div id="modalGestion" class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white max-w-2xl w-full rounded-2xl p-6 space-y-6 my-8 shadow-2xl border border-slate-200">
+    <div id="modalGestion" class="fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="tech-card max-w-2xl w-full rounded-2xl p-6 space-y-6 my-8">
             
-            <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+            <div class="flex justify-between items-start border-b border-sky-500/20 pb-3">
                 <div>
-                    <span class="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold" id="gestionTecnologia">HFC</span>
-                    <h3 class="font-bold text-lg text-blue-900 mt-1" id="gestionClienteNombre">Cliente</h3>
-                    <p class="text-xs text-slate-500">Código: <span id="gestionClienteCodigo" class="font-semibold text-slate-700">-</span></p>
+                    <span class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full font-bold" id="gestionTecnologia">HFC</span>
+                    <h3 class="font-bold text-lg text-white mt-1" id="gestionClienteNombre">Cliente</h3>
+                    <p class="text-xs text-slate-400">Código: <span id="gestionClienteCodigo" class="font-semibold text-sky-300">-</span></p>
                 </div>
-                <button onclick="cerrarModalGestion()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+                <button onclick="cerrarModalGestion()" class="text-slate-400 hover:text-white text-xl font-bold">✕</button>
             </div>
 
             <div class="space-y-4 text-xs">
                 
                 <!-- Datos Operativos Editables -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-900/60 p-4 rounded-xl border border-sky-500/20">
                     <div>
-                        <label class="font-bold text-slate-700">Nº ORDEN DE TRABAJO (OT):</label>
-                        <input type="text" id="gestionOt" placeholder="Ej: OT-88492" class="w-full mt-1 p-2 bg-white border border-slate-300 rounded-lg" />
+                        <label class="font-bold text-sky-300">Nº ORDEN DE TRABAJO (OT):</label>
+                        <input type="text" id="gestionOt" placeholder="Ej: OT-88492" class="w-full mt-1 p-2.5 tech-input rounded-xl" />
                     </div>
                     <div>
-                        <label class="font-bold text-slate-700">NODO / ZONA / TAP:</label>
-                        <input type="text" id="gestionNodo" class="w-full mt-1 p-2 bg-white border border-slate-300 rounded-lg" />
+                        <label class="font-bold text-sky-300">NODO / ZONA / TAP:</label>
+                        <input type="text" id="gestionNodo" class="w-full mt-1 p-2.5 tech-input rounded-xl" />
                     </div>
                     <div class="sm:col-span-2">
-                        <label class="font-bold text-slate-700">REFERENCIA DOMICILIO:</label>
-                        <input type="text" id="gestionRefDomicilio" class="w-full mt-1 p-2 bg-white border border-slate-300 rounded-lg" />
+                        <label class="font-bold text-sky-300">REFERENCIA DOMICILIO:</label>
+                        <input type="text" id="gestionRefDomicilio" class="w-full mt-1 p-2.5 tech-input rounded-xl" />
                     </div>
                     <div class="sm:col-span-2">
                         <div class="flex justify-between items-center mb-1">
-                            <label class="font-bold text-slate-700">GEOLOCALIZACIÓN (GPS):</label>
-                            <button onclick="capturarGpsActual()" class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded font-bold hover:bg-sky-200">📍 Usar mi ubicación actual</button>
+                            <label class="font-bold text-sky-300">GEOLOCALIZACIÓN (GPS):</label>
+                            <button onclick="capturarGpsActual()" class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-lg font-bold hover:bg-sky-500/30">📍 Usar mi ubicación actual</button>
                         </div>
-                        <input type="text" id="gestionGeo" placeholder="Coordenadas GPS" class="w-full p-2 bg-white border border-slate-300 rounded-lg" />
+                        <input type="text" id="gestionGeo" placeholder="Coordenadas GPS" class="w-full p-2.5 tech-input rounded-xl" />
                     </div>
                 </div>
 
                 <!-- Escaneo / Registro de MÓDEM / ONT -->
-                <div class="bg-blue-50/50 p-4 rounded-xl border border-blue-100 space-y-3">
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-sky-500/20 space-y-3">
                     <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-blue-900 flex items-center gap-1">📟 MÓDEM / ONT</h4>
-                        <label class="cursor-pointer bg-blue-900 text-white px-2.5 py-1 rounded text-[10px] font-bold hover:bg-blue-800">
+                        <h4 class="font-bold text-sky-300 flex items-center gap-1">📟 MÓDEM / ONT</h4>
+                        <label class="cursor-pointer tech-button text-white px-3 py-1 rounded-lg text-[10px] font-bold">
                             📷 Foto / Escanear Etiqueta
                             <input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiqueta(this, 'modem')" />
                         </label>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input type="text" id="modemModelo" placeholder="Modelo Módem" class="p-2 bg-white border border-slate-300 rounded-lg" />
-                        <input type="text" id="modemSerie" placeholder="Nº Serie / MAC" class="p-2 bg-white border border-slate-300 rounded-lg" />
+                        <input type="text" id="modemModelo" placeholder="Modelo Módem" class="p-2.5 tech-input rounded-xl" />
+                        <input type="text" id="modemSerie" placeholder="Nº Serie / MAC" class="p-2.5 tech-input rounded-xl" />
                     </div>
-                    <p id="modemOcrStatus" class="text-[10px] text-blue-700 font-semibold min-h-[1rem]"></p>
+                    <p id="modemOcrStatus" class="text-[10px] text-sky-400 font-semibold min-h-[1rem]"></p>
                 </div>
 
                 <!-- Escaneo / Registro de DECODER (STB) -->
-                <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100 space-y-3">
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-sky-500/20 space-y-3">
                     <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-amber-900 flex items-center gap-1">📺 DECODER (STB)</h4>
-                        <label class="cursor-pointer bg-amber-800 text-white px-2.5 py-1 rounded text-[10px] font-bold hover:bg-amber-700">
+                        <h4 class="font-bold text-amber-300 flex items-center gap-1">📺 DECODER (STB)</h4>
+                        <label class="cursor-pointer bg-amber-800 hover:bg-amber-700 text-white px-3 py-1 rounded-lg text-[10px] font-bold">
                             📷 Foto / Escanear Etiqueta
                             <input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiqueta(this, 'deco')" />
                         </label>
                     </div>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <input type="text" id="decoModelo" placeholder="Modelo Deco" class="p-2 bg-white border border-slate-300 rounded-lg" />
-                        <input type="text" id="decoSerie" placeholder="Nº Serie / CAS ID" class="p-2 bg-white border border-slate-300 rounded-lg" />
+                        <input type="text" id="decoModelo" placeholder="Modelo Deco" class="p-2.5 tech-input rounded-xl" />
+                        <input type="text" id="decoSerie" placeholder="Nº Serie / CAS ID" class="p-2.5 tech-input rounded-xl" />
                     </div>
-                    <p id="decoOcrStatus" class="text-[10px] text-amber-700 font-semibold min-h-[1rem]"></p>
+                    <p id="decoOcrStatus" class="text-[10px] text-amber-400 font-semibold min-h-[1rem]"></p>
                 </div>
 
-                <!-- Selección de ACCESORIOS RETIRADOS -->
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
-                    <h4 class="font-bold text-slate-800">🔌 ACCESORIOS RETIRADOS</h4>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px]">
+                <!-- ACCESORIOS RETIRADOS -->
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-sky-500/20 space-y-2">
+                    <h4 class="font-bold text-sky-300">🔌 ACCESORIOS RETIRADOS</h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] text-slate-300">
                         <label class="flex items-center gap-1.5"><input type="checkbox" value="Transformador 12V" class="accCheck" /> Transformador/Fuente</label>
                         <label class="flex items-center gap-1.5"><input type="checkbox" value="Control Remoto" class="accCheck" /> Control Remoto</label>
                         <label class="flex items-center gap-1.5"><input type="checkbox" value="Cable HDMI" class="accCheck" /> Cable HDMI</label>
                         <label class="flex items-center gap-1.5"><input type="checkbox" value="Cable UTP/Patchcord" class="accCheck" /> Cable Patchcord</label>
                         <label class="flex items-center gap-1.5"><input type="checkbox" value="Splitter / Fiel" class="accCheck" /> Splitter Coaxial</label>
                     </div>
-                    <input type="text" id="gestionOtrosAccesorios" placeholder="Otros accesorios o detalles..." class="w-full p-2 bg-white border border-slate-300 rounded-lg mt-2" />
+                    <input type="text" id="gestionOtrosAccesorios" placeholder="Otros accesorios o detalles..." class="w-full p-2.5 tech-input rounded-xl mt-2" />
                 </div>
 
-                <!-- SUBIDA MÚLTIPLE DE FOTOS Y EVIDENCIAS -->
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                <!-- SUBIDA MÚLTIPLE DE FOTOS -->
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-sky-500/20 space-y-2">
                     <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-slate-800">🖼️ FOTOS Y EVIDENCIAS DE CAMPO</h4>
-                        <label class="cursor-pointer bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-700">
+                        <h4 class="font-bold text-sky-300">🖼️ FOTOS Y EVIDENCIAS DE CAMPO</h4>
+                        <label class="cursor-pointer bg-slate-800 hover:bg-slate-700 border border-sky-500/30 text-sky-300 px-3 py-1.5 rounded-xl text-xs font-bold">
                             ➕ Adjuntar Fotos (Ilimitadas)
                             <input type="file" id="fotosEvidenciaInput" multiple accept="image/*" class="hidden" onchange="vistaPreviaFotos(this)" />
                         </label>
                     </div>
                     <div id="previewFotosContainer" class="flex flex-wrap gap-2 pt-2">
-                        <p class="text-slate-400 italic text-[11px]">No se han seleccionado fotos aún.</p>
+                        <p class="text-slate-500 italic text-[11px]">No se han seleccionado fotos aún.</p>
                     </div>
                 </div>
 
             </div>
 
-            <!-- BOTONES DE ACCIÓN Y ENVÍO A WHATSAPP -->
-            <div class="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t border-slate-100">
-                <button onclick="cerrarModalGestion()" class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-bold hover:bg-slate-200">Cancelar</button>
-                <button onclick="enviarReporteAWhatsApp()" class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold flex items-center justify-center gap-2 shadow-md">
+            <!-- ACCIONES Y WHATSAPP -->
+            <div class="flex flex-col sm:flex-row justify-end gap-2 pt-4 border-t border-sky-500/20">
+                <button onclick="cerrarModalGestion()" class="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700">Cancelar</button>
+                <button onclick="enviarReporteAWhatsApp()" class="px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold flex items-center justify-center gap-2 shadow-lg">
                     📲 Enviar Reporte a WhatsApp
                 </button>
             </div>
@@ -294,7 +302,7 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE FUNCIONALIDAD COMPLETA -->
+    <!-- SCRIPTS Y PERSISTENCIA -->
     <script>
         const BASE_URL = "https://darcifsfttemivwssbqd.supabase.co";
         const SUPABASE_URL = BASE_URL.split('/rest')[0].replace(/\/$/, "");
@@ -307,55 +315,54 @@
         let ordenSeleccionadaGestion = null;
         let fotosAdjuntadasArchivos = [];
 
-        // Inicialización
-        window.onload = async function() {
-            await cargarUsuariosParaLogin();
+        // Inicialización y recuperación de sesión desde localStorage
+        window.onload = function() {
+            const savedUser = localStorage.getItem('datared_active_user');
+            if (savedUser) {
+                try {
+                    usuarioActual = JSON.parse(savedUser);
+                    aplicarSesionIniciada();
+                } catch (e) {
+                    localStorage.removeItem('datared_active_user');
+                }
+            }
         };
 
-        // Cargar lista de usuarios registrados para Login
-        async function cargarUsuariosParaLogin() {
-            const select = document.getElementById('loginUserSelect');
-            const { data, error } = await supabaseClient.from('usuarios').select('*').order('nombre');
-
-            if (error || !data || data.length === 0) {
-                select.innerHTML = '<option value="">No hay usuarios registrados. Registre en el sistema.</option>';
-                return;
-            }
-
-            select.innerHTML = '<option value="">-- Selecciona tu Nombre --</option>' + 
-                data.map(u => `<option value="${u.usuario}">${u.nombre} (${u.rol})</option>`).join('');
-        }
-
-        // Iniciar Sesión
-        async function iniciarSesion() {
-            const userEmail = document.getElementById('loginUserSelect').value;
-            const pass = document.getElementById('loginPasswordInput').value;
+        // Iniciar Sesión con Usuario y Contraseña
+        async function iniciarSesion(event) {
+            event.preventDefault();
+            const usernameInput = document.getElementById('loginUsernameInput').value.trim();
+            const passInput = document.getElementById('loginPasswordInput').value.trim();
             const status = document.getElementById('loginStatus');
 
-            if (!userEmail) {
-                status.innerText = "Por favor selecciona un usuario.";
-                return;
-            }
+            status.innerText = "Verificando credenciales...";
 
             const { data, error } = await supabaseClient
                 .from('usuarios')
                 .select('*')
-                .eq('usuario', userEmail)
+                .eq('usuario', usernameInput)
                 .single();
 
-            if (error || !data || data.password !== pass) {
-                status.innerText = "Contraseña incorrecta o usuario no encontrado.";
+            if (error || !data || data.password !== passInput) {
+                status.innerText = "Usuario o contraseña incorrectos.";
                 return;
             }
 
             usuarioActual = data;
+            localStorage.setItem('datared_active_user', JSON.stringify(usuarioActual));
+            status.innerText = "";
+            
+            aplicarSesionIniciada();
+        }
+
+        async function aplicarSesionIniciada() {
             document.getElementById('loginOverlay').classList.add('hidden');
             document.getElementById('appContent').classList.remove('hidden');
 
             document.getElementById('currentUserName').innerText = usuarioActual.nombre;
             document.getElementById('currentUserRole').innerText = `${usuarioActual.rol} - ${usuarioActual.ciudad || 'BOLIVIA'}`;
 
-            // Ocultar módulos administrativos a técnicos
+            // Ocultar carga masiva a técnicos
             if (['Tecnico', 'Técnico'].includes(usuarioActual.rol)) {
                 document.getElementById('adminModules').classList.add('hidden');
             } else {
@@ -368,15 +375,16 @@
 
         function cerrarSesion() {
             usuarioActual = null;
+            localStorage.removeItem('datared_active_user');
             document.getElementById('appContent').classList.add('hidden');
             document.getElementById('loginOverlay').classList.remove('hidden');
         }
 
-        // Cargar Órdenes desde Supabase y filtrar por Técnico/Rol
+        // Cargar Órdenes desde Supabase y filtrar por perfil
         async function cargarOrdenesDesdeSupabase() {
             const tbody = document.getElementById('tablaOrdenesBody');
             const totalTexto = document.getElementById('totalRegistrosTexto');
-            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">Cargando órdenes desde Supabase...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">Cargando órdenes desde Supabase...</td></tr>';
 
             let query = supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
 
@@ -396,23 +404,23 @@
 
             if (ordenesCargadas.length === 0) {
                 totalTexto.innerText = "0 órdenes encontradas";
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-400">No hay órdenes registradas o asignadas a tu perfil.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay órdenes registradas o asignadas a tu perfil.</td></tr>';
                 return;
             }
 
             totalTexto.innerText = `${ordenesCargadas.length} órdenes registradas en total`;
 
             tbody.innerHTML = ordenesCargadas.map(o => `
-                <tr class="hover:bg-slate-50 border-b border-slate-100">
-                    <td class="p-2.5"><input type="checkbox" class="rowCheckbox" value="${o.id}" onchange="actualizarConteoSeleccionados()" /></td>
-                    <td class="p-2.5 font-bold text-blue-900">${o.cliente_nro}<br><span class="font-normal text-slate-600">${o.cliente_nombre}</span></td>
-                    <td class="p-2.5">${o.ciudad}<br><span class="text-slate-400 text-[10px]">${o.zona_nodo_tap || ''}</span></td>
-                    <td class="p-2.5 text-slate-600">${o.direccion}<br><span class="text-slate-400 text-[10px]">${o.referencia || ''}</span></td>
-                    <td class="p-2.5 font-semibold">${o.tecnologia}</td>
-                    <td class="p-2.5 text-slate-500">${o.tecnico_asignado || '<span class="italic text-slate-400">Sin asignar</span>'}</td>
-                    <td class="p-2.5"><span class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">${o.estado}</span></td>
-                    <td class="p-2.5 text-center">
-                        <button onclick="abrirModalGestion(${o.id})" class="bg-blue-900 text-white text-[10px] px-2.5 py-1 rounded hover:bg-blue-800 shadow-sm font-bold">Gestionar</button>
+                <tr class="hover:bg-slate-900/50 border-b border-slate-800">
+                    <td class="p-3"><input type="checkbox" class="rowCheckbox" value="${o.id}" onchange="actualizarConteoSeleccionados()" /></td>
+                    <td class="p-3 font-bold text-sky-300">${o.cliente_nro}<br><span class="font-normal text-slate-300">${o.cliente_nombre}</span></td>
+                    <td class="p-3">${o.ciudad}<br><span class="text-slate-400 text-[10px]">${o.zona_nodo_tap || ''}</span></td>
+                    <td class="p-3 text-slate-300">${o.direccion}<br><span class="text-slate-400 text-[10px]">${o.referencia || ''}</span></td>
+                    <td class="p-3 font-semibold text-sky-200">${o.tecnologia}</td>
+                    <td class="p-3 text-slate-400">${o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>'}</td>
+                    <td class="p-3"><span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">${o.estado}</span></td>
+                    <td class="p-3 text-center">
+                        <button onclick="abrirModalGestion(${o.id})" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold shadow">Gestionar</button>
                     </td>
                 </tr>
             `).join('');
@@ -454,10 +462,7 @@
 
         async function ejecutarAsignacionMasiva() {
             const tecnico = document.getElementById('batchTecnicoSelect').value;
-            if (!tecnico) {
-                alert('Selecciona un técnico de la lista.');
-                return;
-            }
+            if (!tecnico) return alert('Selecciona un técnico.');
 
             const ids = Array.from(document.querySelectorAll('.rowCheckbox:checked')).map(cb => parseInt(cb.value));
             
@@ -474,7 +479,7 @@
             }
         }
 
-        // Abrir Modal de Gestión por Cliente
+        // Modal de Gestión
         function abrirModalGestion(id) {
             ordenSeleccionadaGestion = ordenesCargadas.find(o => o.id === id);
             if (!ordenSeleccionadaGestion) return;
@@ -501,7 +506,7 @@
             document.getElementById('gestionOtrosAccesorios').value = "";
             
             fotosAdjuntadasArchivos = [];
-            document.getElementById('previewFotosContainer').innerHTML = '<p class="text-slate-400 italic text-[11px]">No se han seleccionado fotos aún.</p>';
+            document.getElementById('previewFotosContainer').innerHTML = '<p class="text-slate-500 italic text-[11px]">No se han seleccionado fotos aún.</p>';
 
             document.getElementById('modalGestion').classList.remove('hidden');
         }
@@ -510,52 +515,41 @@
             document.getElementById('modalGestion').classList.add('hidden');
         }
 
-        // Capturar GPS del Celular
         function capturarGpsActual() {
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     document.getElementById('gestionGeo').value = `${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`;
-                }, err => {
-                    alert('No se pudo obtener la ubicación GPS: ' + err.message);
-                });
+                }, err => alert('No se pudo obtener GPS: ' + err.message));
             } else {
-                alert('Su navegador no soporta geolocalización.');
+                alert('Geolocalización no soportada.');
             }
         }
 
-        // OCR Inteligente de Etiquetas de Equipos (Tesseract JS)
         async function escaneoInteligenteEtiqueta(input, tipo) {
             if (!input.files || !input.files[0]) return;
-
             const file = input.files[0];
             const statusElem = document.getElementById(tipo === 'modem' ? 'modemOcrStatus' : 'decoOcrStatus');
-            statusElem.innerText = "🔍 Escaneando etiqueta del equipo... Por favor espere.";
+            statusElem.innerText = "🔍 Escaneando etiqueta del equipo...";
 
             try {
                 const result = await Tesseract.recognize(file, 'eng');
                 const text = result.data.text;
-                
-                // Buscar patrones comunes de S/N o MAC
                 const snMatch = text.match(/(?:SN|S\/N|SERIAL|CAS|MAC)[:\s]*([A-Za-z0-9\-]+)/i);
                 
                 if (snMatch && snMatch[1]) {
                     document.getElementById(tipo === 'modem' ? 'modemSerie' : 'decoSerie').value = snMatch[1].trim();
                     statusElem.innerText = "¡Serie detectada automáticamente!";
                 } else {
-                    statusElem.innerText = "Foto guardada. Ingrese la serie manualmente si no se autocompletó.";
+                    statusElem.innerText = "Foto guardada. Ingrese la serie manualmente.";
                 }
             } catch (err) {
-                statusElem.innerText = "Foto adjuntada. Complete la serie manualmente.";
+                statusElem.innerText = "Complete la serie manualmente.";
             }
         }
 
-        // Vista Previa de Fotos de Galería
         function vistaPreviaFotos(input) {
             if (!input.files) return;
-
-            const files = Array.from(input.files);
-            fotosAdjuntadasArchivos = fotosAdjuntadasArchivos.concat(files);
-
+            fotosAdjuntadasArchivos = fotosAdjuntadasArchivos.concat(Array.from(input.files));
             const container = document.getElementById('previewFotosContainer');
             container.innerHTML = "";
 
@@ -563,7 +557,7 @@
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const div = document.createElement('div');
-                    div.className = "relative w-16 h-16 bg-slate-200 rounded-lg overflow-hidden border border-slate-300";
+                    div.className = "relative w-16 h-16 bg-slate-800 rounded-xl overflow-hidden border border-sky-500/30";
                     div.innerHTML = `
                         <img src="${e.target.result}" class="w-full h-full object-cover" />
                         <button onclick="eliminarFoto(${index})" class="absolute top-0 right-0 bg-rose-600 text-white text-[10px] w-4 h-4 rounded-bl flex items-center justify-center">✕</button>
@@ -576,11 +570,9 @@
 
         function eliminarFoto(index) {
             fotosAdjuntadasArchivos.splice(index, 1);
-            const input = document.getElementById('fotosEvidenciaInput');
             vistaPreviaFotos({ files: [] });
         }
 
-        // Enviar Reporte a WhatsApp con el Formato Oficial
         function enviarReporteAWhatsApp() {
             const codigoNombre = `${ordenSeleccionadaGestion.cliente_nro} - ${ordenSeleccionadaGestion.cliente_nombre}`;
             const ot = document.getElementById('gestionOt').value || 'S/OT';
@@ -596,7 +588,6 @@
             const decoSer = document.getElementById('decoSerie').value;
             const decoTxt = (decoMod || decoSer) ? `${decoMod} (SN: ${decoSer})` : 'NO APLICA / NO RETIRADO';
 
-            // Accesorios
             const accs = Array.from(document.querySelectorAll('.accCheck:checked')).map(cb => cb.value);
             const otrosAcc = document.getElementById('gestionOtrosAccesorios').value;
             if (otrosAcc) accs.push(otrosAcc);
@@ -624,11 +615,10 @@ Accesorios: ${accsTxt}
 
 TECNICO: ${tecnicoNombre}`;
 
-            const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeWhatsApp)}`;
-            window.open(url, '_blank');
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeWhatsApp)}`, '_blank');
         }
 
-        // Módulo Carga Masiva Pendientes
+        // Carga Masiva Pendientes
         async function procesarYSubirExcel() {
             const fileInput = document.getElementById('excelFileInput');
             const statusOutput = document.getElementById('statusOutput');
@@ -644,9 +634,7 @@ TECNICO: ${tecnicoNombre}`;
                 let totalCargados = 0;
 
                 for (const sheetName of workbook.SheetNames) {
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
+                    const jsonRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: "" });
                     for (const row of jsonRows) {
                         const cliente_nro = row.cliente_nro || row.cliente || row.CODIGO || "";
                         const cliente_nombre = row.cliente_nombre_completo || row.cliente_nombre || row.NOMBRE || "";
@@ -677,7 +665,7 @@ TECNICO: ${tecnicoNombre}`;
             reader.readAsArrayBuffer(file);
         }
 
-        // Módulo Carga Masiva Usuarios
+        // Carga Masiva Usuarios
         async function procesarYSubirUsuarios() {
             const fileInput = document.getElementById('usersFileInput');
             const statusOutput = document.getElementById('statusUsersOutput');
@@ -688,9 +676,7 @@ TECNICO: ${tecnicoNombre}`;
             statusOutput.innerText = 'Registrando usuarios...';
 
             reader.onload = async function(e) {
-                const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const jsonRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: "" });
+                const jsonRows = XLSX.utils.sheet_to_json(XLSX.read(new Uint8Array(e.target.result), { type: 'array' }).Sheets[XLSX.read(new Uint8Array(e.target.result), { type: 'array' }).SheetNames[0]], { defval: "" });
                 let totalCargados = 0;
 
                 for (const row of jsonRows) {
@@ -716,7 +702,6 @@ TECNICO: ${tecnicoNombre}`;
                     if (!error) totalCargados++;
                 }
                 statusOutput.innerText = `¡Éxito! Se registraron ${totalCargados} usuarios.`;
-                cargarUsuariosParaLogin();
             };
             reader.readAsArrayBuffer(file);
         }
