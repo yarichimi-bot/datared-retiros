@@ -420,7 +420,7 @@
                     <td class="p-3 text-slate-400">${o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>'}</td>
                     <td class="p-3"><span class="${badgeClass} border text-[10px] px-2 py-0.5 rounded-full font-bold">${o.estado}</span></td>
                     <td class="p-3 text-center">
-                        <button onclick="abrirModalGestion(${o.id})" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold shadow">Gestionar</button>
+                        <button onclick="abrirModalGestion('${o.id}')" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold shadow">Gestionar</button>
                     </td>
                 </tr>
             `}).join('');
@@ -463,7 +463,7 @@
             const tecnico = document.getElementById('batchTecnicoSelect').value;
             if (!tecnico) return alert('Selecciona un técnico.');
 
-            const ids = Array.from(document.querySelectorAll('.rowCheckbox:checked')).map(cb => parseInt(cb.value));
+            const ids = Array.from(document.querySelectorAll('.rowCheckbox:checked')).map(cb => cb.value);
             
             const { error } = await supabaseClient
                 .from('ordenes_retiro')
@@ -479,7 +479,7 @@
         }
 
         function abrirModalGestion(id) {
-            ordenSeleccionadaGestion = ordenesCargadas.find(o => o.id === id);
+            ordenSeleccionadaGestion = ordenesCargadas.find(o => String(o.id) === String(id));
             if (!ordenSeleccionadaGestion) return;
 
             document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tecnologia;
