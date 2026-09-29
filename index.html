@@ -90,16 +90,19 @@
             </div>
 
             <nav class="flex flex-wrap items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-sky-500/20">
-                <button id="navBtnCodigos" onclick="cambiarSeccionAdmin('codigos')" class="text-xs font-bold px-3.5 py-2 rounded-lg bg-sky-500/20 text-sky-300">
+                <button id="navBtnCodigos" onclick="cambiarSeccionAdmin('codigos')" class="text-xs font-bold px-3 py-2 rounded-lg bg-sky-500/20 text-sky-300">
                     📋 Clientes / Códigos
                 </button>
-                <button id="navBtnAgenda" onclick="cambiarSeccionAdmin('agenda')" class="text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white">
-                    📅 Agenda & Tracking
+                <button id="navBtnAgenda" onclick="cambiarSeccionAdmin('agenda')" class="text-xs font-bold px-3 py-2 rounded-lg text-slate-400 hover:text-white">
+                    📅 Agenda
                 </button>
-                <button id="navBtnDigitacion" onclick="cambiarSeccionAdmin('digitacion')" class="text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white">
-                    🖥 Back Office / Digitación
+                <button id="navBtnDigitacion" onclick="cambiarSeccionAdmin('digitacion')" class="text-xs font-bold px-3 py-2 rounded-lg text-slate-400 hover:text-white">
+                    🖥 Back Office
                 </button>
-                <button id="navBtnCarga" onclick="cambiarSeccionAdmin('carga')" class="hidden text-xs font-bold px-3.5 py-2 rounded-lg text-slate-400 hover:text-white">
+                <button id="navBtnPagosAdmin" onclick="cambiarSeccionAdmin('pagosAdmin')" class="text-xs font-bold px-3 py-2 rounded-lg text-slate-400 hover:text-white">
+                    💰 Conciliación / Pagos
+                </button>
+                <button id="navBtnCarga" onclick="cambiarSeccionAdmin('carga')" class="hidden text-xs font-bold px-3 py-2 rounded-lg text-slate-400 hover:text-white">
                     📂 Carga Excel
                 </button>
             </nav>
@@ -117,9 +120,8 @@
 
         <main class="max-w-7xl mx-auto p-4 space-y-6">
 
-            <!-- PESTAÑA ADMIN 1: CÓDIGOS, FILTROS COMPLETO Y MAPA DE MONITOREO -->
+            <!-- PESTAÑA ADMIN 1: CÓDIGOS Y TABLA GENERAL -->
             <div id="seccionAdminCodigos" class="space-y-6">
-                
                 <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <div onclick="filtrarPorTabAdmin('TODOS')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-sky-400 transition-all">
                         <p class="text-[10px] font-bold text-slate-400">TOTAL CÓDIGOS</p>
@@ -143,7 +145,6 @@
                     </div>
                 </div>
 
-                <!-- MAPA GENERAL DE MONITOREO GPS -->
                 <section class="tech-card p-4 rounded-2xl space-y-2">
                     <div class="flex justify-between items-center">
                         <h3 class="font-bold text-sky-300 text-xs flex items-center gap-1.5">
@@ -168,26 +169,16 @@
                             <button id="tabPagado" onclick="filtrarPorTabAdmin('PAGADO')" class="text-xs font-bold px-3 py-1.5 rounded-xl bg-rose-900/40 text-rose-300 border border-rose-500/40">Pagados</button>
                         </div>
 
-                        <!-- FILTROS AVANZADOS MULTI-CRITERIO: BÚSQUEDA, DEPARTAMENTO, CIUDAD Y TÉCNICO -->
                         <div class="flex flex-wrap items-center gap-2">
-                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosAdminLocales()" placeholder="🔍 Código, cliente o dirección..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-40" />
-                            
-                            <select id="deptoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs">
-                                <option value="">-- Depto --</option>
-                            </select>
+                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosAdminLocales()" placeholder="🔍 Código, cliente..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-40" />
+                            <select id="deptoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Depto --</option></select>
+                            <select id="ciudadSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Ciudad --</option></select>
+                            <select id="tecnicoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Técnico --</option></select>
 
-                            <select id="ciudadSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs">
-                                <option value="">-- Ciudad --</option>
-                            </select>
-
-                            <select id="tecnicoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs">
-                                <option value="">-- Técnico --</option>
-                            </select>
-
-                            <button onclick="exportarExcelConsolidado()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap shadow flex items-center gap-1">
-                                📊 Exportar
+                            <button onclick="exportarPlanillaPagosGlobal()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1">
+                                📊 Exportar Planilla
                             </button>
-                            <button id="btnAsignacionMasiva" onclick="abrirModalAsignacionMasiva()" class="hidden text-xs bg-sky-700 hover:bg-sky-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap shadow">
+                            <button id="btnAsignacionMasiva" onclick="abrirModalAsignacionMasiva()" class="hidden text-xs bg-sky-700 hover:bg-sky-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap">
                                 ⚡ Asignar (<span id="selectedCount">0</span>)
                             </button>
                         </div>
@@ -199,84 +190,76 @@
                                 <tr class="bg-slate-900/80 text-sky-300 border-b border-sky-500/20">
                                     <th class="p-3 w-8"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" /></th>
                                     <th class="p-3">Código / Cliente</th>
-                                    <th class="p-3">Depto / Ciudad / Zona</th>
-                                    <th class="p-3">Dirección / Ref.</th>
+                                    <th class="p-3">Depto / Ciudad</th>
+                                    <th class="p-3">Dirección</th>
                                     <th class="p-3">Tecnología</th>
-                                    <th class="p-3">Técnico Asignado</th>
+                                    <th class="p-3">Técnico</th>
                                     <th class="p-3">Estado</th>
                                     <th class="p-3 text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="tablaAdminOrdenesBody" class="divide-y divide-slate-800 text-slate-300">
-                                <tr>
-                                    <td colspan="8" class="p-4 text-center text-slate-500">Cargando datos desde Supabase...</td>
-                                </tr>
+                                <tr><td colspan="8" class="p-4 text-center text-slate-500">Cargando datos...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </section>
             </div>
 
-            <!-- PESTAÑA ADMIN 2: AGENDA Y TRACKING -->
+            <!-- PESTAÑA ADMIN 2: CONCILIACIÓN Y PLANILLA TOTAL DE PAGOS -->
+            <div id="seccionAdminPagos" class="hidden space-y-6">
+                <section class="tech-card p-6 rounded-2xl space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-3 border-b border-sky-500/20">
+                        <div>
+                            <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">
+                                💰 CONCILIACIÓN Y LIQUIDACIÓN MENSUAL DE PAGOS
+                            </h2>
+                            <p class="text-xs text-slate-400">Resumen auditado según el formato oficial de DATARED CHACO con recargo por Domingos/Feriados (+50%).</p>
+                        </div>
+                        <button onclick="exportarPlanillaPagosGlobal()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow">
+                            📊 Exportar Planilla Consolidada General (Excel)
+                        </button>
+                    </div>
+
+                    <div id="contenedorResumenPagosTecnicos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Tarjetas de resumen por técnico -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- PESTAÑA ADMIN 3: AGENDA Y TRACKING -->
             <div id="seccionAdminAgenda" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl space-y-4">
                     <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">
                         📅 Agenda de Seguimiento y Control Diario
                     </h2>
-                    <p class="text-xs text-slate-400">Filtra la productividad por fechas para auditorías y reuniones ejecutivas.</p>
-                    
                     <div class="flex flex-wrap gap-3 items-center bg-slate-900/60 p-4 rounded-xl border border-sky-500/20">
-                        <div>
-                            <label class="block text-[11px] font-bold text-sky-300 mb-1">FECHA FILTRO:</label>
-                            <input type="date" id="agendaFechaFilter" onchange="calcularResumenAgenda()" class="tech-input rounded-xl p-2 text-xs" />
-                        </div>
-                        <button onclick="calcularResumenAgenda()" class="tech-button text-white text-xs font-bold px-4 py-2 rounded-xl mt-4">
-                            🔍 Consultar Fecha
-                        </button>
+                        <input type="date" id="agendaFechaFilter" onchange="calcularResumenAgenda()" class="tech-input rounded-xl p-2 text-xs" />
+                        <button onclick="calcularResumenAgenda()" class="tech-button text-white text-xs font-bold px-4 py-2 rounded-xl">🔍 Consultar Fecha</button>
                     </div>
-
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div class="p-4 bg-slate-900/80 rounded-xl border border-emerald-500/30">
-                            <p class="text-xs font-bold text-emerald-400">EJECUTADOS EL DÍA</p>
-                            <p class="text-3xl font-black text-emerald-200 mt-1" id="agendaEjecutados">0</p>
-                        </div>
-                        <div class="p-4 bg-slate-900/80 rounded-xl border border-amber-500/30">
-                            <p class="text-xs font-bold text-amber-400">PENDIENTES EL DÍA</p>
-                            <p class="text-3xl font-black text-amber-200 mt-1" id="agendaPendientes">0</p>
-                        </div>
-                        <div class="p-4 bg-slate-900/80 rounded-xl border border-sky-500/30">
-                            <p class="text-xs font-bold text-sky-400">CON REPORTE TÉCNICO</p>
-                            <p class="text-3xl font-black text-sky-200 mt-1" id="agendaConReporte">0</p>
-                        </div>
+                        <div class="p-4 bg-slate-900/80 rounded-xl border border-emerald-500/30"><p class="text-xs font-bold text-emerald-400">EJECUTADOS EL DÍA</p><p class="text-3xl font-black text-emerald-200 mt-1" id="agendaEjecutados">0</p></div>
+                        <div class="p-4 bg-slate-900/80 rounded-xl border border-amber-500/30"><p class="text-xs font-bold text-amber-400">PENDIENTES EL DÍA</p><p class="text-3xl font-black text-amber-200 mt-1" id="agendaPendientes">0</p></div>
+                        <div class="p-4 bg-slate-900/80 rounded-xl border border-sky-500/30"><p class="text-xs font-bold text-sky-400">CON REPORTE TÉCNICO</p><p class="text-3xl font-black text-sky-200 mt-1" id="agendaConReporte">0</p></div>
                     </div>
                 </section>
             </div>
 
-            <!-- PESTAÑA ADMIN 3: BACK OFFICE Y VALIDACIÓN -->
+            <!-- PESTAÑA ADMIN 4: BACK OFFICE Y VALIDACIÓN -->
             <div id="seccionAdminDigitacion" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl space-y-4">
-                    <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">
-                        🖥️ Panel de Digitación & Validación Back Office
-                    </h2>
-                    <p class="text-xs text-slate-400">Valida la información ingresada por los técnicos. Aprueba la orden o devuélvela con una observación para corrección.</p>
-                    
-                    <div id="contenedorDigitacionOrdenes" class="space-y-3">
-                        <p class="text-slate-500 text-xs text-center italic py-4">No hay órdenes pendientes de digitación o revisión.</p>
-                    </div>
+                    <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">🖥️ Panel de Digitación & Validación Back Office</h2>
+                    <div id="contenedorDigitacionOrdenes" class="space-y-3"><p class="text-slate-500 text-xs text-center italic py-4">No hay órdenes pendientes de revisión.</p></div>
                 </section>
             </div>
 
-            <!-- PESTAÑA ADMIN 4: CARGA EXCEL (SÓLO VISIBLE PARA ADMINISTRADORES/SUPERVISORES) -->
+            <!-- PESTAÑA ADMIN 5: CARGA EXCEL -->
             <div id="seccionAdminCarga" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl max-w-3xl mx-auto">
-                    <h2 class="text-lg font-bold text-sky-300 mb-2 flex items-center gap-2">
-                        📂 Importar Pendientes desde Excel (.xlsx)
-                    </h2>
+                    <h2 class="text-lg font-bold text-sky-300 mb-2 flex items-center gap-2">📂 Importar Pendientes desde Excel (.xlsx)</h2>
                     <div class="flex flex-col sm:flex-row gap-3 items-center">
                         <input type="file" id="excelFileInput" accept=".xlsx, .xls" class="block w-full text-xs text-slate-400 tech-input rounded-xl p-1" />
-                        <button onclick="procesarYSubirExcel()" class="w-full sm:w-auto tech-button text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all whitespace-nowrap">
-                            🚀 Cargar Pendientes
-                        </button>
+                        <button onclick="procesarYSubirExcel()" class="w-full sm:w-auto tech-button text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all whitespace-nowrap">🚀 Cargar Pendientes</button>
                     </div>
                     <div id="statusOutput" class="mt-3 text-xs font-semibold"></div>
                 </section>
@@ -300,10 +283,8 @@
                 </div>
             </div>
 
-            <!-- CALENDARIO INTERACTIVO EXTENDIDO DE MES COMPLETO (30 DÍAS) CON NAVEGACIÓN DÍA A DÍA -->
-            <div class="flex items-center gap-1.5 pt-1 text-center text-xs overflow-x-auto pb-1" id="barCalendarioHorizontal">
-                <!-- Días dinámicos e interactivos -->
-            </div>
+            <!-- CALENDARIO MES COMPLETO -->
+            <div class="flex items-center gap-1.5 pt-1 text-center text-xs overflow-x-auto pb-1" id="barCalendarioHorizontal"></div>
         </header>
 
         <!-- SECCIÓN TÉCNICO 1: PROGRAMAR (MAPA + LISTA) -->
@@ -323,18 +304,30 @@
                 </div>
 
                 <div id="listaCitasDiaContainer" class="space-y-2.5">
-                    <!-- Tarjetas de retiros del técnico para el día seleccionado -->
+                    <!-- Tarjetas de retiros -->
                 </div>
             </div>
         </div>
 
-        <!-- SECCIÓN TÉCNICO 2: INVENTARIO DE EQUIPOS -->
+        <!-- SECCIÓN TÉCNICO 2: INVENTARIO DE EQUIPOS Y EXPORTACIÓN DE PLANILLA DE PAGO -->
         <div id="tecTabInventario" class="hidden p-4 space-y-4">
-            <div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-1">
-                <h2 class="text-sm font-bold text-sky-300 flex items-center gap-2">
-                    📦 INVENTARIO DE EQUIPOS RECUPERADOS
-                </h2>
-                <p class="text-xs text-slate-400">Respaldo auditado de seriales retirados en campo con fecha y cliente asociado.</p>
+            <div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-3">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                    <div>
+                        <h2 class="text-sm font-bold text-sky-300 flex items-center gap-2">
+                            📦 INVENTARIO & PLANILLA DE PAGO
+                        </h2>
+                        <p class="text-xs text-slate-400">Respaldo auditado de boletas ejecutadas en formato oficial.</p>
+                    </div>
+                    <button onclick="exportarPlanillaPagoTecnico()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow">
+                        📊 Exportar Planilla Pago (Excel)
+                    </button>
+                </div>
+
+                <div class="bg-slate-950 p-3 rounded-xl border border-emerald-500/30 flex justify-between items-center text-xs">
+                    <span class="text-slate-300">Total Boletas Ejecutadas: <b id="tecCountBoletasTotal" class="text-white">0</b></span>
+                    <span class="text-emerald-400 font-bold">Monto Estimado: <b id="tecMontoPagosTotal">Bs. 0.00</b></span>
+                </div>
             </div>
 
             <div id="contenedorInventarioEquipos" class="space-y-3">
@@ -347,7 +340,6 @@
             <div class="py-12 space-y-3">
                 <div class="inline-block p-4 rounded-full bg-slate-900 text-sky-400 text-3xl">🔔</div>
                 <h3 class="text-sm font-bold text-white">Centro de Notificaciones</h3>
-                <p class="text-xs text-slate-400 max-w-xs mx-auto">Alertas de Back Office por observaciones o correcciones.</p>
                 <div id="contenedorNotificacionesTecnico" class="pt-4 text-left space-y-2">
                     <p class="text-xs text-slate-500 text-center italic">No tienes alertas pendientes por corregir.</p>
                 </div>
@@ -357,9 +349,7 @@
         <!-- SECCIÓN TÉCNICO 4: PERFIL -->
         <div id="tecTabPerfil" class="hidden p-4 space-y-4">
             <div class="tech-card p-6 rounded-2xl space-y-4 text-center">
-                <div class="w-20 h-20 bg-sky-500/20 border-2 border-sky-400 rounded-full mx-auto flex items-center justify-center text-3xl">
-                    👤
-                </div>
+                <div class="w-20 h-20 bg-sky-500/20 border-2 border-sky-400 rounded-full mx-auto flex items-center justify-center text-3xl">👤</div>
                 <div>
                     <h3 class="text-base font-bold text-white" id="perfilNombre">-</h3>
                     <p class="text-xs text-sky-300" id="perfilRol">-</p>
@@ -377,18 +367,10 @@
 
         <!-- BOTTOM NAV BAR TÉCNICO -->
         <nav class="fixed bottom-0 left-0 right-0 bg-slate-950 border-t border-sky-500/20 px-4 py-2 flex justify-around items-center z-40 text-center">
-            <button onclick="cambiarTabMobile('programar')" id="navMobProgramar" class="text-sky-400 flex flex-col items-center text-[10px] font-bold">
-                <span class="text-lg">📅</span> Programar
-            </button>
-            <button onclick="cambiarTabMobile('inventario')" id="navMobInventario" class="text-slate-400 flex flex-col items-center text-[10px] font-bold">
-                <span class="text-lg">📦</span> Inventario
-            </button>
-            <button onclick="cambiarTabMobile('notificaciones')" id="navMobNotificaciones" class="text-slate-400 flex flex-col items-center text-[10px] font-bold">
-                <span class="text-lg">🔔</span> Notificaciones
-            </button>
-            <button onclick="cambiarTabMobile('perfil')" id="navMobPerfil" class="text-slate-400 flex flex-col items-center text-[10px] font-bold">
-                <span class="text-lg">👤</span> Perfil
-            </button>
+            <button onclick="cambiarTabMobile('programar')" id="navMobProgramar" class="text-sky-400 flex flex-col items-center text-[10px] font-bold"><span class="text-lg">📅</span> Programar</button>
+            <button onclick="cambiarTabMobile('inventario')" id="navMobInventario" class="text-slate-400 flex flex-col items-center text-[10px] font-bold"><span class="text-lg">📦</span> Inventario</button>
+            <button onclick="cambiarTabMobile('notificaciones')" id="navMobNotificaciones" class="text-slate-400 flex flex-col items-center text-[10px] font-bold"><span class="text-lg">🔔</span> Notificaciones</button>
+            <button onclick="cambiarTabMobile('perfil')" id="navMobPerfil" class="text-slate-400 flex flex-col items-center text-[10px] font-bold"><span class="text-lg">👤</span> Perfil</button>
         </nav>
     </div>
 
@@ -409,21 +391,31 @@
                 <p class="text-slate-200" id="observacionTextoMsg"></p>
             </div>
 
-            <!-- Botón de Pago directo -->
             <div class="bg-rose-950/30 border border-rose-500/40 p-3 rounded-xl flex justify-between items-center text-xs">
                 <div>
                     <p class="font-bold text-rose-300">💳 CLIENTE PAGÓ LA DEUDA</p>
                     <p class="text-[10px] text-slate-400">Cancela el retiro si el cliente liquidó deuda.</p>
                 </div>
-                <button onclick="marcarComoPagadoModal()" class="bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs">
-                    🔴 Marcar PAGADO
-                </button>
+                <button onclick="marcarComoPagadoModal()" class="bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-xs">🔴 Marcar PAGADO</button>
             </div>
 
             <div class="space-y-3 text-xs">
-                <div>
-                    <label class="font-bold text-sky-300">OT / ORDEN TRABAJO:</label>
-                    <input type="text" id="gestionOt" placeholder="Ej: OT-88492" class="w-full mt-1 p-2 tech-input rounded-xl text-xs" />
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="font-bold text-sky-300">OT / ORDEN TRABAJO:</label>
+                        <input type="text" id="gestionOt" placeholder="Ej: 29552297" class="w-full mt-1 p-2 tech-input rounded-xl text-xs" />
+                    </div>
+                    <div>
+                        <label class="font-bold text-emerald-300">PRECIO BASE (Bs):</label>
+                        <input type="number" id="gestionPrecioUnit" value="45" placeholder="45" class="w-full mt-1 p-2 tech-input rounded-xl text-xs" />
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 bg-slate-900/80 p-2.5 rounded-xl border border-sky-500/20">
+                    <input type="checkbox" id="gestionEsFeriado" class="w-4 h-4 rounded accent-sky-500" />
+                    <label for="gestionEsFeriado" class="text-xs font-bold text-amber-300 cursor-pointer">
+                        🎉 ¿Es Día Feriado / Festivo? (+50% Recargo)
+                    </label>
                 </div>
 
                 <div class="bg-slate-900/60 p-3 rounded-xl border border-sky-500/20 space-y-2">
@@ -581,7 +573,6 @@
                 document.getElementById('adminUserName').innerText = usuarioActual.nombre;
                 document.getElementById('adminUserRole').innerText = `${usuarioActual.rol} - ${usuarioActual.ciudad || 'BOLIVIA'}`;
 
-                // MOSTRAR PESTAÑA CARGA EXCEL SÓLO A ADMINISTRADORES/SUPERVISORES
                 const navCarga = document.getElementById('navBtnCarga');
                 if (esAdminOuSupervisor) {
                     navCarga.classList.remove('hidden');
@@ -603,13 +594,17 @@
             document.getElementById('loginOverlay').classList.remove('hidden');
         }
 
-        // LÓGICA VISTA ADMINISTRATIVA Y MAPA DE MONITOREO
+        // VISTA ADMINISTRATIVA Y CONCILIACIÓN
         function cambiarSeccionAdmin(seccion) {
-            ['seccionAdminCodigos', 'seccionAdminAgenda', 'seccionAdminDigitacion', 'seccionAdminCarga'].forEach(s => document.getElementById(s).classList.add('hidden'));
+            ['seccionAdminCodigos', 'seccionAdminPagos', 'seccionAdminAgenda', 'seccionAdminDigitacion', 'seccionAdminCarga'].forEach(s => document.getElementById(s).classList.add('hidden'));
 
             if (seccion === 'codigos') {
                 document.getElementById('seccionAdminCodigos').classList.remove('hidden');
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 300);
+            }
+            if (seccion === 'pagosAdmin') {
+                document.getElementById('seccionAdminPagos').classList.remove('hidden');
+                renderizarConciliacionPagosAdmin();
             }
             if (seccion === 'agenda') document.getElementById('seccionAdminAgenda').classList.remove('hidden');
             if (seccion === 'digitacion') {
@@ -647,20 +642,14 @@
             aplicarFiltrosAdminLocales();
         }
 
-        // POBLAR DESPLEGABLES DE FILTROS DINÁMICAMENTE (DEPARTAMENTO, CIUDAD Y TÉCNICO)
         function poblarFiltrosDesplegables(lista) {
             const deptos = [...new Set(lista.map(o => o.departamento).filter(Boolean))].sort();
             const ciudades = [...new Set(lista.map(o => o.ciudad).filter(Boolean))].sort();
             const tecnicos = [...new Set(lista.map(o => o.tecnico_asignado).filter(Boolean))].sort();
 
-            const selectDepto = document.getElementById('deptoSelectFilter');
-            selectDepto.innerHTML = '<option value="">-- Depto --</option>' + deptos.map(d => `<option value="${d}">${d}</option>`).join('');
-
-            const selectCiudad = document.getElementById('ciudadSelectFilter');
-            selectCiudad.innerHTML = '<option value="">-- Ciudad --</option>' + ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
-
-            const selectTecnico = document.getElementById('tecnicoSelectFilter');
-            selectTecnico.innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
+            document.getElementById('deptoSelectFilter').innerHTML = '<option value="">-- Depto --</option>' + deptos.map(d => `<option value="${d}">${d}</option>`).join('');
+            document.getElementById('ciudadSelectFilter').innerHTML = '<option value="">-- Ciudad --</option>' + ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('tecnicoSelectFilter').innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
         }
 
         function actualizarContadoresAdmin() {
@@ -695,20 +684,18 @@
                 if (searchText) {
                     const matchCodigo = o.cliente_nro && o.cliente_nro.toLowerCase().includes(searchText);
                     const matchNombre = o.cliente_nombre && o.cliente_nombre.toLowerCase().includes(searchText);
-                    const matchDir = o.direccion && o.direccion.toLowerCase().includes(searchText);
-                    if (!matchCodigo && !matchNombre && !matchDir) return false;
+                    if (!matchCodigo && !matchNombre) return false;
                 }
                 return true;
             });
 
             renderizarTablaAdmin(ordenesFiltradasAdmin);
-            actualizarPinesMapaAdmin(ordenesFiltradasAdmin);
         }
 
         function renderizarTablaAdmin(lista) {
             const tbody = document.getElementById('tablaAdminOrdenesBody');
             if (lista.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay códigos para mostrar con los filtros seleccionados.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay códigos para mostrar.</td></tr>';
                 return;
             }
 
@@ -726,7 +713,7 @@
                 <tr class="hover:bg-slate-900/50 border-b border-slate-800 ${o.estado === 'PAGADO' ? 'bg-rose-950/20' : ''}">
                     <td class="p-3"><input type="checkbox" class="rowCheckbox" value="${o.id}" onchange="actualizarConteoSeleccionados()" /></td>
                     <td class="p-3 font-bold text-sky-300">${o.cliente_nro}<br><span class="font-normal text-slate-300">${o.cliente_nombre}</span></td>
-                    <td class="p-3"><span class="text-sky-300 font-semibold">${o.departamento || 'TARIJA'}</span> / ${o.ciudad}<br><span class="text-slate-400 text-[10px]">${o.zona_nodo_tap || ''}</span></td>
+                    <td class="p-3"><span class="text-sky-300 font-semibold">${o.departamento || 'TARIJA'}</span> / ${o.ciudad}</td>
                     <td class="p-3 text-slate-300">${o.direccion}</td>
                     <td class="p-3 font-semibold text-sky-200">${o.tecnologia}</td>
                     <td class="p-3 text-slate-400">${o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>'}</td>
@@ -741,98 +728,142 @@
             `}).join('');
         }
 
-        function actualizarPinesMapaAdmin(lista) {
-            if (!adminMap || !adminMarkersGroup) return;
-            adminMarkersGroup.clearLayers();
+        // CONCILIACIÓN CON FORMATO EXACTO OFICIAL
+        async function renderizarConciliacionPagosAdmin() {
+            const { data: gestiones } = await supabaseClient.from('historial_gestiones').select('*').order('fecha_gestion', { ascending: false });
+            const container = document.getElementById('contenedorResumenPagosTecnicos');
 
-            let bounds = [];
-            lista.forEach(o => {
-                const lat = formatearGPS(o.coordenada_x);
-                const lng = formatearGPS(o.coordenada_y);
-                if (lat && lng) {
-                    const latNum = parseFloat(lat);
-                    const lngNum = parseFloat(lng);
-                    if (!isNaN(latNum) && !isNaN(lngNum)) {
-                        bounds.push([latNum, lngNum]);
-                        L.marker([latNum, lngNum]).addTo(adminMarkersGroup)
-                            .bindPopup(`<b>${o.cliente_nro}</b><br>${o.cliente_nombre}<br>Técnico: ${o.tecnico_asignado || 'Sin Asignar'}`);
-                    }
-                }
-            });
-
-            if (bounds.length > 0) {
-                adminMap.fitBounds(bounds, { padding: [20, 20], maxZoom: 15 });
-            }
-        }
-
-        function abrirModalGestionAdmin(id) {
-            ordenSeleccionadaGestion = ordenesGlobalesAdmin.find(o => String(o.id) === String(id));
-            if (!ordenSeleccionadaGestion) return;
-
-            document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tecnologia;
-            document.getElementById('gestionClienteNombre').innerText = ordenSeleccionadaGestion.cliente_nombre;
-            document.getElementById('gestionClienteCodigo').innerText = ordenSeleccionadaGestion.cliente_nro;
-            document.getElementById('modalGestion').classList.remove('hidden');
-        }
-
-        function renderizarDigitacionAdmin() {
-            const container = document.getElementById('contenedorDigitacionOrdenes');
-            const revisables = ordenesGlobalesAdmin.filter(o => o.estado === 'RETIRADO' || o.estado === 'OBSERVADO');
-
-            if (revisables.length === 0) {
-                container.innerHTML = '<p class="text-slate-500 text-xs text-center italic py-4">No hay códigos ejecutados listos para revisión de Back Office.</p>';
+            if (!gestiones || gestiones.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-xs text-center col-span-3 py-6">No se han registrado ejecuciones de retiros para liquidación aún.</p>';
                 return;
             }
 
-            container.innerHTML = revisables.map(r => `
-                <div class="bg-slate-900/80 p-4 rounded-xl border border-sky-500/20 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div>
-                        <p class="font-bold text-sky-300 text-xs">${r.cliente_nro} - ${r.cliente_nombre}</p>
-                        <p class="text-[11px] text-slate-400">Técnico: ${r.tecnico_asignado || 'N/A'} | Estado: <span class="text-amber-300 font-bold">${r.estado}</span></p>
+            const resumenPorTecnico = {};
+            gestiones.forEach(g => {
+                const tec = g.tecnico_nombre || 'Desconocido';
+                if (!resumenPorTecnico[tec]) {
+                    resumenPorTecnico[tec] = { totalBoletas: 0, montoTotal: 0, lista: [] };
+                }
+                const precio = calcularPrecioConRecargo(g.fecha_gestion, g.precio_unitario, g.es_feriado);
+                resumenPorTecnico[tec].totalBoletas++;
+                resumenPorTecnico[tec].montoTotal += precio;
+                resumenPorTecnico[tec].lista.push(g);
+            });
+
+            container.innerHTML = Object.keys(resumenPorTecnico).map(tec => {
+                const info = resumenPorTecnico[tec];
+                return `
+                    <div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-3">
+                        <div class="flex justify-between items-center border-b border-sky-500/20 pb-2">
+                            <h3 class="font-bold text-white text-xs">${tec}</h3>
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full border border-emerald-500/30 font-bold">${info.totalBoletas} Boletas</span>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-400">Total a Liquidar:</span>
+                            <span class="text-emerald-400 font-black text-sm">Bs. ${info.montoTotal.toFixed(2)}</span>
+                        </div>
+                        <button onclick="exportarPlanillaPorTecnicoAdmin('${tec}')" class="w-full bg-slate-800 hover:bg-slate-700 text-sky-300 text-[11px] font-bold py-2 rounded-lg border border-sky-500/30 flex items-center justify-center gap-1">
+                            📊 Exportar Planilla Individual (.xlsx)
+                        </button>
                     </div>
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="observarOrdenBackoffice('${r.id}')" class="bg-amber-800/80 hover:bg-amber-700 text-amber-200 border border-amber-500/40 text-xs px-3 py-1.5 rounded-xl font-bold">⚠️ Observar</button>
-                        <button onclick="aprobarOrdenBackoffice('${r.id}')" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-xl font-bold">✅ Aprobar Digitación</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
-        async function observarOrdenBackoffice(id) {
-            const nota = prompt("Escribe la observación para el técnico:");
-            if (!nota) return;
+        function calcularPrecioConRecargo(fechaIso, precioBase, esFeriadoManual) {
+            let base = parseFloat(precioBase || 45);
+            if (!fechaIso) return base;
+            const d = new Date(fechaIso);
+            const esDomingo = d.getDay() === 0;
 
-            await supabaseClient.from('ordenes_retiro').update({ estado: 'OBSERVADO', observacion_backoffice: nota }).eq('id', id);
-            alert("Orden devuelta al técnico para corrección.");
-            await cargarOrdenesAdminDesdeSupabase();
-            renderizarDigitacionAdmin();
+            if (esDomingo || esFeriadoManual) {
+                return base * 1.5; // +50% extra
+            }
+            return base;
         }
 
-        async function aprobarOrdenBackoffice(id) {
-            await supabaseClient.from('ordenes_retiro').update({ estado: 'DIGITADO_OK', observacion_backoffice: null }).eq('id', id);
-            alert("Orden aprobada y cerrada en Back Office.");
-            await cargarOrdenesAdminDesdeSupabase();
-            renderizarDigitacionAdmin();
+        function construirFilasPlanillaOficial(gestiones) {
+            let totalMonto = 0;
+            const rows = gestiones.map(g => {
+                const d = g.fecha_gestion ? new Date(g.fecha_gestion) : new Date();
+                const esDomingo = d.getDay() === 0;
+                let domingoTexto = "";
+                if (esDomingo) domingoTexto = "DOM";
+                if (g.es_feriado) domingoTexto = "FERIADO";
+
+                const precioFinal = calcularPrecioConRecargo(g.fecha_gestion, g.precio_unitario, g.es_feriado);
+                totalMonto += precioFinal;
+
+                const fechaFormateada = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+
+                return {
+                    'CODIGO': g.cliente_nro,
+                    'FECHA': fechaFormateada,
+                    'NOMBRE': g.nodo || 'CLIENTE',
+                    'OT 0': g.ot || '',
+                    'OT 1': '',
+                    'OT 2': '',
+                    'OT 3 ': '',
+                    'OT 4': '',
+                    'OT 5': '',
+                    'TOR': g.tor || 'RP0',
+                    'TECNICO': g.tecnico_nombre,
+                    'POBLACION': g.poblacion || 'URBANO',
+                    'Y': g.coordenada_y || '',
+                    'X': g.coordenada_x || '',
+                    'TECNOLOGIA': g.tecnologia || 'HFC',
+                    'DOMINGO': domingoTexto,
+                    'CIUDAD': g.ciudad || 'YACUIBA',
+                    'PRECIO UNIT': precioFinal,
+                    'SALDO TOTAL': ''
+                };
+            });
+
+            return { rows, totalMonto };
         }
 
-        function exportarExcelConsolidado() {
-            const excelRows = ordenesFiltradasAdmin.map(o => ({
-                'CODIGO CLIENTE': o.cliente_nro,
-                'NOMBRE CLIENTE': o.cliente_nombre,
-                'DEPARTAMENTO': o.departamento || 'TARIJA',
-                'CIUDAD': o.ciudad,
-                'DIRECCION': o.direccion,
-                'TECNOLOGIA': o.tecnologia,
-                'TECNICO ASIGNADO': o.tecnico_asignado || 'Sin Asignar',
-                'ESTADO': o.estado
-            }));
-            const worksheet = XLSX.utils.json_to_sheet(excelRows);
+        async function exportarPlanillaPagosGlobal() {
+            const { data: gestiones } = await supabaseClient.from('historial_gestiones').select('*').order('fecha_gestion', { ascending: false });
+            if (!gestiones || gestiones.length === 0) return alert('No hay gestiones para exportar.');
+
+            const { rows, totalMonto } = construirFilasPlanillaOficial(gestiones);
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            XLSX.utils.sheet_add_aoa(worksheet, [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'TOTAL PLANILLA:', totalMonto, `=SUM(R2:R${rows.length + 1})`]], { origin: -1 });
+
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Ordenes");
-            XLSX.writeFile(workbook, `DATARED_Retiros_${new Date().toISOString().slice(0,10)}.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "CONCILIACION_GENERAL");
+            XLSX.writeFile(workbook, `DATARED_Planilla_General_Pagos_${new Date().toISOString().slice(0,10)}.xlsx`);
         }
 
-        // CALENDARIO MES COMPLETO (30/31 O 28 DÍAS DEPENDIENDO EL MES ACTIVO)
+        async function exportarPlanillaPorTecnicoAdmin(tecnico) {
+            const { data: gestiones } = await supabaseClient.from('historial_gestiones').select('*').eq('tecnico_nombre', tecnico);
+            if (!gestiones || gestiones.length === 0) return;
+
+            const { rows, totalMonto } = construirFilasPlanillaOficial(gestiones);
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            XLSX.utils.sheet_add_aoa(worksheet, [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'TOTAL PLANILLA:', totalMonto, `=SUM(R2:R${rows.length + 1})`]], { origin: -1 });
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, `${tecnico.slice(0,15)}`);
+            XLSX.writeFile(workbook, `Planilla_Pago_${tecnico.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function exportarPlanillaPagoTecnico() {
+            if (historialRetiros.length === 0) return alert('No tienes boletas para exportar.');
+
+            const { rows, totalMonto } = construirFilasPlanillaOficial(historialRetiros);
+
+            const worksheet = XLSX.utils.json_to_sheet(rows);
+            XLSX.utils.sheet_add_aoa(worksheet, [['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', 'TOTAL PLANILLA:', totalMonto, `=SUM(R2:R${rows.length + 1})`]], { origin: -1 });
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "MI_PLANILLA");
+            XLSX.writeFile(workbook, `Planilla_Pago_${usuarioActual.nombre.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        // LÓGICA VISTA TÉCNICO
         function generarCalendarioHorizontal() {
             const container = document.getElementById('barCalendarioHorizontal');
             const diasSemana = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
@@ -982,14 +1013,20 @@
 
         function renderizarInventarioEquipos() {
             const container = document.getElementById('contenedorInventarioEquipos');
+            let totalMonto = 0;
+
+            document.getElementById('tecCountBoletasTotal').innerText = historialRetiros.length;
 
             if (historialRetiros.length === 0) {
-                container.innerHTML = '<p class="text-slate-500 text-xs text-center py-6">No has registrado equipos retirados aún.</p>';
+                document.getElementById('tecMontoPagosTotal').innerText = "Bs. 0.00";
+                container.innerHTML = '<p class="text-slate-500 text-xs text-center py-6">No has registrado boletas ejecutadas en tu planilla aún.</p>';
                 return;
             }
 
             container.innerHTML = historialRetiros.map(h => {
                 const fechaFormateada = h.fecha_gestion ? new Date(h.fecha_gestion).toLocaleString() : 'Recientemente';
+                const precio = calcularPrecioConRecargo(h.fecha_gestion, h.precio_unitario, h.es_feriado);
+                totalMonto += precio;
 
                 return `
                     <div class="bg-slate-900/90 p-4 rounded-xl border border-sky-500/20 space-y-2 text-xs">
@@ -998,7 +1035,10 @@
                                 <span class="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/30">CÓDIGO: ${h.cliente_nro}</span>
                                 <p class="font-bold text-white text-xs mt-1">${h.nodo || 'CLIENTE RETIRADO'}</p>
                             </div>
-                            <span class="text-[10px] text-slate-400 font-semibold bg-slate-800 px-2 py-0.5 rounded-lg">📅 ${fechaFormateada}</span>
+                            <div class="text-right">
+                                <span class="text-[10px] text-slate-400 font-semibold bg-slate-800 px-2 py-0.5 rounded-lg block mb-1">📅 ${fechaFormateada}</span>
+                                <span class="text-[11px] font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-500/30 px-2 py-0.5 rounded-lg">Bs. ${precio.toFixed(2)}</span>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
@@ -1016,6 +1056,8 @@
                     </div>
                 `;
             }).join('');
+
+            document.getElementById('tecMontoPagosTotal').innerText = `Bs. ${totalMonto.toFixed(2)}`;
         }
 
         function cambiarTabMobile(tab) {
@@ -1027,7 +1069,7 @@
                 setTimeout(() => { if (mobileMap) mobileMap.invalidateSize(); }, 200);
             } else if (tab === 'inventario') {
                 document.getElementById('tecTabInventario').classList.remove('hidden');
-                document.getElementById('tituloSeccionTecnico').innerText = "Inventario de Equipos";
+                document.getElementById('tituloSeccionTecnico').innerText = "Inventario & Planilla";
             } else if (tab === 'notificaciones') {
                 document.getElementById('tecTabNotificaciones').classList.remove('hidden');
                 document.getElementById('tituloSeccionTecnico').innerText = "Notificaciones";
@@ -1064,7 +1106,6 @@
             }
         }
 
-        // COMPRESIÓN DE IMAGEN EN EL CLIENTE ANTES DE PASAR POR OCR / SUBIR A SUPABASE
         async function escaneoInteligenteEtiqueta(input, tipo) {
             if (!input.files || !input.files[0]) return;
             const statusDiv = document.getElementById('gestionStatusOutput');
@@ -1091,6 +1132,8 @@
             const decoMod = document.getElementById('decoModelo').value;
             const decoSer = document.getElementById('decoSerie').value;
             const ot = document.getElementById('gestionOt').value || 'S/OT';
+            const precioUnit = parseFloat(document.getElementById('gestionPrecioUnit').value) || 45;
+            const esFeriado = document.getElementById('gestionEsFeriado').checked;
 
             const targetId = !isNaN(ordenSeleccionadaGestion.id) ? Number(ordenSeleccionadaGestion.id) : ordenSeleccionadaGestion.id;
 
@@ -1103,7 +1146,13 @@
                 modem_serie: modemSer,
                 deco_modelo: decoMod,
                 deco_serie: decoSer,
+                precio_unitario: precioUnit,
+                es_feriado: esFeriado,
                 tecnico_nombre: usuarioActual.nombre,
+                ciudad: ordenSeleccionadaGestion.ciudad,
+                tecnologia: ordenSeleccionadaGestion.tecnologia,
+                coordenada_x: ordenSeleccionadaGestion.coordenada_x,
+                coordenada_y: ordenSeleccionadaGestion.coordenada_y,
                 estado_final: 'RETIRADO',
                 fecha_gestion: new Date().toISOString()
             }]);
@@ -1116,7 +1165,7 @@
             } else {
                 await cargarOrdenesAdminDesdeSupabase();
             }
-            alert("¡Retiro registrado con éxito!");
+            alert("¡Retiro registrado y añadido a tu planilla de cobro!");
         }
 
         function toggleSelectAll(master) {
