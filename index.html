@@ -217,9 +217,10 @@
                                 <tr class="bg-slate-900/80 text-sky-300 border-b border-sky-500/20">
                                     <th class="p-3 w-8"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" /></th>
                                     <th class="p-3">Código / Cliente</th>
+                                    <th class="p-3">Contacto</th>
                                     <th class="p-3">Depto / Ciudad</th>
-                                    <th class="p-3">Dirección</th>
                                     <th class="p-3">Nodo / TAP</th>
+                                    <th class="p-3">Dirección & Referencia</th>
                                     <th class="p-3">Tecnología</th>
                                     <th class="p-3">Técnico</th>
                                     <th class="p-3">Estado</th>
@@ -227,7 +228,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tablaAdminOrdenesBody" class="divide-y divide-slate-800 text-slate-300">
-                                <tr><td colspan="9" class="p-4 text-center text-slate-500">Cargando datos...</td></tr>
+                                <tr><td colspan="10" class="p-4 text-center text-slate-500">Cargando datos...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -463,7 +464,7 @@
 
             <div class="flex justify-end gap-2 pt-2 border-t border-sky-500/20 sticky bottom-0 bg-slate-950/95 py-2">
                 <button onclick="cerrarModalGestion()" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Cancelar</button>
-                <button onclick="enviarReporteAWhatsApp()" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow">📲 Finalizar Retiro</button>
+                <button onclick="enviarReporteAWhatsApp()" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow">📲 Finalizar y Enviar a Grupo WPP</button>
             </div>
         </div>
     </div>
@@ -698,7 +699,6 @@
         }
 
         async function cargarOrdenesAdminDesdeSupabase() {
-            // Traer todas las órdenes de la base de datos
             const { data } = await supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
             ordenesGlobalesAdmin = data || [];
             poblarFiltrosDesplegables(ordenesGlobalesAdmin);
@@ -769,9 +769,9 @@
                 if (searchText) {
                     const matchCodigo = o.cliente_nro && o.cliente_nro.toLowerCase().includes(searchText);
                     const matchNombre = o.cliente_nombre && o.cliente_nombre.toLowerCase().includes(searchText);
-                    const matchNodo = o.nodo && o.nodo.toLowerCase().includes(searchText);
-                    const matchTap = o.tap && o.tap.toLowerCase().includes(searchText);
-                    if (!matchCodigo && !matchNombre && !matchNodo && !matchTap) return false;
+                    const matchNodoTap = o.zona_nodo_tap && o.zona_nodo_tap.toLowerCase().includes(searchText);
+                    const matchRef = o.referencia && o.referencia.toLowerCase().includes(searchText);
+                    if (!matchCodigo && !matchNombre && !matchNodoTap && !matchRef) return false;
                 }
                 return true;
             });
@@ -807,8 +807,8 @@
                         <div class="text-xs font-sans">
                             <b class="text-sky-600">${o.cliente_nro}</b><br>
                             <b>${o.cliente_nombre}</b><br>
-                            <span class="text-slate-400">Nodo: ${o.nodo || 'N/A'} | TAP: ${o.tap || 'N/A'}</span><br>
-                            <span class="text-slate-500">${o.direccion}</span><br>
+                            <span class="text-amber-400 font-bold">${o.zona_nodo_tap || 'S/NODO'}</span><br>
+                            <span class="text-slate-400">${o.direccion || ''} (${o.referencia || ''})</span><br>
                             <b>Técnico:</b> ${o.tecnico_asignado || 'Sin Asignar'}
                         </div>
                     `);
@@ -855,7 +855,7 @@
         function renderizarTablaAdmin(lista) {
             const tbody = document.getElementById('tablaAdminOrdenesBody');
             if (lista.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-500">No hay códigos para mostrar.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-slate-500">No hay códigos para mostrar.</td></tr>';
                 return;
             }
 
@@ -869,15 +869,28 @@
                 const lngFormatted = formatearGPS(o.coordenada_y);
                 let mapsUrl = (latFormatted && lngFormatted) ? "https://www.google.com/maps/search/?api=1&query=" + latFormatted + "," + lngFormatted : null;
 
-                const nodoTapTexto = (o.nodo ? 'N: ' + o.nodo : '') + (o.tap ? ' / TAP: ' + o.tap : '');
+                const tel = o.cliente_telefono ? String(o.cliente_telefono).replace(/\D/g, '') : '';
+                const wppUrl = tel ? `https://wa.me/591${tel}` : null;
+                const callUrl = tel ? `tel:${tel}` : null;
+
+                const nodoTapTexto = o.zona_nodo_tap || o.nodo || '<span class="text-slate-600 italic">Sin datos</span>';
+                const direccionYRef = `${o.direccion || ''} ${o.referencia ? `<br><span class="text-amber-300/80 italic text-[11px]">📍 Ref: ${o.referencia}</span>` : ''}`;
 
                 return '<tr class="hover:bg-slate-900/50 border-b border-slate-800 ' + (o.estado === 'PAGADO' ? 'bg-rose-950/20' : '') + '">' +
                     '<td class="p-3"><input type="checkbox" class="rowCheckbox" value="' + o.id + '" onchange="actualizarConteoSeleccionados()" /></td>' +
                     '<td class="p-3 font-bold text-sky-300">' + o.cliente_nro + '<br><span class="font-normal text-slate-300">' + (o.cliente_nombre || '') + '</span></td>' +
+                    '<td class="p-3">' +
+                        (tel ? `
+                            <div class="flex items-center gap-1.5">
+                                <a href="${callUrl}" class="bg-blue-900/60 hover:bg-blue-800 text-sky-300 border border-sky-500/30 text-[10px] px-2 py-0.5 rounded font-bold">📞 ${tel}</a>
+                                <a href="${wppUrl}" target="_blank" class="bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded font-bold">💬 WPP</a>
+                            </div>
+                        ` : '<span class="text-slate-600 italic">Sin teléfono</span>') +
+                    '</td>' +
                     '<td class="p-3"><span class="text-sky-300 font-semibold">' + (o.departamento || 'TARIJA') + '</span> / ' + (o.ciudad || '') + '</td>' +
-                    '<td class="p-3 text-slate-300">' + (o.direccion || '') + '</td>' +
-                    '<td class="p-3 font-semibold text-amber-300">' + (nodoTapTexto || '<span class="text-slate-600 italic">Sin datos</span>') + '</td>' +
-                    '<td class="p-3 font-semibold text-sky-200">' + (o.tecnologia || '') + '</td>' +
+                    '<td class="p-3 font-semibold text-amber-300">' + nodoTapTexto + '</td>' +
+                    '<td class="p-3 text-slate-300">' + direccionYRef + '</td>' +
+                    '<td class="p-3 font-semibold text-sky-200">' + (o.tipo_tecnologia || o.tecnologia || '') + '</td>' +
                     '<td class="p-3 text-slate-400">' + (o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>') + '</td>' +
                     '<td class="p-3"><span class="' + badgeClass + ' border text-[10px] px-2 py-0.5 rounded-full">' + o.estado + '</span></td>' +
                     '<td class="p-3 text-center">' +
@@ -1147,7 +1160,7 @@
                         <div>
                             <span class="text-sky-400 font-bold">🔔 CÓDIGO: ${p.cliente_nro}</span>
                             <p class="text-white font-semibold mt-0.5">${p.cliente_nombre}</p>
-                            <p class="text-amber-300 text-[10px]">Nodo: ${p.nodo || '-'} | TAP: ${p.tap || '-'}</p>
+                            <p class="text-amber-300 text-[10px]">${p.zona_nodo_tap || '-'}</p>
                             <p class="text-slate-400 text-[10px]">📍 ${p.direccion}</p>
                         </div>
                         <button onclick="cambiarTabMobile('programar')" class="bg-sky-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">Ver Cita</button>
@@ -1183,6 +1196,10 @@
                 const lng = formatearGPS(o.coordenada_y);
                 const mapsUrl = (lat && lng) ? "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng : null;
 
+                const tel = o.cliente_telefono ? String(o.cliente_telefono).replace(/\D/g, '') : '';
+                const wppUrl = tel ? `https://wa.me/591${tel}` : null;
+                const callUrl = tel ? `tel:${tel}` : null;
+
                 if (lat && lng) {
                     bounds.push([parseFloat(lat), parseFloat(lng)]);
                     L.marker([parseFloat(lat), parseFloat(lng)]).addTo(mobileMarkersGroup)
@@ -1199,13 +1216,20 @@
                         '<div>' +
                             '<span class="text-[9px] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">SA-' + o.cliente_nro + '</span>' +
                             '<h4 class="font-bold text-white text-xs mt-1">' + o.cliente_nombre + '</h4>' +
-                            '<p class="text-[10px] text-amber-300 font-semibold">Nodo: ' + (o.nodo || 'N/A') + ' | TAP: ' + (o.tap || 'N/A') + '</p>' +
-                            '<p class="text-[10px] text-slate-400">📍 ' + o.direccion + '</p>' +
+                            '<p class="text-[10px] text-amber-300 font-semibold">' + (o.zona_nodo_tap || 'S/NODO') + '</p>' +
+                            '<p class="text-[10px] text-slate-300">📍 ' + o.direccion + '</p>' +
+                            (o.referencia ? '<p class="text-[10px] text-amber-300/80 italic">Ref: ' + o.referencia + '</p>' : '') +
                         '</div>' +
                         '<span class="' + statusBadge + ' text-[9px] px-2 py-0.5 rounded-full border">' + o.estado + '</span>' +
                     '</div>' +
+                    (tel ? `
+                        <div class="flex items-center gap-2 pt-1">
+                            <a href="${callUrl}" class="flex-1 bg-blue-900/50 hover:bg-blue-800 text-sky-300 border border-sky-500/30 text-[10px] font-bold py-1.5 rounded-lg text-center">📞 Llamar (${tel})</a>
+                            <a href="${wppUrl}" target="_blank" class="flex-1 bg-emerald-900/50 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold py-1.5 rounded-lg text-center">💬 WhatsApp</a>
+                        </div>
+                    ` : '') +
                     '<div class="flex justify-between items-center pt-2 border-t border-slate-800 text-[10px]">' +
-                        '<span class="text-slate-400">' + o.tecnologia + ' • ' + o.ciudad + '</span>' +
+                        '<span class="text-slate-400">' + (o.tipo_tecnologia || o.tecnologia || '') + ' • ' + o.ciudad + '</span>' +
                         '<div class="flex gap-1.5">' +
                             (mapsUrl ? '<a href="' + mapsUrl + '" target="_blank" class="bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold">🗺️ Ir GPS</a>' : '') +
                             (o.estado !== 'PAGADO' ? '<button onclick="abrirModalGestionGenerico(\'' + o.id + '\')" class="bg-sky-600 text-white px-3 py-1 rounded-lg font-bold">Gestionar</button>' : '') +
@@ -1351,7 +1375,7 @@
             ordenSeleccionadaGestion = listaBusqueda.find(o => String(o.id) === String(id));
             if (!ordenSeleccionadaGestion) return;
 
-            document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tecnologia || 'HFC';
+            document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tipo_tecnologia || ordenSeleccionadaGestion.tecnologia || 'HFC';
             document.getElementById('gestionClienteNombre').innerText = ordenSeleccionadaGestion.cliente_nombre || 'CLIENTE';
             document.getElementById('gestionClienteCodigo').innerText = ordenSeleccionadaGestion.cliente_nro || '-';
 
@@ -1419,8 +1443,8 @@
                 const ser = fila.querySelector('.serieInput').value.trim();
 
                 if (ser) {
-                    if (tipo === 'MODEM') modemsArray.push(mod + ' (' + ser + ')');
-                    else decosArray.push(mod + ' (' + ser + ')');
+                    if (tipo === 'MODEM') modemsArray.push(`${mod} (${ser})`);
+                    else decosArray.push(`${mod} (${ser})`);
                 }
             });
 
@@ -1445,6 +1469,7 @@
 
             const targetId = !isNaN(ordenSeleccionadaGestion.id) ? Number(ordenSeleccionadaGestion.id) : ordenSeleccionadaGestion.id;
 
+            // Guardar en la base de datos
             await supabaseClient.from('historial_gestiones').insert([{
                 orden_id: targetId,
                 cliente_nro: ordenSeleccionadaGestion.cliente_nro,
@@ -1460,7 +1485,7 @@
                 materiales_fungibles: 'N/A - SOLO RETIRO',
                 tecnico_nombre: usuarioActual.nombre,
                 ciudad: ordenSeleccionadaGestion.ciudad,
-                tecnologia: ordenSeleccionadaGestion.tecnologia,
+                tecnologia: ordenSeleccionadaGestion.tipo_tecnologia || ordenSeleccionadaGestion.tecnologia,
                 coordenada_x: ordenSeleccionadaGestion.coordenada_x,
                 coordenada_y: ordenSeleccionadaGestion.coordenada_y,
                 estado_final: 'RETIRADO',
@@ -1469,13 +1494,32 @@
 
             await supabaseClient.from('ordenes_retiro').update({ estado: 'RETIRADO' }).eq('id', targetId);
 
+            // 🚀 GENERAR REPORTE OFICIAL PARA WPP
+            const mensajeWpp = `📡 *INFORME DE RETIRO EJECUTADO - DATARED*
+👤 *TÉCNICO:* ${usuarioActual.nombre}
+🏢 *CIUDAD:* ${ordenSeleccionadaGestion.ciudad || 'YACUIBA'}
+----------------------------------
+🆔 *CÓDIGO:* ${ordenSeleccionadaGestion.cliente_nro}
+👤 *CLIENTE:* ${ordenSeleccionadaGestion.cliente_nombre}
+📍 *DIRECCIÓN:* ${ordenSeleccionadaGestion.direccion || ''}
+🗺️ *NODO/TAP:* ${ordenSeleccionadaGestion.zona_nodo_tap || 'S/N'}
+📝 *OT:* ${ot}
+----------------------------------
+📟 *MÓDEMS/ONT:* ${modemsArray.join(', ') || 'NINGUNO'}
+📺 *DECODIFICADORES:* ${decosArray.join(', ') || 'NINGUNO'}
+🔌 *ACCESORIOS:* ${fungiblesCatArray.join(', ') || 'NINGUNO'}
+----------------------------------
+✅ *ESTADO:* RETIRADO COMPLETADO`;
+
+            const wppUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeWpp)}`;
+            window.open(wppUrl, '_blank');
+
             cerrarModalGestion();
             if (['Tecnico', 'Técnico'].includes(usuarioActual.rol)) {
                 await cargarDatosTecnico();
             } else {
                 await cargarOrdenesAdminDesdeSupabase();
             }
-            alert("¡Retiro registrado con éxito!");
         }
 
         function toggleSelectAll(master) {
