@@ -110,7 +110,7 @@
         </div>
     </div>
 
-    <!-- PANEL ADMINISTRATIVO (OPERADORA / ADMIN) -->
+    <!-- PANEL ADMINISTRATIVO -->
     <div id="appAdminContent" class="hidden pb-10">
         <header class="bg-slate-900/90 border-b border-sky-500/20 p-4 shadow-lg backdrop-blur flex flex-col md:flex-row justify-between items-center gap-3">
             <div>
@@ -698,15 +698,8 @@
         }
 
         async function cargarOrdenesAdminDesdeSupabase() {
-            let query = supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
-            
-            // Aislamiento multirregional si el usuario es de una ciudad/depto específico y no es SuperAdmin
-            if (usuarioActual && usuarioActual.rol !== 'SuperAdmin') {
-                if (usuarioActual.departamento) query = query.eq('departamento', usuarioActual.departamento);
-                if (usuarioActual.ciudad) query = query.eq('ciudad', usuarioActual.ciudad);
-            }
-
-            const { data } = await query;
+            // Traer todas las órdenes de la base de datos
+            const { data } = await supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
             ordenesGlobalesAdmin = data || [];
             poblarFiltrosDesplegables(ordenesGlobalesAdmin);
             actualizarContadoresAdmin();
@@ -823,13 +816,7 @@
                 }
             });
 
-            let queryTecs = supabaseClient.from('usuarios').select('*').in('rol', ['Tecnico', 'Técnico']);
-            if (usuarioActual && usuarioActual.rol !== 'SuperAdmin') {
-                if (usuarioActual.departamento) queryTecs = queryTecs.eq('departamento', usuarioActual.departamento);
-                if (usuarioActual.ciudad) queryTecs = queryTecs.eq('ciudad', usuarioActual.ciudad);
-            }
-
-            const { data: usuariosTecnicos } = await queryTecs;
+            const { data: usuariosTecnicos } = await supabaseClient.from('usuarios').select('*').in('rol', ['Tecnico', 'Técnico']);
 
             if (usuariosTecnicos) {
                 usuariosTecnicos.forEach(tec => {
@@ -904,13 +891,7 @@
         }
 
         async function renderizarConciliacionPagosAdmin() {
-            let query = supabaseClient.from('historial_gestiones').select('*').order('fecha_gestion', { ascending: false });
-            
-            if (usuarioActual && usuarioActual.rol !== 'SuperAdmin') {
-                if (usuarioActual.ciudad) query = query.eq('ciudad', usuarioActual.ciudad);
-            }
-
-            const { data: gestiones } = await query;
+            const { data: gestiones } = await supabaseClient.from('historial_gestiones').select('*').order('fecha_gestion', { ascending: false });
             const container = document.getElementById('contenedorResumenPagosTecnicos');
 
             if (!gestiones || gestiones.length === 0) {
@@ -1514,13 +1495,7 @@
         }
 
         async function cargarListaTecnicosSelects() {
-            let query = supabaseClient.from('usuarios').select('nombre').order('nombre');
-            if (usuarioActual && usuarioActual.rol !== 'SuperAdmin') {
-                if (usuarioActual.departamento) query = query.eq('departamento', usuarioActual.departamento);
-                if (usuarioActual.ciudad) query = query.eq('ciudad', usuarioActual.ciudad);
-            }
-
-            const { data } = await query;
+            const { data } = await supabaseClient.from('usuarios').select('nombre').order('nombre');
             if (data) {
                 const options = '<option value="">-- Seleccionar Técnico --</option>' + data.map(t => '<option value="' + t.nombre + '">' + t.nombre + '</option>').join('');
                 document.getElementById('batchTecnicoSelect').innerHTML = options;
