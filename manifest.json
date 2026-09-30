@@ -1,0 +1,22 @@
+{
+  "name": "DATARED BOLIVIA - Sistema de Retiros",
+  "short_name": "DATARED",
+  "description": "Aplicación Operativa de Gestión y Control de Retiros DTH/HFC/FTTH",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2983/2983780.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2983/2983780.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
