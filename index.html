@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DATARED - Control y Gestión Operativa DTH/HFC/FTTH</title>
     
-    <!-- Configuración PWA para Instalación en Teléfono -->
+    <!-- Configuración PWA -->
     <meta name="theme-color" content="#020617">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -110,7 +110,7 @@
         </div>
     </div>
 
-    <!-- VISTA A: PANEL ADMINISTRATIVO (OPERADORA / ADMIN) -->
+    <!-- PANEL ADMINISTRATIVO (OPERADORA / ADMIN) -->
     <div id="appAdminContent" class="hidden pb-10">
         <header class="bg-slate-900/90 border-b border-sky-500/20 p-4 shadow-lg backdrop-blur flex flex-col md:flex-row justify-between items-center gap-3">
             <div>
@@ -197,8 +197,8 @@
                         </div>
 
                         <div class="flex flex-wrap items-center gap-2">
-                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosAdminLocales()" placeholder="🔍 Código, cliente..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-40" />
-                            <select id="deptoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Depto --</option></select>
+                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosAdminLocales()" placeholder="🔍 Código, cliente..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-36" />
+                            <select id="deptoSelectFilter" onchange="alCambiarFiltroDepto()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Depto --</option></select>
                             <select id="ciudadSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Ciudad --</option></select>
                             <select id="tecnicoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Técnico --</option></select>
 
@@ -219,6 +219,7 @@
                                     <th class="p-3">Código / Cliente</th>
                                     <th class="p-3">Depto / Ciudad</th>
                                     <th class="p-3">Dirección</th>
+                                    <th class="p-3">Nodo / TAP</th>
                                     <th class="p-3">Tecnología</th>
                                     <th class="p-3">Técnico</th>
                                     <th class="p-3">Estado</th>
@@ -226,7 +227,7 @@
                                 </tr>
                             </thead>
                             <tbody id="tablaAdminOrdenesBody" class="divide-y divide-slate-800 text-slate-300">
-                                <tr><td colspan="8" class="p-4 text-center text-slate-500">Cargando datos...</td></tr>
+                                <tr><td colspan="9" class="p-4 text-center text-slate-500">Cargando datos...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -621,7 +622,6 @@
                 inicializarMapaMobile();
                 await cargarDatosTecnico();
 
-                // Auto-Monitoreo Técnico cada 10 segundos
                 intervaloRealtime = setInterval(async () => {
                     await cargarDatosTecnicoSilencioso();
                 }, 10000);
@@ -630,7 +630,7 @@
                 document.getElementById('appAdminContent').classList.remove('hidden');
 
                 document.getElementById('adminUserName').innerText = usuarioActual.nombre;
-                document.getElementById('adminUserRole').innerText = `${usuarioActual.rol} - ${usuarioActual.ciudad || 'BOLIVIA'}`;
+                document.getElementById('adminUserRole').innerText = `${usuarioActual.rol} - ${usuarioActual.ciudad || usuarioActual.departamento || 'BOLIVIA'}`;
 
                 const navCarga = document.getElementById('navBtnCarga');
                 if (esAdminOuSupervisor) {
@@ -643,14 +643,8 @@
                 await cargarOrdenesAdminDesdeSupabase();
                 await cargarListaTecnicosSelects();
 
-                // Auto-Monitoreo Operadora/Admin cada 10 segundos
                 intervaloRealtime = setInterval(async () => {
-                    const { data } = await supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
-                    if (data) {
-                        ordenesGlobalesAdmin = data;
-                        actualizarContadoresAdmin();
-                        aplicarFiltrosAdminLocales();
-                    }
+                    await cargarOrdenesAdminDesdeSupabase();
                 }, 10000);
             }
         }
@@ -704,7 +698,15 @@
         }
 
         async function cargarOrdenesAdminDesdeSupabase() {
-            const { data } = await supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
+            let query = supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
+            
+            // Aislamiento multirregional si el usuario es de una ciudad/depto específico y no es SuperAdmin
+            if (usuarioActual && usuarioActual.rol !== 'SuperAdmin') {
+                if (usuarioActual.departamento) query = query.eq('departamento', usuarioActual.departamento);
+                if (usuarioActual.ciudad) query = query.eq('ciudad', usuarioActual.ciudad);
+            }
+
+            const { data } = await query;
             ordenesGlobalesAdmin = data || [];
             poblarFiltrosDesplegables(ordenesGlobalesAdmin);
             actualizarContadoresAdmin();
@@ -713,12 +715,33 @@
 
         function poblarFiltrosDesplegables(lista) {
             const deptos = [...new Set(lista.map(o => o.departamento).filter(Boolean))].sort();
-            const ciudades = [...new Set(lista.map(o => o.ciudad).filter(Boolean))].sort();
-            const tecnicos = [...new Set(lista.map(o => o.tecnico_asignado).filter(Boolean))].sort();
+            const selectDepto = document.getElementById('deptoSelectFilter');
+            const valPrevDepto = selectDepto.value;
+            selectDepto.innerHTML = '<option value="">-- Depto --</option>' + deptos.map(d => `<option value="${d}">${d}</option>`).join('');
+            if (valPrevDepto) selectDepto.value = valPrevDepto;
 
-            document.getElementById('deptoSelectFilter').innerHTML = '<option value="">-- Depto --</option>' + deptos.map(d => `<option value="${d}">${d}</option>`).join('');
-            document.getElementById('ciudadSelectFilter').innerHTML = '<option value="">-- Ciudad --</option>' + ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
-            document.getElementById('tecnicoSelectFilter').innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
+            alCambiarFiltroDepto();
+        }
+
+        function alCambiarFiltroDepto() {
+            const deptoVal = document.getElementById('deptoSelectFilter').value;
+            let listaCiudades = ordenesGlobalesAdmin;
+            if (deptoVal) {
+                listaCiudades = ordenesGlobalesAdmin.filter(o => o.departamento === deptoVal);
+            }
+
+            const ciudades = [...new Set(listaCiudades.map(o => o.ciudad).filter(Boolean))].sort();
+            const selectCiudad = document.getElementById('ciudadSelectFilter');
+            const valPrevCiudad = selectCiudad.value;
+            
+            selectCiudad.innerHTML = '<option value="">-- Ciudad --</option>' + ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
+            if (ciudades.includes(valPrevCiudad)) selectCiudad.value = valPrevCiudad;
+
+            const tecnicos = [...new Set(listaCiudades.map(o => o.tecnico_asignado).filter(Boolean))].sort();
+            const selectTec = document.getElementById('tecnicoSelectFilter');
+            selectTec.innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
+
+            aplicarFiltrosAdminLocales();
         }
 
         function actualizarContadoresAdmin() {
@@ -753,7 +776,9 @@
                 if (searchText) {
                     const matchCodigo = o.cliente_nro && o.cliente_nro.toLowerCase().includes(searchText);
                     const matchNombre = o.cliente_nombre && o.cliente_nombre.toLowerCase().includes(searchText);
-                    if (!matchCodigo && !matchNombre) return false;
+                    const matchNodo = o.nodo && o.nodo.toLowerCase().includes(searchText);
+                    const matchTap = o.tap && o.tap.toLowerCase().includes(searchText);
+                    if (!matchCodigo && !matchNombre && !matchNodo && !matchTap) return false;
                 }
                 return true;
             });
@@ -789,6 +814,7 @@
                         <div class="text-xs font-sans">
                             <b class="text-sky-600">${o.cliente_nro}</b><br>
                             <b>${o.cliente_nombre}</b><br>
+                            <span class="text-slate-400">Nodo: ${o.nodo || 'N/A'} | TAP: ${o.tap || 'N/A'}</span><br>
                             <span class="text-slate-500">${o.direccion}</span><br>
                             <b>Técnico:</b> ${o.tecnico_asignado || 'Sin Asignar'}
                         </div>
@@ -797,10 +823,13 @@
                 }
             });
 
-            const { data: usuariosTecnicos } = await supabaseClient
-                .from('usuarios')
-                .select('*')
-                .in('rol', ['Tecnico', 'Técnico']);
+            let queryTecs = supabaseClient.from('usuarios').select('*').in('rol', ['Tecnico', 'Técnico']);
+            if (usuarioActual && usuarioActual.rol !== 'SuperAdmin') {
+                if (usuarioActual.departamento) queryTecs = queryTecs.eq('departamento', usuarioActual.departamento);
+                if (usuarioActual.ciudad) queryTecs = queryTecs.eq('ciudad', usuarioActual.ciudad);
+            }
+
+            const { data: usuariosTecnicos } = await queryTecs;
 
             if (usuariosTecnicos) {
                 usuariosTecnicos.forEach(tec => {
@@ -839,7 +868,7 @@
         function renderizarTablaAdmin(lista) {
             const tbody = document.getElementById('tablaAdminOrdenesBody');
             if (lista.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-slate-500">No hay códigos para mostrar.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="p-4 text-center text-slate-500">No hay códigos para mostrar.</td></tr>';
                 return;
             }
 
@@ -853,11 +882,14 @@
                 const lngFormatted = formatearGPS(o.coordenada_y);
                 let mapsUrl = (latFormatted && lngFormatted) ? "https://www.google.com/maps/search/?api=1&query=" + latFormatted + "," + lngFormatted : null;
 
+                const nodoTapTexto = (o.nodo ? 'N: ' + o.nodo : '') + (o.tap ? ' / TAP: ' + o.tap : '');
+
                 return '<tr class="hover:bg-slate-900/50 border-b border-slate-800 ' + (o.estado === 'PAGADO' ? 'bg-rose-950/20' : '') + '">' +
                     '<td class="p-3"><input type="checkbox" class="rowCheckbox" value="' + o.id + '" onchange="actualizarConteoSeleccionados()" /></td>' +
                     '<td class="p-3 font-bold text-sky-300">' + o.cliente_nro + '<br><span class="font-normal text-slate-300">' + (o.cliente_nombre || '') + '</span></td>' +
                     '<td class="p-3"><span class="text-sky-300 font-semibold">' + (o.departamento || 'TARIJA') + '</span> / ' + (o.ciudad || '') + '</td>' +
                     '<td class="p-3 text-slate-300">' + (o.direccion || '') + '</td>' +
+                    '<td class="p-3 font-semibold text-amber-300">' + (nodoTapTexto || '<span class="text-slate-600 italic">Sin datos</span>') + '</td>' +
                     '<td class="p-3 font-semibold text-sky-200">' + (o.tecnologia || '') + '</td>' +
                     '<td class="p-3 text-slate-400">' + (o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>') + '</td>' +
                     '<td class="p-3"><span class="' + badgeClass + ' border text-[10px] px-2 py-0.5 rounded-full">' + o.estado + '</span></td>' +
@@ -872,7 +904,13 @@
         }
 
         async function renderizarConciliacionPagosAdmin() {
-            const { data: gestiones } = await supabaseClient.from('historial_gestiones').select('*').order('fecha_gestion', { ascending: false });
+            let query = supabaseClient.from('historial_gestiones').select('*').order('fecha_gestion', { ascending: false });
+            
+            if (usuarioActual && usuarioActual.rol !== 'SuperAdmin') {
+                if (usuarioActual.ciudad) query = query.eq('ciudad', usuarioActual.ciudad);
+            }
+
+            const { data: gestiones } = await query;
             const container = document.getElementById('contenedorResumenPagosTecnicos');
 
             if (!gestiones || gestiones.length === 0) {
@@ -1128,6 +1166,7 @@
                         <div>
                             <span class="text-sky-400 font-bold">🔔 CÓDIGO: ${p.cliente_nro}</span>
                             <p class="text-white font-semibold mt-0.5">${p.cliente_nombre}</p>
+                            <p class="text-amber-300 text-[10px]">Nodo: ${p.nodo || '-'} | TAP: ${p.tap || '-'}</p>
                             <p class="text-slate-400 text-[10px]">📍 ${p.direccion}</p>
                         </div>
                         <button onclick="cambiarTabMobile('programar')" class="bg-sky-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">Ver Cita</button>
@@ -1179,6 +1218,7 @@
                         '<div>' +
                             '<span class="text-[9px] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">SA-' + o.cliente_nro + '</span>' +
                             '<h4 class="font-bold text-white text-xs mt-1">' + o.cliente_nombre + '</h4>' +
+                            '<p class="text-[10px] text-amber-300 font-semibold">Nodo: ' + (o.nodo || 'N/A') + ' | TAP: ' + (o.tap || 'N/A') + '</p>' +
                             '<p class="text-[10px] text-slate-400">📍 ' + o.direccion + '</p>' +
                         '</div>' +
                         '<span class="' + statusBadge + ' text-[9px] px-2 py-0.5 rounded-full border">' + o.estado + '</span>' +
@@ -1474,7 +1514,13 @@
         }
 
         async function cargarListaTecnicosSelects() {
-            const { data } = await supabaseClient.from('usuarios').select('nombre').order('nombre');
+            let query = supabaseClient.from('usuarios').select('nombre').order('nombre');
+            if (usuarioActual && usuarioActual.rol !== 'SuperAdmin') {
+                if (usuarioActual.departamento) query = query.eq('departamento', usuarioActual.departamento);
+                if (usuarioActual.ciudad) query = query.eq('ciudad', usuarioActual.ciudad);
+            }
+
+            const { data } = await query;
             if (data) {
                 const options = '<option value="">-- Seleccionar Técnico --</option>' + data.map(t => '<option value="' + t.nombre + '">' + t.nombre + '</option>').join('');
                 document.getElementById('batchTecnicoSelect').innerHTML = options;
