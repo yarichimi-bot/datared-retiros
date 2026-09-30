@@ -273,7 +273,7 @@
 
             <div id="seccionAdminDigitacion" class="hidden space-y-6">
                 <section class="tech-card p-6 rounded-2xl space-y-4">
-                    <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">🖥️ Panel de Digitación & Validación Back Office</h2>
+                    <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">🖥️️ Panel de Digitación & Validación Back Office</h2>
                     <div id="contenedorDigitacionOrdenes" class="space-y-3"><p class="text-slate-500 text-xs text-center italic py-4">No hay órdenes pendientes de revisión.</p></div>
                 </section>
             </div>
@@ -525,7 +525,9 @@
         let contadorEquiposDinamicos = 0;
         let contadorFungiblesCat = 0;
         let conteoPrevioOrdenesTecnico = 0;
+        
         let esPrimeraCargaMapaAdmin = true;
+        let estaUsuarioInteractuandoMapa = false;
         
         let fechaSeleccionadaTecnico = new Date().toISOString().slice(0, 10);
         let mobileMap = null;
@@ -692,6 +694,16 @@
             adminMap = L.map('adminMapContainer').setView([-21.96, -63.67], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(adminMap);
             adminMarkersGroup = L.layerGroup().addTo(adminMap);
+
+            adminMap.on('movestart zoomstart dragstart', () => {
+                estaUsuarioInteractuandoMapa = true;
+            });
+            adminMap.on('popupopen', () => {
+                estaUsuarioInteractuandoMapa = true;
+            });
+            adminMap.on('popupclose', () => {
+                estaUsuarioInteractuandoMapa = false;
+            });
         }
 
         function toggleMapaAdmin() {
@@ -823,9 +835,13 @@
             await actualizarMapaAdminConPuntosYTecnicos(ordenesFiltradasAdmin, forzarAjusteMapa);
         }
 
-        // 🚀 CONTROL INTELIGENTE DE MAPA PARA EVITAR QUE SE REAJUSTE SOLO CADENAS SEGUNDOS
         async function actualizarMapaAdminConPuntosYTecnicos(lista, forzarAjuste = false) {
             if (!adminMap || !adminMarkersGroup) return;
+
+            if (estaUsuarioInteractuandoMapa && !forzarAjuste) {
+                return;
+            }
+
             adminMarkersGroup.clearLayers();
             let bounds = [];
 
@@ -891,10 +907,10 @@
                 });
             }
 
-            // 🚀 Solo encuadramos la pantalla la primera vez o cuando la operadora explícitamente selecciona un filtro
             if ((esPrimeraCargaMapaAdmin || forzarAjuste) && bounds.length > 0) {
                 adminMap.fitBounds(bounds, { padding: [30, 30] });
                 esPrimeraCargaMapaAdmin = false;
+                estaUsuarioInteractuandoMapa = false;
             }
         }
 
