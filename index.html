@@ -45,7 +45,7 @@
             z-index: 10;
         }
         #adminMapContainer {
-            height: 280px;
+            height: 320px;
             width: 100%;
             border-radius: 1rem;
             position: relative;
@@ -56,6 +56,17 @@
         }
         .leaflet-top, .leaflet-bottom {
             z-index: 15 !important;
+        }
+        .label-tecnico-gps {
+            background: rgba(2, 132, 199, 0.9);
+            border: 1px solid #38bdf8;
+            color: white;
+            font-weight: bold;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            white-space: nowrap;
+            box-shadow: 0 0 8px rgba(56, 189, 248, 0.5);
         }
     </style>
 </head>
@@ -136,7 +147,7 @@
                         <p class="text-xl font-black text-white mt-0.5" id="countTotal">0</p>
                     </div>
                     <div onclick="filtrarPorTabAdmin('SIN_ASIGNAR')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-amber-400 transition-all border-amber-500/30">
-                        <p class="text-[10px] font-bold text-amber-400">⚠️️ SIN ASIGNAR</p>
+                        <p class="text-[10px] font-bold text-amber-400">⚠️ SIN ASIGNAR</p>
                         <p class="text-xl font-black text-amber-200 mt-0.5" id="countSinAsignar">0</p>
                     </div>
                     <div onclick="filtrarPorTabAdmin('PENDIENTES')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-sky-400 transition-all border-sky-500/30">
@@ -156,7 +167,7 @@
                 <section class="tech-card p-4 rounded-2xl space-y-2">
                     <div class="flex justify-between items-center">
                         <h3 class="font-bold text-sky-300 text-xs flex items-center gap-1.5">
-                            🗺️ MONITOREO GPS DE CLIENTES Y TÉCNICOS EN CAMPO
+                            🗺️ MONITOREO GPS EN TIEMPO REAL (CLIENTES Y TÉCNICOS)
                         </h3>
                         <button onclick="toggleMapaAdmin()" id="btnToggleMapaAdmin" class="text-[10px] bg-slate-800 text-sky-300 px-2.5 py-1 rounded-lg border border-sky-500/30">
                             Ocultar Mapa 👁️
@@ -676,7 +687,7 @@
             aplicarFiltrosAdminLocales();
         }
 
-        function aplicarFiltrosAdminLocales() {
+        async function aplicarFiltrosAdminLocales() {
             const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
             const deptoVal = document.getElementById('deptoSelectFilter').value;
             const ciudadVal = document.getElementById('ciudadSelectFilter').value;
@@ -701,6 +712,83 @@
             });
 
             renderizarTablaAdmin(ordenesFiltradasAdmin);
+            await actualizarMapaAdminConPuntosYTecnicos(ordenesFiltradasAdmin);
+        }
+
+        async function actualizarMapaAdminConPuntosYTecnicos(lista) {
+            if (!adminMap || !adminMarkersGroup) return;
+            adminMarkersGroup.clearLayers();
+            let bounds = [];
+
+            // 1. Renderizar Puntos de Clientes
+            lista.forEach(o => {
+                const lat = formatearGPS(o.coordenada_x);
+                const lng = formatearGPS(o.coordenada_y);
+
+                if (lat && lng) {
+                    const latNum = parseFloat(lat);
+                    const lngNum = parseFloat(lng);
+                    bounds.push([latNum, lngNum]);
+
+                    let colorHex = '#0284c7'; // Azul por defecto
+                    if (o.estado === 'RETIRADO') colorHex = '#10b981'; // Verde
+                    if (o.estado === 'PAGADO') colorHex = '#e11d48'; // Rojo
+
+                    const marker = L.circleMarker([latNum, lngNum], {
+                        radius: 6,
+                        color: colorHex,
+                        fillColor: colorHex,
+                        fillOpacity: 0.8
+                    }).bindPopup(`
+                        <div class="text-xs font-sans">
+                            <b class="text-sky-600">${o.cliente_nro}</b><br>
+                            <b>${o.cliente_nombre}</b><br>
+                            <span class="text-slate-500">${o.direccion}</span><br>
+                            <b>Técnico:</b> ${o.tecnico_asignado || 'Sin Asignar'}
+                        </div>
+                    `);
+                    adminMarkersGroup.addLayer(marker);
+                }
+            });
+
+            // 2. Renderizar Ubicación en Tiempo Real de Técnicos
+            const { data: usuariosTecnicos } = await supabaseClient
+                .from('usuarios')
+                .select('*')
+                .in('rol', ['Tecnico', 'Técnico']);
+
+            if (usuariosTecnicos) {
+                usuariosTecnicos.forEach(tec => {
+                    const latTec = formatearGPS(tec.latitud_actual);
+                    const lngTec = formatearGPS(tec.longitud_actual);
+
+                    if (latTec && lngTec) {
+                        const latNum = parseFloat(latTec);
+                        const lngNum = parseFloat(lngTec);
+                        bounds.push([latNum, lngNum]);
+
+                        const tecMarker = L.marker([latNum, lngNum]).bindPopup(`
+                            <div class="text-xs font-sans">
+                                <b class="text-emerald-600">👤 TÉCNICO EN CAMPO</b><br>
+                                <b>${tec.nombre}</b><br>
+                                <span>Ciudad: ${tec.ciudad || 'BOLIVIA'}</span>
+                            </div>
+                        `);
+
+                        tecMarker.bindTooltip(tec.nombre, {
+                            permanent: true,
+                            direction: 'top',
+                            className: 'label-tecnico-gps'
+                        });
+
+                        adminMarkersGroup.addLayer(tecMarker);
+                    }
+                });
+            }
+
+            if (bounds.length > 0) {
+                adminMap.fitBounds(bounds, { padding: [30, 30] });
+            }
         }
 
         function renderizarTablaAdmin(lista) {
@@ -915,13 +1003,21 @@
             mobileMarkersGroup = L.layerGroup().addTo(mobileMap);
 
             if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(pos => {
+                navigator.geolocation.watchPosition(async pos => {
                     const lat = pos.coords.latitude;
                     const lng = pos.coords.longitude;
                     if (miGpsMarker) {
                         miGpsMarker.setLatLng([lat, lng]);
                     } else {
                         miGpsMarker = L.circleMarker([lat, lng], { radius: 7, color: '#38bdf8', fillColor: '#0284c7', fillOpacity: 1 }).addTo(mobileMap);
+                    }
+
+                    // Transmitir posición del técnico a Supabase
+                    if (usuarioActual && usuarioActual.id) {
+                        await supabaseClient.from('usuarios').update({
+                            latitud_actual: lat,
+                            longitud_actual: lng
+                        }).eq('id', usuarioActual.id);
                     }
                 });
             }
@@ -1190,7 +1286,7 @@
                     document.querySelector('#' + idFila + ' .serieInput').value = snMatch[1].trim();
                     statusDiv.innerText = "✅ Serie detectada e insertada automáticamente.";
                 } else {
-                    statusDiv.innerText = "⚠️ No se detectó un patrón de serie claro. Ingrésalo manualmente.";
+                    statusDiv.innerText = "⚠️️ No se detectó un patrón de serie claro. Ingrésalo manualmente.";
                 }
             } catch (err) {
                 statusDiv.innerText = "Error en procesamiento OCR.";
