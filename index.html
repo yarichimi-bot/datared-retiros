@@ -197,13 +197,11 @@
                         </div>
 
                         <div class="flex flex-wrap items-center gap-2">
-                            <!-- BUSCADOR POR TEXTO LIBRE (CÓDIGO, NODO, CLIENTE, DIRECCIÓN, REF) -->
-                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosAdminLocales()" placeholder="🔍 Buscar Código, Nodo, Cliente..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-48" />
+                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosAdminLocales(true)" placeholder="🔍 Buscar Código, Nodo, Cliente..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-48" />
                             <select id="deptoSelectFilter" onchange="alCambiarFiltroDepto()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Depto --</option></select>
                             <select id="ciudadSelectFilter" onchange="alCambiarFiltroCiudad()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Ciudad --</option></select>
-                            <!-- DESPLEGABLE DE NODOS -->
-                            <select id="nodoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs font-bold text-amber-300"><option value="">-- Nodo --</option></select>
-                            <select id="tecnicoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Técnico --</option></select>
+                            <select id="nodoSelectFilter" onchange="aplicarFiltrosAdminLocales(true)" class="tech-input rounded-xl p-2 text-xs font-bold text-amber-300"><option value="">-- Nodo --</option></select>
+                            <select id="tecnicoSelectFilter" onchange="aplicarFiltrosAdminLocales(true)" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Técnico --</option></select>
 
                             <button onclick="exportarPlanillaPagosGlobal()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1">
                                 📊 Exportar Planilla
@@ -527,6 +525,7 @@
         let contadorEquiposDinamicos = 0;
         let contadorFungiblesCat = 0;
         let conteoPrevioOrdenesTecnico = 0;
+        let esPrimeraCargaMapaAdmin = true;
         
         let fechaSeleccionadaTecnico = new Date().toISOString().slice(0, 10);
         let mobileMap = null;
@@ -549,7 +548,6 @@
             return str;
         }
 
-        // 🚀 EXTRAER NOMBRE LIMPIO DE NODO
         function extraerNombreNodo(strZona) {
             if (!strZona) return '';
             const match = strZona.match(/NODO\s+([A-Za-z0-9]+)/i);
@@ -714,7 +712,7 @@
             ordenesGlobalesAdmin = data || [];
             poblarFiltrosDesplegables(ordenesGlobalesAdmin);
             actualizarContadoresAdmin();
-            aplicarFiltrosAdminLocales();
+            aplicarFiltrosAdminLocales(false);
         }
 
         function poblarFiltrosDesplegables(lista) {
@@ -752,7 +750,6 @@
             if (deptoVal) listaFiltrada = listaFiltrada.filter(o => o.departamento === deptoVal);
             if (ciudadVal) listaFiltrada = listaFiltrada.filter(o => o.ciudad === ciudadVal);
 
-            // 🚀 EXTRAER Y POBLAR NODOS ÚNICOS
             const nodosSet = new Set();
             listaFiltrada.forEach(o => {
                 const z = o.zona_nodo_tap || o.nodo;
@@ -773,7 +770,7 @@
             const selectTec = document.getElementById('tecnicoSelectFilter');
             selectTec.innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
 
-            aplicarFiltrosAdminLocales();
+            aplicarFiltrosAdminLocales(true);
         }
 
         function actualizarContadoresAdmin() {
@@ -786,11 +783,10 @@
 
         function filtrarPorTabAdmin(tab) {
             tabActualAdmin = tab;
-            aplicarFiltrosAdminLocales();
+            aplicarFiltrosAdminLocales(true);
         }
 
-        // 🚀 FILTRO COMBINADO POTENTE (BUSCADOR LIBRE DE NODO O TEXTO + SELECTORES)
-        async function aplicarFiltrosAdminLocales() {
+        async function aplicarFiltrosAdminLocales(forzarAjusteMapa = false) {
             const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
             const deptoVal = document.getElementById('deptoSelectFilter').value;
             const ciudadVal = document.getElementById('ciudadSelectFilter').value;
@@ -806,7 +802,6 @@
                 if (deptoVal && o.departamento !== deptoVal) return false;
                 if (ciudadVal && o.ciudad !== ciudadVal) return false;
                 
-                // Filtro estricto por desplegable de Nodo
                 if (nodoVal) {
                     const nodoFila = extraerNombreNodo(o.zona_nodo_tap || o.nodo);
                     if (!nodoFila.includes(nodoVal.replace('NODO ', '')) && nodoFila !== nodoVal) return false;
@@ -814,7 +809,6 @@
 
                 if (tecnicoVal && o.tecnico_asignado !== tecnicoVal) return false;
 
-                // Buscador de texto inteligente (sirve para código, nombre, nodo completo, TAP o referencia)
                 if (searchText) {
                     const matchCodigo = o.cliente_nro && o.cliente_nro.toLowerCase().includes(searchText);
                     const matchNombre = o.cliente_nombre && o.cliente_nombre.toLowerCase().includes(searchText);
@@ -826,10 +820,11 @@
             });
 
             renderizarTablaAdmin(ordenesFiltradasAdmin);
-            await actualizarMapaAdminConPuntosYTecnicos(ordenesFiltradasAdmin);
+            await actualizarMapaAdminConPuntosYTecnicos(ordenesFiltradasAdmin, forzarAjusteMapa);
         }
 
-        async function actualizarMapaAdminConPuntosYTecnicos(lista) {
+        // 🚀 CONTROL INTELIGENTE DE MAPA PARA EVITAR QUE SE REAJUSTE SOLO CADENAS SEGUNDOS
+        async function actualizarMapaAdminConPuntosYTecnicos(lista, forzarAjuste = false) {
             if (!adminMap || !adminMarkersGroup) return;
             adminMarkersGroup.clearLayers();
             let bounds = [];
@@ -896,8 +891,10 @@
                 });
             }
 
-            if (bounds.length > 0) {
+            // 🚀 Solo encuadramos la pantalla la primera vez o cuando la operadora explícitamente selecciona un filtro
+            if ((esPrimeraCargaMapaAdmin || forzarAjuste) && bounds.length > 0) {
                 adminMap.fitBounds(bounds, { padding: [30, 30] });
+                esPrimeraCargaMapaAdmin = false;
             }
         }
 
