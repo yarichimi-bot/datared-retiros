@@ -471,7 +471,7 @@
         </div>
     </div>
 
-    <!-- MODAL ASIGNACIÓN MASIVA MEJORADO CON BÚSQUEDA Y TEXTO LIBRE -->
+    <!-- MODAL ASIGNACIÓN MASIVA MEJORADO -->
     <div id="modalAsignacionMasiva" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="tech-card max-w-md w-full rounded-2xl p-6 space-y-4">
             <h3 class="font-bold text-lg text-sky-300">⚡ Asignación / Reasignación de Técnico</h3>
@@ -1520,7 +1520,8 @@
         async function marcarComoPagadoModal() {
             if (!ordenSeleccionadaGestion) return;
             if (confirm('¿Confirmar que el cliente ' + ordenSeleccionadaGestion.cliente_nro + ' PAGÓ su deuda?')) {
-                await supabaseClient.from('ordenes_retiro').update({ estado: 'PAGADO' }).eq('id', ordenSeleccionadaGestion.id);
+                const targetId = (/^\d+$/).test(String(ordenSeleccionadaGestion.id)) ? Number(ordenSeleccionadaGestion.id) : ordenSeleccionadaGestion.id;
+                await supabaseClient.from('ordenes_retiro').update({ estado: 'PAGADO' }).eq('id', targetId);
                 cerrarModalGestion();
                 if (['Tecnico', 'Técnico'].includes(usuarioActual.rol)) {
                     await cargarDatosTecnico();
@@ -1543,7 +1544,7 @@
                     document.querySelector('#' + idFila + ' .serieInput').value = snMatch[1].trim();
                     statusDiv.innerText = "✅ Serie detectada e insertada automáticamente.";
                 } else {
-                    statusDiv.innerText = "⚠️️ No se detectó un patrón de serie claro. Ingrésalo manualmente.";
+                    statusDiv.innerText = "⚠️ No se detectó un patrón de serie claro. Ingrésalo manualmente.";
                 }
             } catch (err) {
                 statusDiv.innerText = "Error en procesamiento OCR.";
@@ -1589,7 +1590,8 @@
                 }
             });
 
-            const targetId = !isNaN(ordenSeleccionadaGestion.id) ? Number(ordenSeleccionadaGestion.id) : ordenSeleccionadaGestion.id;
+            const rawId = String(ordenSeleccionadaGestion.id);
+            const targetId = (/^\d+$/).test(rawId) ? Number(rawId) : rawId;
 
             await supabaseClient.from('historial_gestiones').insert([{
                 orden_id: targetId,
@@ -1658,7 +1660,6 @@
             }
         }
 
-        // 🚀 Carga de técnicos combinada (Escribir + Seleccionar)
         async function cargarListaTecnicosSelects() {
             const { data } = await supabaseClient.from('usuarios').select('nombre').order('nombre');
             if (data) {
@@ -1677,13 +1678,20 @@
             document.getElementById('modalAsignacionMasiva').classList.add('hidden');
         }
 
-        // 🚀 Asignación permitiendo texto libre o valor de la lista
+        // 🚀 ASIGNACIÓN MASIVA CORREGIDA (PROSESA IDs NUMÉRICOS Y TEXTO CORRECTAMENTE)
         async function ejecutarAsignacionMasiva() {
             const tecnico = document.getElementById('batchTecnicoInput').value.trim();
             if (!tecnico) return alert('Selecciona o escribe un técnico.');
 
             const rawIds = Array.from(document.querySelectorAll('.rowCheckbox:checked')).map(cb => cb.value);
-            const idsProcessed = rawIds.map(id => !isNaN(id) ? Number(id) : id);
+            
+            if (rawIds.length === 0) {
+                return alert('No hay ningún cliente seleccionado en la tabla.');
+            }
+
+            const idsProcessed = rawIds.map(id => {
+                return (/^\d+$/).test(id) ? Number(id) : id;
+            });
 
             const { data, error } = await supabaseClient
                 .from('ordenes_retiro')
@@ -1692,10 +1700,12 @@
                 .select();
 
             if (error) {
-                alert('Error al asignar: ' + error.message);
+                alert('Error al asignar en Supabase: ' + error.message);
             } else {
-                lanzarNotificacion("⚡ Asignación Masiva Exitosa", `Se enviaron ${idsProcessed.length} órdenes al técnico ${tecnico}.`);
-                alert('Se asignaron ' + (data ? data.length : idsProcessed.length) + ' órdenes a ' + tecnico + '.');
+                const totalModificados = data ? data.length : 0;
+                lanzarNotificacion("⚡ Asignación Masiva Exitosa", `Se enviaron ${totalModificados} órdenes al técnico ${tecnico}.`);
+                alert('Se asignaron ' + totalModificados + ' órdenes a ' + tecnico + '.');
+                
                 document.getElementById('batchTecnicoInput').value = '';
                 cerrarModalAsignacionMasiva();
                 await cargarOrdenesAdminDesdeSupabase();
