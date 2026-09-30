@@ -471,15 +471,14 @@
         </div>
     </div>
 
-    <!-- MODAL ASIGNACIÓN MASIVA -->
+    <!-- MODAL ASIGNACIÓN MASIVA MEJORADO CON BÚSQUEDA Y TEXTO LIBRE -->
     <div id="modalAsignacionMasiva" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="tech-card max-w-md w-full rounded-2xl p-6 space-y-4">
             <h3 class="font-bold text-lg text-sky-300">⚡ Asignación / Reasignación de Técnico</h3>
             <div>
-                <label class="block text-xs font-semibold text-sky-300 mb-1">TÉCNICO DESTINO</label>
-                <select id="batchTecnicoSelect" class="w-full tech-input rounded-xl p-3 text-xs">
-                    <option value="">Cargando lista...</option>
-                </select>
+                <label class="block text-xs font-semibold text-sky-300 mb-1">TÉCNICO DESTINO (Selecciona o escribe)</label>
+                <input type="text" id="batchTecnicoInput" list="listaTecnicosDatalist" placeholder="🔍 Escribe o selecciona el nombre..." class="w-full tech-input rounded-xl p-3 text-xs" />
+                <datalist id="listaTecnicosDatalist"></datalist>
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button onclick="cerrarModalAsignacionMasiva()" class="text-xs px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Cancelar</button>
@@ -561,7 +560,6 @@
         window.onload = function() {
             pedirPermisoNotificacionesPush();
             
-            // Establecer fecha actual en la agenda
             const agendaInput = document.getElementById('agendaFechaFilter');
             if (agendaInput) {
                 agendaInput.value = new Date().toISOString().slice(0, 10);
@@ -700,7 +698,6 @@
             if (seccion === 'carga') document.getElementById('seccionAdminCarga').classList.remove('hidden');
         }
 
-        // 🚀 FUNCIÓN DE AGENDA CORREGIDA Y PROBADA
         async function calcularResumenAgenda() {
             const fechaInput = document.getElementById('agendaFechaFilter').value;
             if (!fechaInput) return alert('Por favor selecciona una fecha');
@@ -713,12 +710,10 @@
             elPendientes.innerText = "⏳";
             elReportes.innerText = "⏳";
 
-            // 1. Obtener órdenes de retiro registradas o asignadas esa fecha
             const { data: ordenes } = await supabaseClient
                 .from('ordenes_retiro')
                 .select('*');
 
-            // 2. Obtener retiros ejecutados (gestiones)
             const { data: gestiones } = await supabaseClient
                 .from('historial_gestiones')
                 .select('*');
@@ -780,7 +775,7 @@
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
             } else {
                 wrapper.classList.add('hidden');
-                btn.innerText = "Mostrar Mapa 🗺️️";
+                btn.innerText = "Mostrar Mapa 🗺️";
             }
         }
 
@@ -1548,7 +1543,7 @@
                     document.querySelector('#' + idFila + ' .serieInput').value = snMatch[1].trim();
                     statusDiv.innerText = "✅ Serie detectada e insertada automáticamente.";
                 } else {
-                    statusDiv.innerText = "⚠️ No se detectó un patrón de serie claro. Ingrésalo manualmente.";
+                    statusDiv.innerText = "⚠️️ No se detectó un patrón de serie claro. Ingrésalo manualmente.";
                 }
             } catch (err) {
                 statusDiv.innerText = "Error en procesamiento OCR.";
@@ -1663,11 +1658,14 @@
             }
         }
 
+        // 🚀 Carga de técnicos combinada (Escribir + Seleccionar)
         async function cargarListaTecnicosSelects() {
             const { data } = await supabaseClient.from('usuarios').select('nombre').order('nombre');
             if (data) {
-                const options = '<option value="">-- Seleccionar Técnico --</option>' + data.map(t => '<option value="' + t.nombre + '">' + t.nombre + '</option>').join('');
-                document.getElementById('batchTecnicoSelect').innerHTML = options;
+                const datalist = document.getElementById('listaTecnicosDatalist');
+                if (datalist) {
+                    datalist.innerHTML = data.map(t => `<option value="${t.nombre}">`).join('');
+                }
             }
         }
 
@@ -1679,9 +1677,10 @@
             document.getElementById('modalAsignacionMasiva').classList.add('hidden');
         }
 
+        // 🚀 Asignación permitiendo texto libre o valor de la lista
         async function ejecutarAsignacionMasiva() {
-            const tecnico = document.getElementById('batchTecnicoSelect').value;
-            if (!tecnico) return alert('Selecciona un técnico.');
+            const tecnico = document.getElementById('batchTecnicoInput').value.trim();
+            if (!tecnico) return alert('Selecciona o escribe un técnico.');
 
             const rawIds = Array.from(document.querySelectorAll('.rowCheckbox:checked')).map(cb => cb.value);
             const idsProcessed = rawIds.map(id => !isNaN(id) ? Number(id) : id);
@@ -1697,6 +1696,7 @@
             } else {
                 lanzarNotificacion("⚡ Asignación Masiva Exitosa", `Se enviaron ${idsProcessed.length} órdenes al técnico ${tecnico}.`);
                 alert('Se asignaron ' + (data ? data.length : idsProcessed.length) + ' órdenes a ' + tecnico + '.');
+                document.getElementById('batchTecnicoInput').value = '';
                 cerrarModalAsignacionMasiva();
                 await cargarOrdenesAdminDesdeSupabase();
             }
