@@ -179,7 +179,7 @@
                             🗺️ MONITOREO GPS EN TIEMPO REAL (CLIENTES Y TÉCNICOS)
                         </h3>
                         <button onclick="toggleMapaAdmin()" id="btnToggleMapaAdmin" class="text-[10px] bg-slate-800 text-sky-300 px-2.5 py-1 rounded-lg border border-slate-600">
-                            Ocultar Mapa 👁️️
+                            Ocultar Mapa 👁️
                         </button>
                     </div>
                     <div id="adminMapWrapper">
@@ -560,6 +560,13 @@
 
         window.onload = function() {
             pedirPermisoNotificacionesPush();
+            
+            // Establecer fecha actual en la agenda
+            const agendaInput = document.getElementById('agendaFechaFilter');
+            if (agendaInput) {
+                agendaInput.value = new Date().toISOString().slice(0, 10);
+            }
+
             const savedUser = localStorage.getItem('datared_active_user');
             if (savedUser) {
                 try {
@@ -682,12 +689,69 @@
                 document.getElementById('seccionAdminPagos').classList.remove('hidden');
                 renderizarConciliacionPagosAdmin();
             }
-            if (seccion === 'agenda') document.getElementById('seccionAdminAgenda').classList.remove('hidden');
+            if (seccion === 'agenda') {
+                document.getElementById('seccionAdminAgenda').classList.remove('hidden');
+                calcularResumenAgenda();
+            }
             if (seccion === 'digitacion') {
                 document.getElementById('seccionAdminDigitacion').classList.remove('hidden');
                 renderizarDigitacionAdmin();
             }
             if (seccion === 'carga') document.getElementById('seccionAdminCarga').classList.remove('hidden');
+        }
+
+        // 🚀 FUNCIÓN DE AGENDA CORREGIDA Y PROBADA
+        async function calcularResumenAgenda() {
+            const fechaInput = document.getElementById('agendaFechaFilter').value;
+            if (!fechaInput) return alert('Por favor selecciona una fecha');
+
+            const elEjecutados = document.getElementById('agendaEjecutados');
+            const elPendientes = document.getElementById('agendaPendientes');
+            const elReportes = document.getElementById('agendaConReporte');
+
+            elEjecutados.innerText = "⏳";
+            elPendientes.innerText = "⏳";
+            elReportes.innerText = "⏳";
+
+            // 1. Obtener órdenes de retiro registradas o asignadas esa fecha
+            const { data: ordenes } = await supabaseClient
+                .from('ordenes_retiro')
+                .select('*');
+
+            // 2. Obtener retiros ejecutados (gestiones)
+            const { data: gestiones } = await supabaseClient
+                .from('historial_gestiones')
+                .select('*');
+
+            let ejecutados = 0;
+            let pendientes = 0;
+            let conReporte = 0;
+
+            if (ordenes) {
+                ordenes.forEach(o => {
+                    const fReg = o.fecha_registro ? o.fecha_registro.slice(0, 10) : '';
+                    if (fReg === fechaInput) {
+                        if (o.estado === 'RETIRADO' || o.estado === 'PAGADO') {
+                            ejecutados++;
+                        } else {
+                            pendientes++;
+                        }
+                    }
+                });
+            }
+
+            if (gestiones) {
+                gestiones.forEach(g => {
+                    const fGest = g.fecha_gestion ? g.fecha_gestion.slice(0, 10) : '';
+                    if (fGest === fechaInput) {
+                        conReporte++;
+                    }
+                });
+            }
+
+            elEjecutados.innerText = ejecutados;
+            elPendientes.innerText = pendientes;
+            elReportes.innerText = conReporte;
         }
 
         function inicializarMapaAdmin() {
@@ -716,7 +780,7 @@
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
             } else {
                 wrapper.classList.add('hidden');
-                btn.innerText = "Mostrar Mapa 🗺️";
+                btn.innerText = "Mostrar Mapa 🗺️️";
             }
         }
 
