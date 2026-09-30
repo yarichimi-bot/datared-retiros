@@ -197,9 +197,12 @@
                         </div>
 
                         <div class="flex flex-wrap items-center gap-2">
-                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosAdminLocales()" placeholder="🔍 Código, cliente..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-36" />
+                            <!-- BUSCADOR POR TEXTO LIBRE (CÓDIGO, NODO, CLIENTE, DIRECCIÓN, REF) -->
+                            <input type="text" id="searchInput" onkeyup="aplicarFiltrosAdminLocales()" placeholder="🔍 Buscar Código, Nodo, Cliente..." class="tech-input rounded-xl p-2 px-3 text-xs w-full sm:w-48" />
                             <select id="deptoSelectFilter" onchange="alCambiarFiltroDepto()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Depto --</option></select>
-                            <select id="ciudadSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Ciudad --</option></select>
+                            <select id="ciudadSelectFilter" onchange="alCambiarFiltroCiudad()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Ciudad --</option></select>
+                            <!-- DESPLEGABLE DE NODOS -->
+                            <select id="nodoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs font-bold text-amber-300"><option value="">-- Nodo --</option></select>
                             <select id="tecnicoSelectFilter" onchange="aplicarFiltrosAdminLocales()" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Técnico --</option></select>
 
                             <button onclick="exportarPlanillaPagosGlobal()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1">
@@ -290,7 +293,7 @@
         </main>
     </div>
 
-    <!-- VISTA B: TÉCNICO EN CAMPO -->
+    <!-- VISTA TÉCNICO -->
     <div id="appTecnicoContent" class="hidden pb-20">
         <header class="field-service-header p-3 text-white space-y-2 sticky top-0 z-30 shadow-lg">
             <div class="flex justify-between items-center text-[10px] tracking-wider text-sky-300 border-b border-sky-500/20 pb-1.5">
@@ -546,6 +549,14 @@
             return str;
         }
 
+        // 🚀 EXTRAER NOMBRE LIMPIO DE NODO
+        function extraerNombreNodo(strZona) {
+            if (!strZona) return '';
+            const match = strZona.match(/NODO\s+([A-Za-z0-9]+)/i);
+            if (match && match[1]) return `NODO ${match[1].toUpperCase()}`;
+            return strZona.trim();
+        }
+
         window.onload = function() {
             pedirPermisoNotificacionesPush();
             const savedUser = localStorage.getItem('datared_active_user');
@@ -730,7 +741,35 @@
             selectCiudad.innerHTML = '<option value="">-- Ciudad --</option>' + ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
             if (ciudades.includes(valPrevCiudad)) selectCiudad.value = valPrevCiudad;
 
-            const tecnicos = [...new Set(listaCiudades.map(o => o.tecnico_asignado).filter(Boolean))].sort();
+            alCambiarFiltroCiudad();
+        }
+
+        function alCambiarFiltroCiudad() {
+            const deptoVal = document.getElementById('deptoSelectFilter').value;
+            const ciudadVal = document.getElementById('ciudadSelectFilter').value;
+            
+            let listaFiltrada = ordenesGlobalesAdmin;
+            if (deptoVal) listaFiltrada = listaFiltrada.filter(o => o.departamento === deptoVal);
+            if (ciudadVal) listaFiltrada = listaFiltrada.filter(o => o.ciudad === ciudadVal);
+
+            // 🚀 EXTRAER Y POBLAR NODOS ÚNICOS
+            const nodosSet = new Set();
+            listaFiltrada.forEach(o => {
+                const z = o.zona_nodo_tap || o.nodo;
+                if (z) {
+                    const n = extraerNombreNodo(z);
+                    if (n) nodosSet.add(n);
+                }
+            });
+
+            const nodos = Array.from(nodosSet).sort();
+            const selectNodo = document.getElementById('nodoSelectFilter');
+            const valPrevNodo = selectNodo.value;
+
+            selectNodo.innerHTML = '<option value="">🔍 -- Filtrar Nodo --</option>' + nodos.map(n => `<option value="${n}">${n}</option>`).join('');
+            if (nodos.includes(valPrevNodo)) selectNodo.value = valPrevNodo;
+
+            const tecnicos = [...new Set(listaFiltrada.map(o => o.tecnico_asignado).filter(Boolean))].sort();
             const selectTec = document.getElementById('tecnicoSelectFilter');
             selectTec.innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
 
@@ -750,10 +789,12 @@
             aplicarFiltrosAdminLocales();
         }
 
+        // 🚀 FILTRO COMBINADO POTENTE (BUSCADOR LIBRE DE NODO O TEXTO + SELECTORES)
         async function aplicarFiltrosAdminLocales() {
             const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
             const deptoVal = document.getElementById('deptoSelectFilter').value;
             const ciudadVal = document.getElementById('ciudadSelectFilter').value;
+            const nodoVal = document.getElementById('nodoSelectFilter').value;
             const tecnicoVal = document.getElementById('tecnicoSelectFilter').value;
 
             ordenesFiltradasAdmin = ordenesGlobalesAdmin.filter(o => {
@@ -764,8 +805,16 @@
 
                 if (deptoVal && o.departamento !== deptoVal) return false;
                 if (ciudadVal && o.ciudad !== ciudadVal) return false;
+                
+                // Filtro estricto por desplegable de Nodo
+                if (nodoVal) {
+                    const nodoFila = extraerNombreNodo(o.zona_nodo_tap || o.nodo);
+                    if (!nodoFila.includes(nodoVal.replace('NODO ', '')) && nodoFila !== nodoVal) return false;
+                }
+
                 if (tecnicoVal && o.tecnico_asignado !== tecnicoVal) return false;
 
+                // Buscador de texto inteligente (sirve para código, nombre, nodo completo, TAP o referencia)
                 if (searchText) {
                     const matchCodigo = o.cliente_nro && o.cliente_nro.toLowerCase().includes(searchText);
                     const matchNombre = o.cliente_nombre && o.cliente_nombre.toLowerCase().includes(searchText);
@@ -1469,7 +1518,6 @@
 
             const targetId = !isNaN(ordenSeleccionadaGestion.id) ? Number(ordenSeleccionadaGestion.id) : ordenSeleccionadaGestion.id;
 
-            // Guardar en la base de datos
             await supabaseClient.from('historial_gestiones').insert([{
                 orden_id: targetId,
                 cliente_nro: ordenSeleccionadaGestion.cliente_nro,
@@ -1494,7 +1542,6 @@
 
             await supabaseClient.from('ordenes_retiro').update({ estado: 'RETIRADO' }).eq('id', targetId);
 
-            // 🚀 GENERAR REPORTE OFICIAL PARA WPP
             const mensajeWpp = `📡 *INFORME DE RETIRO EJECUTADO - DATARED*
 👤 *TÉCNICO:* ${usuarioActual.nombre}
 🏢 *CIUDAD:* ${ordenSeleccionadaGestion.ciudad || 'YACUIBA'}
