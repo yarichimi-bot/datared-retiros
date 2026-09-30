@@ -16,18 +16,22 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <!-- Leaflet para Mapas -->
+    
+    <!-- Leaflet y Plugin de Clustering para Alto Rendimiento -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
     <style>
-        /* TEMA CORPORATIVO ENTERPRISE SLATE */
         body {
-            background-color: #0f172a; /* Slate 900 */
+            background-color: #0f172a;
             color: #f1f5f9;
         }
         .tech-card {
-            background: #1e293b; /* Slate 800 */
-            border: 1px solid #334155; /* Slate 700 */
+            background: #1e293b;
+            border: 1px solid #334155;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
         }
         .tech-input {
@@ -176,7 +180,7 @@
                 <section class="tech-card p-4 rounded-2xl space-y-2">
                     <div class="flex justify-between items-center">
                         <h3 class="font-bold text-sky-300 text-xs flex items-center gap-1.5">
-                            🗺️ MONITOREO GPS EN TIEMPO REAL (CLIENTES Y TÉCNICOS)
+                            🗺️ MONITOREO GPS EN TIEMPO REAL (CLUSTERIZADO)
                         </h3>
                         <button onclick="toggleMapaAdmin()" id="btnToggleMapaAdmin" class="text-[10px] bg-slate-800 text-sky-300 px-2.5 py-1 rounded-lg border border-slate-600">
                             Ocultar Mapa 👁️
@@ -471,7 +475,7 @@
         </div>
     </div>
 
-    <!-- MODAL ASIGNACIÓN MASIVA MEJORADO -->
+    <!-- MODAL ASIGNACIÓN MASIVA -->
     <div id="modalAsignacionMasiva" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
         <div class="tech-card max-w-md w-full rounded-2xl p-6 space-y-4">
             <h3 class="font-bold text-lg text-sky-300">⚡ Asignación / Reasignación de Técnico</h3>
@@ -534,7 +538,7 @@
         let adminMap = null;
         let miGpsMarker = null;
         let mobileMarkersGroup = null;
-        let adminMarkersGroup = null;
+        let adminClusterGroup = null; // Grupo de Marcadores Clusterizados
         let intervaloRealtime = null;
 
         function formatearGPS(val) {
@@ -753,7 +757,14 @@
             if (adminMap) return;
             adminMap = L.map('adminMapContainer').setView([-21.96, -63.67], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(adminMap);
-            adminMarkersGroup = L.layerGroup().addTo(adminMap);
+            
+            // 🚀 Marcadores agrupados mediante MarkerCluster
+            adminClusterGroup = L.markerClusterGroup({
+                disableClusteringAtZoom: 16,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false
+            });
+            adminMap.addLayer(adminClusterGroup);
 
             adminMap.on('movestart zoomstart dragstart', () => {
                 estaUsuarioInteractuandoMapa = true;
@@ -838,11 +849,18 @@
             selectNodo.innerHTML = '<option value="">🔍 -- Filtrar Nodo --</option>' + nodos.map(n => `<option value="${n}">${n}</option>`).join('');
             if (nodos.includes(valPrevNodo)) selectNodo.value = valPrevNodo;
 
+            // 🚀 PRESERVAR TÉCNICO SELECCIONADO
             const tecnicos = [...new Set(listaFiltrada.map(o => o.tecnico_asignado).filter(Boolean))].sort();
             const selectTec = document.getElementById('tecnicoSelectFilter');
-            selectTec.innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
+            const valPrevTecnico = selectTec.value;
 
-            aplicarFiltrosAdminLocales(true);
+            selectTec.innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
+            
+            if (tecnicos.includes(valPrevTecnico)) {
+                selectTec.value = valPrevTecnico;
+            }
+
+            aplicarFiltrosAdminLocales(false);
         }
 
         function actualizarContadoresAdmin() {
@@ -896,13 +914,13 @@
         }
 
         async function actualizarMapaAdminConPuntosYTecnicos(lista, forzarAjuste = false) {
-            if (!adminMap || !adminMarkersGroup) return;
+            if (!adminMap || !adminClusterGroup) return;
 
             if (estaUsuarioInteractuandoMapa && !forzarAjuste) {
                 return;
             }
 
-            adminMarkersGroup.clearLayers();
+            adminClusterGroup.clearLayers();
             let bounds = [];
 
             lista.forEach(o => {
@@ -932,7 +950,7 @@
                             <b>Técnico:</b> ${o.tecnico_asignado || 'Sin Asignar'}
                         </div>
                     `);
-                    adminMarkersGroup.addLayer(marker);
+                    adminClusterGroup.addLayer(marker);
                 }
             });
 
@@ -962,7 +980,7 @@
                             className: 'label-tecnico-gps'
                         });
 
-                        adminMarkersGroup.addLayer(tecMarker);
+                        adminClusterGroup.addLayer(tecMarker);
                     }
                 });
             }
@@ -1678,7 +1696,6 @@
             document.getElementById('modalAsignacionMasiva').classList.add('hidden');
         }
 
-        // 🚀 ASIGNACIÓN MASIVA CORREGIDA (PROSESA IDs NUMÉRICOS Y TEXTO CORRECTAMENTE)
         async function ejecutarAsignacionMasiva() {
             const tecnico = document.getElementById('batchTecnicoInput').value.trim();
             if (!tecnico) return alert('Selecciona o escribe un técnico.');
