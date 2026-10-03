@@ -89,13 +89,13 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        /* Lector Cámara Directo Nítido */
+        /* Corrección de nitidez e imagen opaca en el lector */
         #reader video {
             object-fit: cover !important;
             border-radius: 0.75rem;
             width: 100% !important;
             height: 100% !important;
-            filter: none !important;
+            filter: brightness(100%) contrast(100%) opacity(100%) !important;
             opacity: 1 !important;
         }
         #reader {
@@ -104,6 +104,9 @@
         }
         #reader__scan_region {
             background: transparent !important;
+        }
+        #reader__scan_region img, #reader__scan_region svg {
+            display: none !important; /* Elimina sombreados grises y overlays por defecto */
         }
         #reader__dashboard {
             display: none !important;
@@ -415,16 +418,16 @@
         </nav>
     </div>
 
-    <!-- MODAL LECTOR CÓDIGO BARRAS CORREGIDO Y DIRECTO -->
-    <div id="modalBarcodeScanner" class="fixed inset-0 z-50 bg-slate-950 flex flex-col hidden overflow-hidden">
+    <!-- MODAL ESCÁNER CON SUPERPOSICIÓN MÁXIMA Y CÁMARA NÍTIDA DIRECTA -->
+    <div id="modalBarcodeScanner" class="fixed inset-0 z-[9999] bg-slate-950 flex flex-col hidden overflow-hidden">
         
-        <!-- Barra Superior Estilo App -->
+        <!-- Barra Superior -->
         <div class="bg-teal-800 text-white p-3 flex justify-between items-center text-xs font-bold shadow-md z-10">
             <div class="flex items-center gap-2">
                 <span>📷</span>
                 <span>ESCANEAR CÓDIGO DE BARRAS</span>
             </div>
-            <button onclick="cerrarModalScannerSolo()" class="bg-teal-900/80 hover:bg-teal-950 text-white text-xs px-3 py-1.5 rounded-lg border border-teal-600">
+            <button onclick="cerrarModalScannerSolo()" class="bg-teal-900 hover:bg-teal-950 text-white text-xs px-3 py-1.5 rounded-lg border border-teal-600">
                 Volver ✕
             </button>
         </div>
@@ -432,31 +435,30 @@
         <!-- Contenido Central Escáner -->
         <div class="flex-1 flex flex-col items-center justify-between p-4 relative bg-slate-950">
             
-            <!-- Barra de Opciones Superiores -->
+            <!-- Opción Superior de Linterna y Foto -->
             <div class="flex justify-around items-center w-full max-w-xs my-2 text-white text-[11px] font-semibold">
-                <button onclick="toggleFlashLuz()" id="btnFlashToggle" class="flex flex-col items-center gap-1 bg-slate-900 p-2.5 rounded-xl border border-slate-700 hover:border-amber-400">
+                <button onclick="toggleFlashLuz()" id="btnFlashToggle" class="flex flex-col items-center gap-1 bg-slate-900 p-2.5 rounded-xl border border-slate-700 hover:border-amber-400 transition-all">
                     <span class="text-xl">💡</span>
                     <span>Luz / Flash</span>
                 </button>
-                <label class="flex flex-col items-center gap-1 bg-slate-900 p-2.5 rounded-xl border border-slate-700 hover:border-sky-400 cursor-pointer">
+                <label class="flex flex-col items-center gap-1 bg-slate-900 p-2.5 rounded-xl border border-slate-700 hover:border-sky-400 cursor-pointer transition-all">
                     <span class="text-xl">🖼️</span>
                     <span>Desde Imagen</span>
                     <input type="file" accept="image/*" class="hidden" onchange="escanearCodigoDesdeFoto(this)" />
                 </label>
             </div>
 
-            <!-- Texto de Instrucciones -->
             <div class="text-center text-slate-300 text-xs px-4 space-y-1 my-1">
                 <p class="font-bold text-amber-400">Ideal para códigos de barras rectangulares.</p>
-                <p class="text-[10px] text-slate-400">Apunta el código de barras dentro del recuadro.</p>
+                <p class="text-[10px] text-slate-400">Enfoca directamente la etiqueta de la serie.</p>
             </div>
 
-            <!-- Visor de Cámara sin sombras opacas -->
+            <!-- Visor de Cámara Totalmente Claro -->
             <div id="readerWrapper" class="relative rounded-2xl overflow-hidden border-2 border-teal-500 bg-black w-full max-w-sm h-64 flex items-center justify-center my-2 shadow-2xl">
                 <div id="reader" class="w-full h-full"></div>
                 
-                <!-- Guía visual sin opacar el video -->
-                <div class="absolute inset-x-4 h-16 border-2 border-amber-400 rounded-xl pointer-events-none shadow-[0_0_15px_rgba(251,191,36,0.5)] flex items-center justify-between px-2">
+                <!-- Marco guía rectangular transparente -->
+                <div class="absolute inset-x-4 h-16 border-2 border-amber-400 rounded-xl pointer-events-none shadow-[0_0_15px_rgba(251,191,36,0.6)] flex items-center justify-between px-2">
                     <div class="w-2 h-2 bg-amber-400 rounded-full animate-ping"></div>
                     <div class="w-2 h-2 bg-amber-400 rounded-full animate-ping"></div>
                 </div>
@@ -464,7 +466,7 @@
 
             <div id="scannerErrorMessage" class="text-rose-400 text-[10px] font-semibold hidden bg-rose-950/80 p-2 rounded-lg text-center w-full max-w-xs"></div>
 
-            <!-- Control Deslizante de Zoom (Slider) -->
+            <!-- Control Deslizante de Zoom -->
             <div class="w-full max-w-xs bg-slate-900 p-3 rounded-2xl border border-slate-700 space-y-2 mt-auto mb-4">
                 <div class="flex justify-between items-center text-xs text-slate-300 font-bold">
                     <span>🔍 Zoom</span>
@@ -1613,7 +1615,7 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        // 🚀 ESCÁNER DIRECTO
+        // 🚀 ESCÁNER CON SUPERPOSICIÓN MÁXIMA Y CÁMARA DIRECTA CORREGIDA
         async function abrirModalScanner(idFila) {
             filaDestinoScanner = idFila;
             flashEncendido = false;
@@ -1624,6 +1626,7 @@
             errDiv.classList.add('hidden');
             errDiv.innerText = '';
 
+            // Mostrar el modal inmediatamente con z-index superior
             document.getElementById('modalBarcodeScanner').classList.remove('hidden');
 
             try {
@@ -1635,7 +1638,7 @@
 
                 const config = {
                     fps: 25,
-                    qrbox: { width: 300, height: 120 },
+                    qrbox: { width: 280, height: 110 },
                     aspectRatio: 1.777778
                 };
 
@@ -1653,7 +1656,7 @@
                 }
 
             } catch (err) {
-                errDiv.innerText = "Error iniciando la cámara: " + (err.message || err);
+                errDiv.innerText = "Error al iniciar cámara: " + (err.message || err);
                 errDiv.classList.remove('hidden');
             }
         }
@@ -1682,20 +1685,29 @@
         async function toggleFlashLuz() {
             if (!videoTrackActual) return;
             try {
-                const capabilities = videoTrackActual.getCapabilities();
-                if (capabilities.torch) {
-                    flashEncendido = !flashEncendido;
-                    await videoTrackActual.applyConstraints({ advanced: [{ torch: flashEncendido }] });
+                const capabilities = videoTrackActual.getCapabilities ? videoTrackActual.getCapabilities() : {};
+                
+                flashEncendido = !flashEncendido;
+                
+                // Intento estándar de linterna
+                await videoTrackActual.applyConstraints({
+                    advanced: [{ torch: flashEncendido }]
+                });
+
+                document.getElementById('btnFlashToggle').classList.toggle('border-amber-400', flashEncendido);
+                document.getElementById('btnFlashToggle').classList.toggle('bg-amber-950/40', flashEncendido);
+
+            } catch (e) {
+                // Intento alternativo para WebViews de Android
+                try {
+                    const imageCapture = new ImageCapture(videoTrackActual);
+                    await imageCapture.setOptions({ fillLightMode: flashEncendido ? 'flash' : 'off' });
                     document.getElementById('btnFlashToggle').classList.toggle('border-amber-400', flashEncendido);
-                } else {
+                } catch (err2) {
                     const errDiv = document.getElementById('scannerErrorMessage');
-                    errDiv.innerText = "Su navegador no permite encender la linterna por permisos de cámara.";
+                    errDiv.innerText = "El control de linterna es bloqueado por el navegador del móvil.";
                     errDiv.classList.remove('hidden');
                 }
-            } catch (e) {
-                const errDiv = document.getElementById('scannerErrorMessage');
-                errDiv.innerText = "No se pudo encender el flash en este dispositivo.";
-                errDiv.classList.remove('hidden');
             }
         }
 
@@ -1728,7 +1740,7 @@
             // Se ignoran imágenes sin código en tiempo real
         }
 
-        // Cierra únicamente el lector de cámara y regresa a la gestión
+        // Cierra únicamente el lector de cámara y regresa a la gestión de la OT
         function cerrarModalScannerSolo() {
             if (html5QrCodeScanner) {
                 html5QrCodeScanner.stop().then(() => {
