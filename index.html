@@ -43,6 +43,11 @@
             outline: none;
             border-color: #38bdf8;
         }
+        .tech-input[readonly] {
+            background-color: #1e293b;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
         .tech-button {
             background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
         }
@@ -248,7 +253,7 @@
                             <h2 class="text-lg font-bold text-sky-300 flex items-center gap-2">
                                 💰 CONCILIACIÓN Y LIQUIDACIÓN MENSUAL DE PAGOS
                             </h2>
-                            <p class="text-xs text-slate-400">Resumen auditado según el formato oficial de DATARED CHACO con recargo por Domingos/Feriados (+50%).</p>
+                            <p class="text-xs text-slate-400">Resumen auditado según el formato oficial de DATARED CHACO.</p>
                         </div>
                         <button onclick="exportarPlanillaPagosGlobal()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow">
                             📊 Exportar Planilla Consolidada General (Excel)
@@ -428,14 +433,16 @@
                     </div>
                     <div>
                         <label class="font-bold text-emerald-300">PRECIO BASE (Bs):</label>
-                        <input type="number" id="gestionPrecioUnit" value="45" placeholder="45" class="w-full mt-1 p-2 tech-input rounded-xl text-xs" />
+                        <!-- 🚀 CAMPO FIJO READONLY PARA EVITAR MODIFICACIONES -->
+                        <input type="number" id="gestionPrecioUnit" value="45" readonly class="w-full mt-1 p-2 tech-input rounded-xl text-xs font-bold text-slate-400" />
                     </div>
                 </div>
 
+                <!-- 🚀 TEXTO LIMPIO SIN MENSAJE DE RECARGO DE 50% -->
                 <div class="flex items-center gap-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700">
                     <input type="checkbox" id="gestionEsFeriado" class="w-4 h-4 rounded accent-sky-500" />
                     <label for="gestionEsFeriado" class="text-xs font-bold text-amber-300 cursor-pointer">
-                        🎉 ¿Es Día Feriado / Festivo? (+50% Recargo)
+                        🎉 ¿Es Día Feriado / Festivo?
                     </label>
                 </div>
 
@@ -530,7 +537,6 @@
         let contadorFungiblesCat = 0;
         let conteoPrevioOrdenesTecnico = 0;
         
-        // 🚀 Set global para almacenar IDs seleccionados persistentemente
         let idsSeleccionadosGlobal = new Set();
 
         let esPrimeraCargaMapaAdmin = true;
@@ -717,13 +723,8 @@
             elPendientes.innerText = "⏳";
             elReportes.innerText = "⏳";
 
-            const { data: ordenes } = await supabaseClient
-                .from('ordenes_retiro')
-                .select('*');
-
-            const { data: gestiones } = await supabaseClient
-                .from('historial_gestiones')
-                .select('*');
+            const { data: ordenes } = await supabaseClient.from('ordenes_retiro').select('*');
+            const { data: gestiones } = await supabaseClient.from('historial_gestiones').select('*');
 
             let ejecutados = 0;
             let pendientes = 0;
@@ -768,15 +769,9 @@
             });
             adminMap.addLayer(adminClusterGroup);
 
-            adminMap.on('movestart zoomstart dragstart', () => {
-                estaUsuarioInteractuandoMapa = true;
-            });
-            adminMap.on('popupopen', () => {
-                estaUsuarioInteractuandoMapa = true;
-            });
-            adminMap.on('popupclose', () => {
-                estaUsuarioInteractuandoMapa = false;
-            });
+            adminMap.on('movestart zoomstart dragstart', () => { estaUsuarioInteractuandoMapa = true; });
+            adminMap.on('popupopen', () => { estaUsuarioInteractuandoMapa = true; });
+            adminMap.on('popupclose', () => { estaUsuarioInteractuandoMapa = false; });
         }
 
         function toggleMapaAdmin() {
@@ -886,7 +881,7 @@
 
             ordenesFiltradasAdmin = ordenesGlobalesAdmin.filter(o => {
                 if (tabActualAdmin === 'SIN_ASIGNAR' && (o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
-                if (tabActualAdmin === 'PENDIENTES' && (!o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado !== 'PAGADO')) return false;
+                if (tabActualAdmin === 'PENDIENTES' && (!o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
                 if (tabActualAdmin === 'RETIRADOS' && o.estado !== 'RETIRADO') return false;
                 if (tabActualAdmin === 'PAGADO' && o.estado !== 'PAGADO') return false;
 
@@ -917,9 +912,7 @@
         async function actualizarMapaAdminConPuntosYTecnicos(lista, forzarAjuste = false) {
             if (!adminMap || !adminClusterGroup) return;
 
-            if (estaUsuarioInteractuandoMapa && !forzarAjuste) {
-                return;
-            }
+            if (estaUsuarioInteractuandoMapa && !forzarAjuste) return;
 
             adminClusterGroup.clearLayers();
             let bounds = [];
@@ -975,12 +968,7 @@
                             </div>
                         `);
 
-                        tecMarker.bindTooltip(tec.nombre, {
-                            permanent: true,
-                            direction: 'top',
-                            className: 'label-tecnico-gps'
-                        });
-
+                        tecMarker.bindTooltip(tec.nombre, { permanent: true, direction: 'top', className: 'label-tecnico-gps' });
                         adminClusterGroup.addLayer(tecMarker);
                     }
                 });
@@ -993,7 +981,6 @@
             }
         }
 
-        // 🚀 RENDERIZADO CORREGIDO CON PERSISTENCIA DE CHECKBOXES
         function renderizarTablaAdmin(lista) {
             const tbody = document.getElementById('tablaAdminOrdenesBody');
             if (lista.length === 0) {
@@ -1018,7 +1005,6 @@
                 const nodoTapTexto = o.zona_nodo_tap || o.nodo || '<span class="text-slate-600 italic">Sin datos</span>';
                 const direccionYRef = `${o.direccion || ''} ${o.referencia ? `<br><span class="text-amber-300/80 italic text-[11px]">📍 Ref: ${o.referencia}</span>` : ''}`;
 
-                // Preservar estado checked si el ID está guardado en el Set
                 const isChecked = idsSeleccionadosGlobal.has(String(o.id)) ? 'checked' : '';
 
                 return '<tr class="hover:bg-slate-900/50 border-b border-slate-800 ' + (o.estado === 'PAGADO' ? 'bg-rose-950/20' : '') + '">' +
@@ -1050,14 +1036,10 @@
             actualizarConteoSeleccionados();
         }
 
-        // 🚀 MANEJO PERSISTENTE DE SELECCIÓN INDIVIDUAL Y MASIVA
         function alCambiarCheckboxRow(checkbox) {
             const val = String(checkbox.value);
-            if (checkbox.checked) {
-                idsSeleccionadosGlobal.add(val);
-            } else {
-                idsSeleccionadosGlobal.delete(val);
-            }
+            if (checkbox.checked) idsSeleccionadosGlobal.add(val);
+            else idsSeleccionadosGlobal.delete(val);
             actualizarConteoSeleccionados();
         }
 
@@ -1066,11 +1048,8 @@
             checkboxes.forEach(cb => {
                 cb.checked = master.checked;
                 const val = String(cb.value);
-                if (master.checked) {
-                    idsSeleccionadosGlobal.add(val);
-                } else {
-                    idsSeleccionadosGlobal.delete(val);
-                }
+                if (master.checked) idsSeleccionadosGlobal.add(val);
+                else idsSeleccionadosGlobal.delete(val);
             });
             actualizarConteoSeleccionados();
         }
@@ -1338,7 +1317,6 @@
                 badgeIcon.classList.remove('hidden');
                 badgeIcon.innerText = pend.length;
 
-                // 🚀 REDIRECCIÓN EXACTA A LA FECHA Y CÓDIGO
                 notifBox.innerHTML = pend.map(p => {
                     const fReg = p.fecha_registro ? p.fecha_registro.slice(0, 10) : fechaSeleccionadaTecnico;
                     return `
@@ -1359,7 +1337,6 @@
             }
         }
 
-        // 🚀 LLEVAR AL TÉCNICO DIRECTAMENTE A LA FECHA Y RESALTAR LA ORDEN
         function irACitaEspecificaTecnico(fechaIso, ordenId) {
             cambiarTabMobile('programar');
             seleccionarFechaCalendario(fechaIso);
@@ -1506,6 +1483,7 @@
             }
         }
 
+        // 🚀 CÁMARA DIRECTA + FACTURAR CLIENTE EN EQUIPOS
         function agregarFilaEquipoDinamicamente(tipoDefault = 'DECODER', modelo = '', serie = '') {
             contadorEquiposDinamicos++;
             const idFila = 'equipoRow_' + contadorEquiposDinamicos;
@@ -1519,9 +1497,10 @@
                         '<option value="ROUTER" ' + (tipoDefault === 'ROUTER' ? 'selected' : '') + '>📶 ROUTER / EXTENDER</option>' +
                     '</select>' +
                     '<div class="flex items-center gap-1.5">' +
-                        '<label class="cursor-pointer bg-sky-700 hover:bg-sky-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-bold">' +
+                        // 🚀 capture="environment" PARA ABRIR CÁMARA DIRECTA
+                        '<label class="cursor-pointer bg-sky-700 hover:bg-sky-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1">' +
                             '📷 OCR' +
-                            '<input type="file" accept="image/*" class="hidden" onchange="escaneoInteligenteEtiquetaFila(this, \'' + idFila + '\')" />' +
+                            '<input type="file" accept="image/*" capture="environment" class="hidden" onchange="escaneoInteligenteEtiquetaFila(this, \'' + idFila + '\')" />' +
                         '</label>' +
                         '<button type="button" onclick="eliminarFilaElemento(\'' + idFila + '\')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5 py-0.5">✕</button>' +
                     '</div>' +
@@ -1530,10 +1509,18 @@
                     '<input type="text" class="modeloInput p-1.5 tech-input rounded-xl text-xs" value="' + modelo + '" placeholder="Modelo" />' +
                     '<input type="text" class="serieInput p-1.5 tech-input rounded-xl text-xs font-mono" value="' + serie + '" placeholder="Serie / MAC / CAS" />' +
                 '</div>' +
+                // 🚀 CASILLA FACTURAR A CLIENTE
+                '<div class="flex items-center justify-between pt-1 border-t border-slate-800">' +
+                    '<label class="text-[10px] text-amber-300 font-bold flex items-center gap-1 cursor-pointer">' +
+                        '<input type="checkbox" class="facturarEquipoCheck accent-amber-500 rounded" /> 💵 Facturar a Cliente' +
+                    '</label>' +
+                    '<div class="previewContainer hidden"><img class="imgPreview h-10 w-auto rounded border border-slate-600" /></div>' +
+                '</div>' +
             '</div>';
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
+        // 🚀 FACTURAR CLIENTE EN ACCESORIOS
         function agregarFilaFungibleCat() {
             contadorFungiblesCat++;
             const idFila = 'fungibleRow_' + contadorFungiblesCat;
@@ -1552,6 +1539,12 @@
                     '<button type="button" onclick="eliminarFilaElemento(\'' + idFila + '\')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5">✕</button>' +
                 '</div>' +
                 '<input type="text" placeholder="Escriba la descripción del accesorio..." class="fungibleOtroInput hidden w-full p-1.5 tech-input rounded-lg text-xs text-amber-300 border-amber-500/40" />' +
+                // 🚀 CASILLA FACTURAR A CLIENTE
+                '<div class="flex justify-end pt-0.5">' +
+                    '<label class="text-[10px] text-amber-300 font-bold flex items-center gap-1 cursor-pointer">' +
+                        '<input type="checkbox" class="facturarAccesorioCheck accent-amber-500 rounded" /> 💵 Facturar a Cliente' +
+                    '</label>' +
+                '</div>' +
             '</div>';
             
             container.insertAdjacentHTML('beforeend', rowHtml);
@@ -1613,26 +1606,42 @@
             }
         }
 
+        // 🚀 PROCESAMIENTO OCR Y MOSTRAR IMAGEN CAPTURADA
         async function escaneoInteligenteEtiquetaFila(input, idFila) {
             if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
             const statusDiv = document.getElementById('gestionStatusOutput');
+            const fila = document.getElementById(idFila);
+            
+            const previewContainer = fila.querySelector('.previewContainer');
+            const imgPreview = fila.querySelector('.imgPreview');
+
+            // Mostrar vista previa inmediatamente
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imgPreview.src = e.target.result;
+                previewContainer.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+
             statusDiv.innerText = "⏳ Leyendo etiqueta con OCR inteligente...";
 
             try {
-                const result = await Tesseract.recognize(input.files[0], 'eng');
+                const result = await Tesseract.recognize(file, 'eng');
                 const text = result.data.text;
                 const snMatch = text.match(/(?:SN|S\/N|SERIAL|CAS|MAC)[:\s]*([A-Za-z0-9\-]+)/i);
                 if (snMatch && snMatch[1]) {
-                    document.querySelector('#' + idFila + ' .serieInput').value = snMatch[1].trim();
-                    statusDiv.innerText = "✅ Serie detectada e insertada automáticamente.";
+                    fila.querySelector('.serieInput').value = snMatch[1].trim();
+                    statusDiv.innerText = "✅ Foto capturada y Serie detectada automáticamente.";
                 } else {
-                    statusDiv.innerText = "⚠️ No se detectó un patrón de serie claro. Ingrésalo manualmente.";
+                    statusDiv.innerText = "📷 Foto cargada. Ingresa la serie manualmente si no se leyó bien.";
                 }
             } catch (err) {
-                statusDiv.innerText = "Error en procesamiento OCR.";
+                statusDiv.innerText = "📷 Foto cargada correctamente.";
             }
         }
 
+        // 🚀 ENVIAR REPORTE WPP CON DETALLE DE FACTURACIÓN
         async function enviarReporteAWhatsApp() {
             const ot = document.getElementById('gestionOt').value || 'S/OT';
             const precioUnit = parseFloat(document.getElementById('gestionPrecioUnit').value) || 45;
@@ -1641,15 +1650,20 @@
             const filasEquipos = document.querySelectorAll('#contenedorEquiposDinamicos > div');
             let modemsArray = [];
             let decosArray = [];
+            let itemsFacturar = [];
 
             filasEquipos.forEach(fila => {
                 const tipo = fila.querySelector('.tipoEquipoSelect').value;
                 const mod = fila.querySelector('.modeloInput').value.trim();
                 const ser = fila.querySelector('.serieInput').value.trim();
+                const facturar = fila.querySelector('.facturarEquipoCheck').checked;
 
+                const txtEquipo = `${mod} (${ser})`;
                 if (ser) {
-                    if (tipo === 'MODEM') modemsArray.push(`${mod} (${ser})`);
-                    else decosArray.push(`${mod} (${ser})`);
+                    if (tipo === 'MODEM') modemsArray.push(txtEquipo);
+                    else decosArray.push(txtEquipo);
+
+                    if (facturar) itemsFacturar.push(`📟 [EQUIPO] ${txtEquipo}`);
                 }
             });
 
@@ -1660,15 +1674,22 @@
                 if (!select) return;
                 const siga = select.value;
                 const cant = f.querySelector('.fungibleCantInput').value;
+                const facturar = f.querySelector('.facturarAccesorioCheck').checked;
                 
+                let descItem = '';
                 if (siga === 'OTRO') {
                     const descManual = f.querySelector('.fungibleOtroInput').value.trim() || 'ACCESORIO OTRO';
-                    fungiblesCatArray.push('[OTRO] ' + descManual + ' x' + cant);
+                    descItem = '[OTRO] ' + descManual + ' x' + cant;
                 } else {
                     const itemObj = CATALOGO_FUNGIBLES.find(c => c.siga === siga);
                     if (itemObj) {
-                        fungiblesCatArray.push('[SIGA ' + siga + '] ' + itemObj.tipo + ' x' + cant);
+                        descItem = '[SIGA ' + siga + '] ' + itemObj.tipo + ' x' + cant;
                     }
+                }
+
+                if (descItem) {
+                    fungiblesCatArray.push(descItem);
+                    if (facturar) itemsFacturar.push(`🔌 [ACCESORIO] ${descItem}`);
                 }
             });
 
@@ -1687,7 +1708,7 @@
                 precio_unitario: precioUnit,
                 es_feriado: esFeriado,
                 fungibles_catalogo: fungiblesCatArray.join(', '),
-                materiales_fungibles: 'N/A - SOLO RETIRO',
+                materiales_fungibles: itemsFacturar.length > 0 ? 'FACTURAR A CLIENTE: ' + itemsFacturar.join(' | ') : 'N/A',
                 tecnico_nombre: usuarioActual.nombre,
                 ciudad: ordenSeleccionadaGestion.ciudad,
                 tecnologia: ordenSeleccionadaGestion.tipo_tecnologia || ordenSeleccionadaGestion.tecnologia,
@@ -1698,6 +1719,10 @@
             }]);
 
             await supabaseClient.from('ordenes_retiro').update({ estado: 'RETIRADO' }).eq('id', targetId);
+
+            const textoFactura = itemsFacturar.length > 0 
+                ? `\n💳 *ITEMS A FACTURAR AL CLIENTE:*\n${itemsFacturar.join('\n')}\n----------------------------------`
+                : '';
 
             const mensajeWpp = `📡 *INFORME DE RETIRO EJECUTADO - DATARED*
 👤 *TÉCNICO:* ${usuarioActual.nombre}
@@ -1711,7 +1736,7 @@
 ----------------------------------
 📟 *MÓDEMS/ONT:* ${modemsArray.join(', ') || 'NINGUNO'}
 📺 *DECODIFICADORES:* ${decosArray.join(', ') || 'NINGUNO'}
-🔌 *ACCESORIOS:* ${fungiblesCatArray.join(', ') || 'NINGUNO'}
+🔌 *ACCESORIOS:* ${fungiblesCatArray.join(', ') || 'NINGUNO'}${textoFactura}
 ----------------------------------
 ✅ *ESTADO:* RETIRADO COMPLETADO`;
 
@@ -1744,7 +1769,6 @@
             document.getElementById('modalAsignacionMasiva').classList.add('hidden');
         }
 
-        // 🚀 ASIGNACIÓN MASIVA UTILIZANDO EL SET PERSISTENTE DE SELECCIONES
         async function ejecutarAsignacionMasiva() {
             const tecnico = document.getElementById('batchTecnicoInput').value.trim();
             if (!tecnico) return alert('Selecciona o escribe un técnico.');
@@ -1772,7 +1796,6 @@
                 lanzarNotificacion("⚡ Asignación Masiva Exitosa", `Se enviaron ${totalModificados} órdenes al técnico ${tecnico}.`);
                 alert('Se asignaron ' + totalModificados + ' órdenes a ' + tecnico + '.');
                 
-                // Limpiar selecciones tras la asignación masiva
                 idsSeleccionadosGlobal.clear();
                 const masterCheckbox = document.getElementById('selectAllCheckbox');
                 if (masterCheckbox) masterCheckbox.checked = false;
