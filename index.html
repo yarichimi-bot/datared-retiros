@@ -804,7 +804,7 @@
             const btn = document.getElementById('btnToggleMapaAdmin');
             if (wrapper.classList.contains('hidden')) {
                 wrapper.classList.remove('hidden');
-                btn.innerText = "Ocultar Mapa 👁️️";
+                btn.innerText = "Ocultar Mapa 👁️";
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
             } else {
                 wrapper.classList.add('hidden');
@@ -886,8 +886,13 @@
 
         function actualizarContadoresAdmin() {
             document.getElementById('countTotal').innerText = ordenesGlobalesAdmin.length;
-            document.getElementById('countSinAsignar').innerText = ordenesGlobalesAdmin.filter(o => !o.tecnico_asignado && o.estado !== 'RETIRADO' && o.estado !== 'PAGADO').length;
-            document.getElementById('countPendientes').innerText = ordenesGlobalesAdmin.filter(o => o.tecnico_asignado && o.estado !== 'RETIRADO' && o.estado !== 'PAGADO').length;
+            
+            // 🚀 CORRECCIÓN EN CONTEOS
+            const sinAsignar = ordenesGlobalesAdmin.filter(o => (!o.tecnico_asignado || String(o.tecnico_asignado).trim() === '') && o.estado !== 'RETIRADO' && o.estado !== 'PAGADO');
+            const enRuta = ordenesGlobalesAdmin.filter(o => o.tecnico_asignado && String(o.tecnico_asignado).trim() !== '' && o.estado !== 'RETIRADO' && o.estado !== 'PAGADO');
+            
+            document.getElementById('countSinAsignar').innerText = sinAsignar.length;
+            document.getElementById('countPendientes').innerText = enRuta.length;
             document.getElementById('countRetirados').innerText = ordenesGlobalesAdmin.filter(o => o.estado === 'RETIRADO').length;
             document.getElementById('countPagados').innerText = ordenesGlobalesAdmin.filter(o => o.estado === 'PAGADO').length;
         }
@@ -897,6 +902,7 @@
             aplicarFiltrosAdminLocales(true);
         }
 
+        // 🚀 CORRECCIÓN DEL FILTRO DE ORDENES "EN RUTA" (PENDIENTES) Y BUSCADOR ADMIN
         async function aplicarFiltrosAdminLocales(forzarAjusteMapa = false) {
             const searchText = document.getElementById('searchInput').value.toLowerCase().trim();
             const deptoVal = document.getElementById('deptoSelectFilter').value;
@@ -905,8 +911,10 @@
             const tecnicoVal = document.getElementById('tecnicoSelectFilter').value;
 
             ordenesFiltradasAdmin = ordenesGlobalesAdmin.filter(o => {
-                if (tabActualAdmin === 'SIN_ASIGNAR' && (o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
-                if (tabActualAdmin === 'PENDIENTES' && (!o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
+                const tieneTecnico = o.tecnico_asignado && String(o.tecnico_asignado).trim() !== '';
+
+                if (tabActualAdmin === 'SIN_ASIGNAR' && (tieneTecnico || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
+                if (tabActualAdmin === 'PENDIENTES' && (!tieneTecnico || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
                 if (tabActualAdmin === 'RETIRADOS' && o.estado !== 'RETIRADO') return false;
                 if (tabActualAdmin === 'PAGADO' && o.estado !== 'PAGADO') return false;
 
@@ -925,7 +933,8 @@
                     const matchNombre = o.cliente_nombre && o.cliente_nombre.toLowerCase().includes(searchText);
                     const matchNodoTap = o.zona_nodo_tap && o.zona_nodo_tap.toLowerCase().includes(searchText);
                     const matchRef = o.referencia && o.referencia.toLowerCase().includes(searchText);
-                    if (!matchCodigo && !matchNombre && !matchNodoTap && !matchRef) return false;
+                    const matchTec = o.tecnico_asignado && o.tecnico_asignado.toLowerCase().includes(searchText);
+                    if (!matchCodigo && !matchNombre && !matchNodoTap && !matchRef && !matchTec) return false;
                 }
                 return true;
             });
@@ -1009,7 +1018,7 @@
         function renderizarTablaAdmin(lista) {
             const tbody = document.getElementById('tablaAdminOrdenesBody');
             if (lista.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-slate-500">No hay códigos para mostrar.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="p-4 text-center text-slate-500">No hay códigos para mostrar en esta sección.</td></tr>';
                 return;
             }
 
@@ -1047,7 +1056,7 @@
                     '<td class="p-3 font-semibold text-amber-300">' + nodoTapTexto + '</td>' +
                     '<td class="p-3 text-slate-300">' + direccionYRef + '</td>' +
                     '<td class="p-3 font-semibold text-sky-200">' + (o.tipo_tecnologia || o.tecnologia || '') + '</td>' +
-                    '<td class="p-3 text-slate-400">' + (o.tecnico_asignado || '<span class="italic text-slate-600">Sin asignar</span>') + '</td>' +
+                    '<td class="p-3 text-slate-400 font-bold text-sky-300">' + (o.tecnico_asignado || '<span class="italic text-slate-600 font-normal">Sin asignar</span>') + '</td>' +
                     '<td class="p-3"><span class="' + badgeClass + ' border text-[10px] px-2 py-0.5 rounded-full">' + o.estado + '</span></td>' +
                     '<td class="p-3 text-center">' +
                         '<div class="flex items-center justify-center gap-1.5">' +
@@ -1378,18 +1387,22 @@
             }, 300);
         }
 
+        // 🚀 CORRECCIÓN EN VISTA DE CITAS DEL TÉCNICO: MUESTRA TODAS LAS ÓRDENES PENDIENTES DEL TÉCNICO
         function renderizarCitasMobile(lista) {
             const container = document.getElementById('listaCitasDiaContainer');
 
+            // Muestra las órdenes asignadas que pertenecen a la fecha seleccionada O que siguen pendientes de atención
             const listaDia = lista.filter(o => {
-                if (!o.fecha_registro) return true;
-                return o.fecha_registro.startsWith(fechaSeleccionadaTecnico);
+                const esPendiente = o.estado !== 'RETIRADO' && o.estado !== 'PAGADO';
+                if (!o.fecha_registro) return esPendiente;
+                const coincideFecha = o.fecha_registro.startsWith(fechaSeleccionadaTecnico);
+                return coincideFecha || esPendiente;
             });
 
-            document.getElementById('conteoCitasTexto').innerText = 'Tiene ' + listaDia.length + ' Cita(s) de servicio';
+            document.getElementById('conteoCitasTexto').innerText = 'Tiene ' + listaDia.length + ' Cita(s) en su ruta';
 
             if (listaDia.length === 0) {
-                container.innerHTML = '<p class="text-slate-500 text-xs text-center py-6">No tienes citas o retiros programados para la fecha seleccionada (' + fechaSeleccionadaTecnico + ').</p>';
+                container.innerHTML = '<p class="text-slate-500 text-xs text-center py-6">No tienes citas o retiros pendientes programados para la fecha seleccionada (' + fechaSeleccionadaTecnico + ').</p>';
                 if (mobileMarkersGroup) mobileMarkersGroup.clearLayers();
                 return;
             }
@@ -1508,7 +1521,6 @@
             }
         }
 
-        // 🚀 INGRESO A MANO O ESCÁNER + SUBIDA DE FOTOS DE RESPALDO/CONFIGURACIÓN
         function agregarFilaEquipoDinamicamente(tipoDefault = 'DECODER', modelo = '', serie = '') {
             contadorEquiposDinamicos++;
             const idFila = 'equipoRow_' + contadorEquiposDinamicos;
@@ -1522,11 +1534,9 @@
                         '<option value="ROUTER" ' + (tipoDefault === 'ROUTER' ? 'selected' : '') + '>📶 ROUTER / EXTENDER</option>' +
                     '</select>' +
                     '<div class="flex items-center gap-1.5 flex-wrap justify-end">' +
-                        // 1. Escáner de Código de Barras
                         '<button type="button" onclick="abrirModalScanner(\'' + idFila + '\')" class="bg-sky-600 hover:bg-sky-500 text-white px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1">' +
                             '📷 Escanear' +
                         '</button>' +
-                        // 2. Subir Foto Respaldo o Captura de Configuración
                         '<label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1">' +
                             '📸 Foto Config / Respaldo' +
                             '<input type="file" accept="image/*" class="hidden" onchange="cargarFotoRespaldoGalería(this, \'' + idFila + '\')" />' +
@@ -1586,7 +1596,7 @@
         }
 
         function onBarcodeScanError(errorMessage) {
-            // Se omiten logs continuos de escaneo
+            // Sin alertas de error continuos
         }
 
         function cerrarModalScanner() {
@@ -1831,7 +1841,6 @@
             document.getElementById('modalAsignacionMasiva').classList.add('hidden');
         }
 
-        // 🚀 ASIGNACIÓN MASIVA CON ACTUALIZACIÓN DE FECHA A HOY
         async function ejecutarAsignacionMasiva() {
             const tecnico = document.getElementById('batchTecnicoInput').value.trim();
             if (!tecnico) return alert('Selecciona o escribe un técnico.');
@@ -1846,7 +1855,6 @@
                 return (/^\d+$/).test(id) ? Number(id) : id;
             });
 
-            // Fecha de hoy en formato ISO local YYYY-MM-DD
             const fechaHoy = new Date().toISOString().slice(0, 10);
 
             const { data, error } = await supabaseClient
@@ -1862,8 +1870,8 @@
                 alert('Error al asignar en Supabase: ' + error.message);
             } else {
                 const totalModificados = data ? data.length : 0;
-                lanzarNotificacion("⚡ Asignación Masiva Exitosa", `Se enviaron ${totalModificados} órdenes al técnico ${tecnico} con la fecha de hoy (${fechaHoy}).`);
-                alert('Se asignaron ' + totalModificados + ' órdenes a ' + tecnico + ' para la fecha de hoy (' + fechaHoy + ').');
+                lanzarNotificacion("⚡ Asignación Masiva Exitosa", `Se enviaron ${totalModificados} órdenes al técnico ${tecnico} para hoy (${fechaHoy}).`);
+                alert('Se asignaron ' + totalModificados + ' órdenes a ' + tecnico + ' correctamente.');
                 
                 idsSeleccionadosGlobal.clear();
                 const masterCheckbox = document.getElementById('selectAllCheckbox');
