@@ -89,14 +89,18 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        /* Lector Estilo App Nativa */
+        /* Lector Cámara Directo Nítido */
         #reader video {
             object-fit: cover !important;
             border-radius: 0.75rem;
             width: 100% !important;
+            height: 100% !important;
+            filter: none !important;
+            opacity: 1 !important;
         }
         #reader {
             border: none !important;
+            background: #000 !important;
         }
         #reader__scan_region {
             background: transparent !important;
@@ -411,30 +415,30 @@
         </nav>
     </div>
 
-    <!-- MODAL LECTOR CÓDIGO BARRAS ESTILO APP NATURA (CON LUZ Y ZOOM SLIDER) -->
+    <!-- MODAL LECTOR CÓDIGO BARRAS CORREGIDO Y DIRECTO -->
     <div id="modalBarcodeScanner" class="fixed inset-0 z-50 bg-slate-950 flex flex-col hidden overflow-hidden">
         
         <!-- Barra Superior Estilo App -->
         <div class="bg-teal-800 text-white p-3 flex justify-between items-center text-xs font-bold shadow-md z-10">
             <div class="flex items-center gap-2">
                 <span>📷</span>
-                <span>ESCANEAR CÓDIGO</span>
+                <span>ESCANEAR CÓDIGO DE BARRAS</span>
             </div>
-            <button onclick="cerrarModalScanner()" class="bg-teal-900/80 hover:bg-teal-950 text-white text-xs px-3 py-1.5 rounded-lg border border-teal-600">
-                Cerrar ✕
+            <button onclick="cerrarModalScannerSolo()" class="bg-teal-900/80 hover:bg-teal-950 text-white text-xs px-3 py-1.5 rounded-lg border border-teal-600">
+                Volver ✕
             </button>
         </div>
 
         <!-- Contenido Central Escáner -->
         <div class="flex-1 flex flex-col items-center justify-between p-4 relative bg-slate-950">
             
-            <!-- Barra de Opciones Superiores (Luz / Galería) -->
+            <!-- Barra de Opciones Superiores -->
             <div class="flex justify-around items-center w-full max-w-xs my-2 text-white text-[11px] font-semibold">
-                <button onclick="toggleFlashLuz()" id="btnFlashToggle" class="flex flex-col items-center gap-1 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700 hover:border-amber-400">
+                <button onclick="toggleFlashLuz()" id="btnFlashToggle" class="flex flex-col items-center gap-1 bg-slate-900 p-2.5 rounded-xl border border-slate-700 hover:border-amber-400">
                     <span class="text-xl">💡</span>
                     <span>Luz / Flash</span>
                 </button>
-                <label class="flex flex-col items-center gap-1 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700 hover:border-sky-400 cursor-pointer">
+                <label class="flex flex-col items-center gap-1 bg-slate-900 p-2.5 rounded-xl border border-slate-700 hover:border-sky-400 cursor-pointer">
                     <span class="text-xl">🖼️</span>
                     <span>Desde Imagen</span>
                     <input type="file" accept="image/*" class="hidden" onchange="escanearCodigoDesdeFoto(this)" />
@@ -444,14 +448,14 @@
             <!-- Texto de Instrucciones -->
             <div class="text-center text-slate-300 text-xs px-4 space-y-1 my-1">
                 <p class="font-bold text-amber-400">Ideal para códigos de barras rectangulares.</p>
-                <p class="text-[10px] text-slate-400">Úselo con el zoom deslizante inferior para códigos más pequeños.</p>
+                <p class="text-[10px] text-slate-400">Apunta el código de barras dentro del recuadro.</p>
             </div>
 
-            <!-- Visor de Cámara con Guía Rectangular -->
+            <!-- Visor de Cámara sin sombras opacas -->
             <div id="readerWrapper" class="relative rounded-2xl overflow-hidden border-2 border-teal-500 bg-black w-full max-w-sm h-64 flex items-center justify-center my-2 shadow-2xl">
                 <div id="reader" class="w-full h-full"></div>
                 
-                <!-- Guía visual superpuesta -->
+                <!-- Guía visual sin opacar el video -->
                 <div class="absolute inset-x-4 h-16 border-2 border-amber-400 rounded-xl pointer-events-none shadow-[0_0_15px_rgba(251,191,36,0.5)] flex items-center justify-between px-2">
                     <div class="w-2 h-2 bg-amber-400 rounded-full animate-ping"></div>
                     <div class="w-2 h-2 bg-amber-400 rounded-full animate-ping"></div>
@@ -461,14 +465,14 @@
             <div id="scannerErrorMessage" class="text-rose-400 text-[10px] font-semibold hidden bg-rose-950/80 p-2 rounded-lg text-center w-full max-w-xs"></div>
 
             <!-- Control Deslizante de Zoom (Slider) -->
-            <div class="w-full max-w-xs bg-slate-900/90 p-3 rounded-2xl border border-slate-700 space-y-2 mt-auto mb-4">
+            <div class="w-full max-w-xs bg-slate-900 p-3 rounded-2xl border border-slate-700 space-y-2 mt-auto mb-4">
                 <div class="flex justify-between items-center text-xs text-slate-300 font-bold">
                     <span>🔍 Zoom</span>
                     <span id="zoomValText" class="text-sky-400">1.0x</span>
                 </div>
                 <div class="flex items-center gap-3">
                     <span class="text-xs">➖</span>
-                    <input type="range" id="zoomRangeInput" min="1" max="5" step="0.1" value="1" oninput="aplicarZoomCamara(this.value)" class="w-full accent-teal-400 cursor-pointer" />
+                    <input type="range" id="zoomRangeInput" min="1" max="4" step="0.1" value="1" oninput="aplicarZoomCamara(this.value)" class="w-full accent-teal-400 cursor-pointer" />
                     <span class="text-xs">➕</span>
                 </div>
             </div>
@@ -624,7 +628,7 @@
         let adminClusterGroup = null;
         let intervaloRealtime = null;
 
-        // Variables para Escáner de Cámara Avanzado
+        // Variables Escáner
         let html5QrCodeScanner = null;
         let filaDestinoScanner = null;
         let flashEncendido = false;
@@ -1609,7 +1613,7 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        // 🚀 ESCÁNER TIPO APP NATURA CON SLIDER DE ZOOM Y FLASH
+        // 🚀 ESCÁNER DIRECTO
         async function abrirModalScanner(idFila) {
             filaDestinoScanner = idFila;
             flashEncendido = false;
@@ -1631,7 +1635,7 @@
 
                 const config = {
                     fps: 25,
-                    qrbox: { width: 300, height: 120 }, // Ventana rectangular como la app
+                    qrbox: { width: 300, height: 120 },
                     aspectRatio: 1.777778
                 };
 
@@ -1642,7 +1646,6 @@
                     onBarcodeScanError
                 );
 
-                // Obtener track de video para Zoom y Flash
                 const videoEl = document.querySelector("#reader video");
                 if (videoEl && videoEl.srcObject) {
                     const stream = videoEl.srcObject;
@@ -1650,7 +1653,7 @@
                 }
 
             } catch (err) {
-                errDiv.innerText = "No se pudo iniciar la cámara: " + (err.message || err);
+                errDiv.innerText = "Error iniciando la cámara: " + (err.message || err);
                 errDiv.classList.remove('hidden');
             }
         }
@@ -1663,12 +1666,14 @@
                 const capabilities = videoTrackActual.getCapabilities();
                 if (capabilities.zoom) {
                     const minZoom = capabilities.zoom.min || 1;
-                    const maxZoom = capabilities.zoom.max || 5;
+                    const maxZoom = capabilities.zoom.max || 4;
                     const targetZoom = Math.min(maxZoom, Math.max(minZoom, parseFloat(val)));
                     await videoTrackActual.applyConstraints({ advanced: [{ zoom: targetZoom }] });
+                } else {
+                    const videoEl = document.querySelector("#reader video");
+                    if (videoEl) videoEl.style.transform = `scale(${val})`;
                 }
             } catch (e) {
-                // Si el dispositivo no soporta zoom por hardware, se aplica escala por CSS
                 const videoEl = document.querySelector("#reader video");
                 if (videoEl) videoEl.style.transform = `scale(${val})`;
             }
@@ -1683,10 +1688,14 @@
                     await videoTrackActual.applyConstraints({ advanced: [{ torch: flashEncendido }] });
                     document.getElementById('btnFlashToggle').classList.toggle('border-amber-400', flashEncendido);
                 } else {
-                    alert("Su dispositivo o cámara no soporta linterna mediante el navegador.");
+                    const errDiv = document.getElementById('scannerErrorMessage');
+                    errDiv.innerText = "Su navegador no permite encender la linterna por permisos de cámara.";
+                    errDiv.classList.remove('hidden');
                 }
             } catch (e) {
-                alert("Error al encender la luz: " + e.message);
+                const errDiv = document.getElementById('scannerErrorMessage');
+                errDiv.innerText = "No se pudo encender el flash en este dispositivo.";
+                errDiv.classList.remove('hidden');
             }
         }
 
@@ -1699,7 +1708,7 @@
                     onBarcodeScanSuccess(decodedText);
                 })
                 .catch(err => {
-                    alert("No se pudo detectar un código legible en la imagen seleccionada.");
+                    alert("No se pudo detectar un código legible en la imagen.");
                 });
         }
 
@@ -1712,14 +1721,15 @@
                     if (statusDiv) statusDiv.innerText = "✅ Serie leída con éxito: " + decodedText;
                 }
             }
-            cerrarModalScanner();
+            cerrarModalScannerSolo();
         }
 
         function onBarcodeScanError(errorMessage) {
-            // Ignorar frames vacíos
+            // Se ignoran imágenes sin código en tiempo real
         }
 
-        function cerrarModalScanner() {
+        // Cierra únicamente el lector de cámara y regresa a la gestión
+        function cerrarModalScannerSolo() {
             if (html5QrCodeScanner) {
                 html5QrCodeScanner.stop().then(() => {
                     document.getElementById('modalBarcodeScanner').classList.add('hidden');
