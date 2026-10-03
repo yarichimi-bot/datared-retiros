@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
-    <!-- Leaflet y Plugin de Clustering para Alto Rendimiento -->
+    <!-- Leaflet y Plugin de Clustering -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
@@ -530,6 +530,9 @@
         let contadorFungiblesCat = 0;
         let conteoPrevioOrdenesTecnico = 0;
         
+        // 🚀 Set global para almacenar IDs seleccionados persistentemente
+        let idsSeleccionadosGlobal = new Set();
+
         let esPrimeraCargaMapaAdmin = true;
         let estaUsuarioInteractuandoMapa = false;
         
@@ -538,7 +541,7 @@
         let adminMap = null;
         let miGpsMarker = null;
         let mobileMarkersGroup = null;
-        let adminClusterGroup = null; // Grupo de Marcadores Clusterizados
+        let adminClusterGroup = null;
         let intervaloRealtime = null;
 
         function formatearGPS(val) {
@@ -758,7 +761,6 @@
             adminMap = L.map('adminMapContainer').setView([-21.96, -63.67], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(adminMap);
             
-            // 🚀 Marcadores agrupados mediante MarkerCluster
             adminClusterGroup = L.markerClusterGroup({
                 disableClusteringAtZoom: 16,
                 spiderfyOnMaxZoom: true,
@@ -849,7 +851,6 @@
             selectNodo.innerHTML = '<option value="">🔍 -- Filtrar Nodo --</option>' + nodos.map(n => `<option value="${n}">${n}</option>`).join('');
             if (nodos.includes(valPrevNodo)) selectNodo.value = valPrevNodo;
 
-            // 🚀 PRESERVAR TÉCNICO SELECCIONADO
             const tecnicos = [...new Set(listaFiltrada.map(o => o.tecnico_asignado).filter(Boolean))].sort();
             const selectTec = document.getElementById('tecnicoSelectFilter');
             const valPrevTecnico = selectTec.value;
@@ -885,7 +886,7 @@
 
             ordenesFiltradasAdmin = ordenesGlobalesAdmin.filter(o => {
                 if (tabActualAdmin === 'SIN_ASIGNAR' && (o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
-                if (tabActualAdmin === 'PENDIENTES' && (!o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado === 'PAGADO')) return false;
+                if (tabActualAdmin === 'PENDIENTES' && (!o.tecnico_asignado || o.estado === 'RETIRADO' || o.estado !== 'PAGADO')) return false;
                 if (tabActualAdmin === 'RETIRADOS' && o.estado !== 'RETIRADO') return false;
                 if (tabActualAdmin === 'PAGADO' && o.estado !== 'PAGADO') return false;
 
@@ -992,6 +993,7 @@
             }
         }
 
+        // 🚀 RENDERIZADO CORREGIDO CON PERSISTENCIA DE CHECKBOXES
         function renderizarTablaAdmin(lista) {
             const tbody = document.getElementById('tablaAdminOrdenesBody');
             if (lista.length === 0) {
@@ -1016,8 +1018,11 @@
                 const nodoTapTexto = o.zona_nodo_tap || o.nodo || '<span class="text-slate-600 italic">Sin datos</span>';
                 const direccionYRef = `${o.direccion || ''} ${o.referencia ? `<br><span class="text-amber-300/80 italic text-[11px]">📍 Ref: ${o.referencia}</span>` : ''}`;
 
+                // Preservar estado checked si el ID está guardado en el Set
+                const isChecked = idsSeleccionadosGlobal.has(String(o.id)) ? 'checked' : '';
+
                 return '<tr class="hover:bg-slate-900/50 border-b border-slate-800 ' + (o.estado === 'PAGADO' ? 'bg-rose-950/20' : '') + '">' +
-                    '<td class="p-3"><input type="checkbox" class="rowCheckbox" value="' + o.id + '" onchange="actualizarConteoSeleccionados()" /></td>' +
+                    '<td class="p-3"><input type="checkbox" class="rowCheckbox" value="' + o.id + '" ' + isChecked + ' onchange="alCambiarCheckboxRow(this)" /></td>' +
                     '<td class="p-3 font-bold text-sky-300">' + o.cliente_nro + '<br><span class="font-normal text-slate-300">' + (o.cliente_nombre || '') + '</span></td>' +
                     '<td class="p-3">' +
                         (tel ? `
@@ -1041,6 +1046,44 @@
                     '</td>' +
                 '</tr>';
             }).join('');
+
+            actualizarConteoSeleccionados();
+        }
+
+        // 🚀 MANEJO PERSISTENTE DE SELECCIÓN INDIVIDUAL Y MASIVA
+        function alCambiarCheckboxRow(checkbox) {
+            const val = String(checkbox.value);
+            if (checkbox.checked) {
+                idsSeleccionadosGlobal.add(val);
+            } else {
+                idsSeleccionadosGlobal.delete(val);
+            }
+            actualizarConteoSeleccionados();
+        }
+
+        function toggleSelectAll(master) {
+            const checkboxes = document.querySelectorAll('.rowCheckbox');
+            checkboxes.forEach(cb => {
+                cb.checked = master.checked;
+                const val = String(cb.value);
+                if (master.checked) {
+                    idsSeleccionadosGlobal.add(val);
+                } else {
+                    idsSeleccionadosGlobal.delete(val);
+                }
+            });
+            actualizarConteoSeleccionados();
+        }
+
+        function actualizarConteoSeleccionados() {
+            const count = idsSeleccionadosGlobal.size;
+            document.getElementById('selectedCount').innerText = count;
+            const btn = document.getElementById('btnAsignacionMasiva');
+            if (count > 0 && usuarioActual && !['Tecnico', 'Técnico'].includes(usuarioActual.rol)) {
+                btn.classList.remove('hidden');
+            } else {
+                btn.classList.add('hidden');
+            }
         }
 
         async function renderizarConciliacionPagosAdmin() {
@@ -1295,21 +1338,42 @@
                 badgeIcon.classList.remove('hidden');
                 badgeIcon.innerText = pend.length;
 
-                notifBox.innerHTML = pend.map(p => `
-                    <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs">
-                        <div>
-                            <span class="text-sky-400 font-bold">🔔 CÓDIGO: ${p.cliente_nro}</span>
-                            <p class="text-white font-semibold mt-0.5">${p.cliente_nombre}</p>
-                            <p class="text-amber-300 text-[10px]">${p.zona_nodo_tap || '-'}</p>
-                            <p class="text-slate-400 text-[10px]">📍 ${p.direccion}</p>
+                // 🚀 REDIRECCIÓN EXACTA A LA FECHA Y CÓDIGO
+                notifBox.innerHTML = pend.map(p => {
+                    const fReg = p.fecha_registro ? p.fecha_registro.slice(0, 10) : fechaSeleccionadaTecnico;
+                    return `
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-700 flex justify-between items-center text-xs">
+                            <div>
+                                <span class="text-sky-400 font-bold">🔔 CÓDIGO: ${p.cliente_nro}</span>
+                                <p class="text-white font-semibold mt-0.5">${p.cliente_nombre}</p>
+                                <p class="text-amber-300 text-[10px]">${p.zona_nodo_tap || '-'}</p>
+                                <p class="text-slate-400 text-[10px]">📍 ${p.direccion}</p>
+                            </div>
+                            <button onclick="irACitaEspecificaTecnico('${fReg}', '${p.id}')" class="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">Ver Cita 🎯</button>
                         </div>
-                        <button onclick="cambiarTabMobile('programar')" class="bg-sky-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg">Ver Cita</button>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             } else {
                 badgeIcon.classList.add('hidden');
                 notifBox.innerHTML = '<p class="text-xs text-slate-500 text-center italic">No tienes alertas pendientes por corregir.</p>';
             }
+        }
+
+        // 🚀 LLEVAR AL TÉCNICO DIRECTAMENTE A LA FECHA Y RESALTAR LA ORDEN
+        function irACitaEspecificaTecnico(fechaIso, ordenId) {
+            cambiarTabMobile('programar');
+            seleccionarFechaCalendario(fechaIso);
+
+            setTimeout(() => {
+                const el = document.getElementById('cita_card_' + ordenId);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.classList.add('ring-2', 'ring-sky-400', 'bg-sky-950/40');
+                    setTimeout(() => {
+                        el.classList.remove('ring-2', 'ring-sky-400', 'bg-sky-950/40');
+                    }, 3000);
+                }
+            }, 300);
         }
 
         function renderizarCitasMobile(lista) {
@@ -1351,7 +1415,7 @@
                 if (o.estado === 'OBSERVADO') statusBadge = "bg-amber-500/20 text-amber-300 border-amber-500/30 font-bold animate-pulse";
                 if (o.estado === 'PAGADO') statusBadge = "bg-rose-600 text-white font-bold border-rose-500";
 
-                return '<div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-700 space-y-2">' +
+                return '<div id="cita_card_' + o.id + '" class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-700 space-y-2 transition-all">' +
                     '<div class="flex justify-between items-start">' +
                         '<div>' +
                             '<span class="text-[9px] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">SA-' + o.cliente_nro + '</span>' +
@@ -1662,22 +1726,6 @@
             }
         }
 
-        function toggleSelectAll(master) {
-            document.querySelectorAll('.rowCheckbox').forEach(cb => cb.checked = master.checked);
-            actualizarConteoSeleccionados();
-        }
-
-        function actualizarConteoSeleccionados() {
-            const count = document.querySelectorAll('.rowCheckbox:checked').length;
-            document.getElementById('selectedCount').innerText = count;
-            const btn = document.getElementById('btnAsignacionMasiva');
-            if (count > 0 && usuarioActual && !['Tecnico', 'Técnico'].includes(usuarioActual.rol)) {
-                btn.classList.remove('hidden');
-            } else {
-                btn.classList.add('hidden');
-            }
-        }
-
         async function cargarListaTecnicosSelects() {
             const { data } = await supabaseClient.from('usuarios').select('nombre').order('nombre');
             if (data) {
@@ -1696,11 +1744,12 @@
             document.getElementById('modalAsignacionMasiva').classList.add('hidden');
         }
 
+        // 🚀 ASIGNACIÓN MASIVA UTILIZANDO EL SET PERSISTENTE DE SELECCIONES
         async function ejecutarAsignacionMasiva() {
             const tecnico = document.getElementById('batchTecnicoInput').value.trim();
             if (!tecnico) return alert('Selecciona o escribe un técnico.');
 
-            const rawIds = Array.from(document.querySelectorAll('.rowCheckbox:checked')).map(cb => cb.value);
+            const rawIds = Array.from(idsSeleccionadosGlobal);
             
             if (rawIds.length === 0) {
                 return alert('No hay ningún cliente seleccionado en la tabla.');
@@ -1723,6 +1772,11 @@
                 lanzarNotificacion("⚡ Asignación Masiva Exitosa", `Se enviaron ${totalModificados} órdenes al técnico ${tecnico}.`);
                 alert('Se asignaron ' + totalModificados + ' órdenes a ' + tecnico + '.');
                 
+                // Limpiar selecciones tras la asignación masiva
+                idsSeleccionadosGlobal.clear();
+                const masterCheckbox = document.getElementById('selectAllCheckbox');
+                if (masterCheckbox) masterCheckbox.checked = false;
+
                 document.getElementById('batchTecnicoInput').value = '';
                 cerrarModalAsignacionMasiva();
                 await cargarOrdenesAdminDesdeSupabase();
