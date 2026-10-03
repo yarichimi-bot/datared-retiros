@@ -17,6 +17,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     
+    <!-- Lector Profesional de Código de Barras en Tiempo Real -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
     <!-- Leaflet y Plugin de Clustering -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -400,6 +403,26 @@
         </nav>
     </div>
 
+    <!-- MODAL LECTOR CÓDIGO BARRAS EN TIEMPO REAL -->
+    <div id="modalBarcodeScanner" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-md hidden flex flex-col items-center justify-center p-4">
+        <div class="tech-card max-w-sm w-full rounded-2xl p-4 space-y-3 border border-sky-500/40 text-center relative">
+            <h3 class="font-bold text-sm text-sky-300 flex items-center justify-center gap-2">
+                📷 ESCANEAR CÓDIGO DE BARRAS
+            </h3>
+            <p class="text-[11px] text-slate-400">Apunta el recuadro directamente sobre la barra requerida (S/N, CM MAC, etc.)</p>
+            
+            <div id="readerWrapper" class="relative rounded-xl overflow-hidden border-2 border-sky-500 bg-black min-h-[250px]">
+                <div id="reader" class="w-full"></div>
+            </div>
+
+            <div class="flex justify-between items-center pt-2">
+                <button onclick="cerrarModalScanner()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs py-2.5 rounded-xl border border-slate-600">
+                    Cancelar Escaneo ✕
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL GESTIÓN COMPARTIDO -->
     <div id="modalGestion" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
         <div class="tech-card max-w-xl w-full rounded-2xl p-5 space-y-4 my-6 relative max-h-[90vh] overflow-y-auto">
@@ -433,12 +456,10 @@
                     </div>
                     <div>
                         <label class="font-bold text-emerald-300">PRECIO BASE (Bs):</label>
-                        <!-- 🚀 CAMPO FIJO READONLY PARA EVITAR MODIFICACIONES -->
                         <input type="number" id="gestionPrecioUnit" value="45" readonly class="w-full mt-1 p-2 tech-input rounded-xl text-xs font-bold text-slate-400" />
                     </div>
                 </div>
 
-                <!-- 🚀 TEXTO LIMPIO SIN MENSAJE DE RECARGO DE 50% -->
                 <div class="flex items-center gap-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700">
                     <input type="checkbox" id="gestionEsFeriado" class="w-4 h-4 rounded accent-sky-500" />
                     <label for="gestionEsFeriado" class="text-xs font-bold text-amber-300 cursor-pointer">
@@ -549,6 +570,10 @@
         let mobileMarkersGroup = null;
         let adminClusterGroup = null;
         let intervaloRealtime = null;
+
+        // Variables para Escáner de Código de Barras
+        let html5QrCodeScanner = null;
+        let filaDestinoScanner = null;
 
         function formatearGPS(val) {
             if (!val) return null;
@@ -1483,7 +1508,7 @@
             }
         }
 
-        // 🚀 CÁMARA DIRECTA + FACTURAR CLIENTE EN EQUIPOS
+        // 🚀 DOBLE OPCIÓN: CÁMARA LECTOR CÓDIGO BARRAS + GALERÍA FOTO RESPALDO
         function agregarFilaEquipoDinamicamente(tipoDefault = 'DECODER', modelo = '', serie = '') {
             contadorEquiposDinamicos++;
             const idFila = 'equipoRow_' + contadorEquiposDinamicos;
@@ -1497,10 +1522,14 @@
                         '<option value="ROUTER" ' + (tipoDefault === 'ROUTER' ? 'selected' : '') + '>📶 ROUTER / EXTENDER</option>' +
                     '</select>' +
                     '<div class="flex items-center gap-1.5">' +
-                        // 🚀 capture="environment" PARA ABRIR CÁMARA DIRECTA
-                        '<label class="cursor-pointer bg-sky-700 hover:bg-sky-600 text-white px-2 py-0.5 rounded-lg text-[10px] font-bold flex items-center gap-1">' +
-                            '📷 OCR' +
-                            '<input type="file" accept="image/*" capture="environment" class="hidden" onchange="escaneoInteligenteEtiquetaFila(this, \'' + idFila + '\')" />' +
+                        // 1. Botón Lector de Código de Barras en Tiempo Real
+                        '<button type="button" onclick="abrirModalScanner(\'' + idFila + '\')" class="bg-sky-600 hover:bg-sky-500 text-white px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1">' +
+                            '📷 Escanear Serie' +
+                        '</button>' +
+                        // 2. Botón Cargar Foto Respaldo (Galería)
+                        '<label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1">' +
+                            '🖼️ Foto Respaldo' +
+                            '<input type="file" accept="image/*" class="hidden" onchange="cargarFotoRespaldoGalería(this, \'' + idFila + '\')" />' +
                         '</label>' +
                         '<button type="button" onclick="eliminarFilaElemento(\'' + idFila + '\')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5 py-0.5">✕</button>' +
                     '</div>' +
@@ -1509,18 +1538,90 @@
                     '<input type="text" class="modeloInput p-1.5 tech-input rounded-xl text-xs" value="' + modelo + '" placeholder="Modelo" />' +
                     '<input type="text" class="serieInput p-1.5 tech-input rounded-xl text-xs font-mono" value="' + serie + '" placeholder="Serie / MAC / CAS" />' +
                 '</div>' +
-                // 🚀 CASILLA FACTURAR A CLIENTE
                 '<div class="flex items-center justify-between pt-1 border-t border-slate-800">' +
                     '<label class="text-[10px] text-amber-300 font-bold flex items-center gap-1 cursor-pointer">' +
                         '<input type="checkbox" class="facturarEquipoCheck accent-amber-500 rounded" /> 💵 Facturar a Cliente' +
                     '</label>' +
-                    '<div class="previewContainer hidden"><img class="imgPreview h-10 w-auto rounded border border-slate-600" /></div>' +
+                    '<div class="previewContainer hidden flex items-center gap-1"><span class="text-[9px] text-slate-400 italic">Foto Respaldo:</span><img class="imgPreview h-10 w-auto rounded border border-slate-600" /></div>' +
                 '</div>' +
             '</div>';
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        // 🚀 FACTURAR CLIENTE EN ACCESORIOS
+        // 🚀 FUNCIONES DEL ESCÁNER DE CÓDIGO DE BARRAS EN TIEMPO REAL
+        function abrirModalScanner(idFila) {
+            filaDestinoScanner = idFila;
+            document.getElementById('modalBarcodeScanner').classList.remove('hidden');
+
+            if (!html5QrCodeScanner) {
+                html5QrCodeScanner = new Html5Qrcode("reader");
+            }
+
+            const config = {
+                fps: 15,
+                qrbox: { width: 260, height: 120 },
+                aspectRatio: 1.0
+            };
+
+            html5QrCodeScanner.start(
+                { facingMode: "environment" },
+                config,
+                onBarcodeScanSuccess,
+                onBarcodeScanError
+            ).catch(err => {
+                alert("No se pudo iniciar la cámara: " + err);
+                cerrarModalScanner();
+            });
+        }
+
+        function onBarcodeScanSuccess(decodedText, decodedResult) {
+            if (filaDestinoScanner) {
+                const fila = document.getElementById(filaDestinoScanner);
+                if (fila) {
+                    fila.querySelector('.serieInput').value = decodedText.trim();
+                    const statusDiv = document.getElementById('gestionStatusOutput');
+                    if (statusDiv) statusDiv.innerText = "✅ Serie leída con éxito: " + decodedText;
+                }
+            }
+            cerrarModalScanner();
+        }
+
+        function onBarcodeScanError(errorMessage) {
+            // Ignorar errores continuos de búsqueda de frame
+        }
+
+        function cerrarModalScanner() {
+            if (html5QrCodeScanner) {
+                html5QrCodeScanner.stop().then(() => {
+                    document.getElementById('modalBarcodeScanner').classList.add('hidden');
+                }).catch(() => {
+                    document.getElementById('modalBarcodeScanner').classList.add('hidden');
+                });
+            } else {
+                document.getElementById('modalBarcodeScanner').classList.add('hidden');
+            }
+        }
+
+        // 🚀 CARGAR FOTO DE RESPALDO DESDE GALERÍA
+        function cargarFotoRespaldoGalería(input, idFila) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const fila = document.getElementById(idFila);
+            
+            const previewContainer = fila.querySelector('.previewContainer');
+            const imgPreview = fila.querySelector('.imgPreview');
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                imgPreview.src = e.target.result;
+                previewContainer.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            const statusDiv = document.getElementById('gestionStatusOutput');
+            if (statusDiv) statusDiv.innerText = "🖼️ Foto de respaldo del equipo adjuntada correctamente.";
+        }
+
         function agregarFilaFungibleCat() {
             contadorFungiblesCat++;
             const idFila = 'fungibleRow_' + contadorFungiblesCat;
@@ -1539,7 +1640,6 @@
                     '<button type="button" onclick="eliminarFilaElemento(\'' + idFila + '\')" class="text-rose-400 hover:text-rose-200 text-xs font-bold px-1.5">✕</button>' +
                 '</div>' +
                 '<input type="text" placeholder="Escriba la descripción del accesorio..." class="fungibleOtroInput hidden w-full p-1.5 tech-input rounded-lg text-xs text-amber-300 border-amber-500/40" />' +
-                // 🚀 CASILLA FACTURAR A CLIENTE
                 '<div class="flex justify-end pt-0.5">' +
                     '<label class="text-[10px] text-amber-300 font-bold flex items-center gap-1 cursor-pointer">' +
                         '<input type="checkbox" class="facturarAccesorioCheck accent-amber-500 rounded" /> 💵 Facturar a Cliente' +
@@ -1606,42 +1706,6 @@
             }
         }
 
-        // 🚀 PROCESAMIENTO OCR Y MOSTRAR IMAGEN CAPTURADA
-        async function escaneoInteligenteEtiquetaFila(input, idFila) {
-            if (!input.files || !input.files[0]) return;
-            const file = input.files[0];
-            const statusDiv = document.getElementById('gestionStatusOutput');
-            const fila = document.getElementById(idFila);
-            
-            const previewContainer = fila.querySelector('.previewContainer');
-            const imgPreview = fila.querySelector('.imgPreview');
-
-            // Mostrar vista previa inmediatamente
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                imgPreview.src = e.target.result;
-                previewContainer.classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-
-            statusDiv.innerText = "⏳ Leyendo etiqueta con OCR inteligente...";
-
-            try {
-                const result = await Tesseract.recognize(file, 'eng');
-                const text = result.data.text;
-                const snMatch = text.match(/(?:SN|S\/N|SERIAL|CAS|MAC)[:\s]*([A-Za-z0-9\-]+)/i);
-                if (snMatch && snMatch[1]) {
-                    fila.querySelector('.serieInput').value = snMatch[1].trim();
-                    statusDiv.innerText = "✅ Foto capturada y Serie detectada automáticamente.";
-                } else {
-                    statusDiv.innerText = "📷 Foto cargada. Ingresa la serie manualmente si no se leyó bien.";
-                }
-            } catch (err) {
-                statusDiv.innerText = "📷 Foto cargada correctamente.";
-            }
-        }
-
-        // 🚀 ENVIAR REPORTE WPP CON DETALLE DE FACTURACIÓN
         async function enviarReporteAWhatsApp() {
             const ot = document.getElementById('gestionOt').value || 'S/OT';
             const precioUnit = parseFloat(document.getElementById('gestionPrecioUnit').value) || 45;
