@@ -89,7 +89,7 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        /* 🚀 ESCÁNER FULLSCREEN HD CON RECUADRO INTERACTIVO */
+        /* ESCÁNER FULLSCREEN HD CON RECUADRO INTERACTIVO */
         #modalBarcodeScanner {
             background-color: #000000 !important;
         }
@@ -127,7 +127,7 @@
             display: none !important;
         }
 
-        /* Recuadro de Enfoque Resizable por Gestos Táctiles */
+        /* Recuadro de Enfoque Resizable */
         #customScanBox {
             position: absolute;
             top: 50%;
@@ -136,7 +136,7 @@
             width: 320px;
             height: 90px;
             min-width: 160px;
-            min-height: 50px;
+            min-height: 45px;
             max-width: 95vw;
             max-height: 40vh;
             border: 2px solid #38bdf8;
@@ -146,7 +146,6 @@
             touch-action: none;
         }
 
-        /* Puntos/Bordes Táctiles para Arrastrar y Ajustar Tamaño */
         .resize-handle {
             position: absolute;
             width: 22px;
@@ -175,6 +174,27 @@
             box-shadow: 0 0 12px #38bdf8, 0 0 2px #ffffff;
             animation: laserSweepHD 2s infinite ease-in-out;
             pointer-events: none;
+        }
+
+        /* VISOR DE RECORTE PARA IMÁGENES DE GALERÍA */
+        #galleryCropContainer {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+            max-height: 60vh;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #galleryCropBox {
+            position: absolute;
+            top: 20%;
+            left: 10%;
+            width: 80%;
+            height: 25%;
+            border: 2px solid #10b981;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65);
+            border-radius: 8px;
+            touch-action: none;
         }
     </style>
 </head>
@@ -255,7 +275,7 @@
                         <p class="text-xl font-black text-white mt-0.5" id="countTotal">0</p>
                     </div>
                     <div onclick="filtrarPorTabAdmin('SIN_ASIGNAR')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-amber-400 transition-all border-amber-500/30">
-                        <p class="text-[10px] font-bold text-amber-400">⚠️️ SIN ASIGNAR</p>
+                        <p class="text-[10px] font-bold text-amber-400">⚠️ SIN ASIGNAR</p>
                         <p class="text-xl font-black text-amber-200 mt-0.5" id="countSinAsignar">0</p>
                     </div>
                     <div onclick="filtrarPorTabAdmin('PENDIENTES')" class="tech-card p-3 rounded-2xl cursor-pointer hover:border-sky-400 transition-all border-sky-500/30">
@@ -491,7 +511,7 @@
             <div id="reader"></div>
         </div>
 
-        <!-- Recuadro Táctil Resizable (Touch to Adjust) -->
+        <!-- Recuadro Táctil Resizable -->
         <div id="customScanBox">
             <div class="laser-line-hd"></div>
             <div class="resize-handle top-left"></div>
@@ -553,7 +573,7 @@
                         <label class="flex-1 flex items-center justify-center gap-1.5 bg-slate-950 p-2 rounded-xl border border-slate-700 text-white text-xs font-bold cursor-pointer hover:border-sky-400">
                             <span>🖼️</span>
                             <span>Galería</span>
-                            <input type="file" accept="image/*" class="hidden" onchange="escanearCodigoDesdeFoto(this)" />
+                            <input type="file" accept="image/*" class="hidden" onchange="abrirModalRecorteGaleria(this)" />
                         </label>
                     </div>
                 </div>
@@ -572,6 +592,40 @@
 
             </div>
 
+        </div>
+    </div>
+
+    <!-- MODAL RECORTE DE GALERÍA (MARCAR CÓDIGO) -->
+    <div id="modalGalleryCrop" class="fixed inset-0 z-[10000] bg-slate-950/95 backdrop-blur-md hidden flex flex-col justify-between p-4">
+        <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-700">
+            <div>
+                <p class="text-xs font-bold text-white">🖼️ SELECCIÓN DE CÓDIGO</p>
+                <p class="text-[10px] text-emerald-400">Mueve el cuadro verde sobre la barra o serial exacto</p>
+            </div>
+            <button onclick="cerrarModalRecorteGaleria()" class="text-slate-400 hover:text-white font-bold text-sm px-2">✕</button>
+        </div>
+
+        <div class="flex-1 flex items-center justify-center my-auto overflow-hidden">
+            <div id="galleryCropContainer">
+                <img id="galleryPreviewImg" src="" class="max-w-full max-h-[60vh] object-contain select-none" />
+                <div id="galleryCropBox">
+                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded">
+                        Arrastra para encuadrar
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-2">
+            <div id="cropStatusMsg" class="text-xs text-sky-300 text-center font-semibold min-h-[1rem]"></div>
+            <div class="flex gap-2">
+                <button onclick="cerrarModalRecorteGaleria()" class="flex-1 bg-slate-800 text-slate-300 text-xs py-3 rounded-xl font-bold">
+                    Cancelar
+                </button>
+                <button onclick="procesarRecorteGaleria()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-3 rounded-xl font-bold shadow-lg">
+                    🔍 Procesar Selección
+                </button>
+            </div>
         </div>
     </div>
 
@@ -723,13 +777,16 @@
         let adminClusterGroup = null;
         let intervaloRealtime = null;
 
-        // Variables Escáner HD e Interactivo
+        // Variables Escáner HD
         let html5QrCodeScanner = null;
         let filaDestinoScanner = null;
         let flashEncendido = false;
         let videoTrackActual = null;
         let escaneoEnProceso = false;
         let camaraSeleccionadaId = null;
+
+        // Variables Recorte de Galería
+        let imagenGaleriaCargada = null;
 
         function formatearGPS(val) {
             if (!val) return null;
@@ -754,6 +811,7 @@
         window.onload = function() {
             pedirPermisoNotificacionesPush();
             inicializarGestosResizeBox();
+            inicializarGestosRecorteGaleria();
             
             const agendaInput = document.getElementById('agendaFechaFilter');
             if (agendaInput) {
@@ -1725,7 +1783,6 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        // 🎯 CONTROL DE AJUSTE DE TAMAÑO POR GESTOS TÁCTILES EN PANTALLA
         function inicializarGestosResizeBox() {
             const box = document.getElementById('customScanBox');
             let isDragging = false;
@@ -1784,7 +1841,7 @@
             }
         }
 
-        // 🚀 MOTOR DE CÁMARA HD NATIVO
+        // MOTOR DE CÁMARA HD NATIVO CON LINTERNA ROBUSTA
         async function abrirModalScanner(idFila) {
             if (escaneoEnProceso) return;
             escaneoEnProceso = true;
@@ -1870,7 +1927,6 @@
                 verbose: false 
             });
 
-            // Obtener dimensiones actuales del recuadro dinámico
             const box = document.getElementById('customScanBox');
             const boxW = box ? box.offsetWidth : 320;
             const boxH = box ? box.offsetHeight : 90;
@@ -1896,29 +1952,18 @@
                 onBarcodeScanError
             );
 
-            // Enfoque continuo nativo
+            // Obtención directa del Track de video para soporte total de Flash
             const videoEl = document.querySelector("#reader video");
             if (videoEl && videoEl.srcObject) {
                 const stream = videoEl.srcObject;
                 videoTrackActual = stream.getVideoTracks()[0];
-
-                if (videoTrackActual && videoTrackActual.getCapabilities) {
-                    const capabilities = videoTrackActual.getCapabilities();
-                    const constraints = {};
-
-                    if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-                        constraints.focusMode = 'continuous';
-                    }
-
-                    if (Object.keys(constraints).length > 0) {
-                        await videoTrackActual.applyConstraints({ advanced: [constraints] }).catch(() => {});
-                    }
-                }
             }
         }
 
         async function cambiarCamaraSeleccionada(idCam) {
             camaraSeleccionadaId = idCam;
+            flashEncendido = false;
+            document.getElementById('btnFlashToggle').classList.remove('border-amber-400', 'bg-amber-950/80');
             const errDiv = document.getElementById('scannerErrorMessage');
             errDiv.classList.add('hidden');
             try {
@@ -1951,10 +1996,19 @@
         }
 
         async function toggleFlashLuz() {
-            if (!videoTrackActual) return;
+            const errDiv = document.getElementById('scannerErrorMessage');
+            errDiv.classList.add('hidden');
+
+            if (!videoTrackActual) {
+                errDiv.innerText = "Inicie la cámara antes de encender la linterna.";
+                errDiv.classList.remove('hidden');
+                return;
+            }
+
             try {
                 flashEncendido = !flashEncendido;
-                
+
+                // Intento 1: applyConstraints NATIVO DE ANDROID/CHROME
                 await videoTrackActual.applyConstraints({
                     advanced: [{ torch: flashEncendido }]
                 });
@@ -1963,29 +2017,121 @@
                 document.getElementById('btnFlashToggle').classList.toggle('bg-amber-950/80', flashEncendido);
 
             } catch (e) {
+                // Intento 2: Fallback vía ImageCapture API
                 try {
                     const imageCapture = new ImageCapture(videoTrackActual);
                     await imageCapture.setOptions({ fillLightMode: flashEncendido ? 'flash' : 'off' });
                     document.getElementById('btnFlashToggle').classList.toggle('border-amber-400', flashEncendido);
                 } catch (err2) {
-                    const errDiv = document.getElementById('scannerErrorMessage');
-                    errDiv.innerText = "El control de linterna no está disponible en este lente.";
+                    flashEncendido = false;
+                    errDiv.innerText = "La linterna no está soportada en el lente actual.";
                     errDiv.classList.remove('hidden');
                 }
             }
         }
 
-        function escanearCodigoDesdeFoto(input) {
-            if (!input.files || !input.files[0] || !html5QrCodeScanner) return;
+        // SELECTOR Y RECORTE DE IMÁGENES DE GALERÍA
+        function abrirModalRecorteGaleria(input) {
+            if (!input.files || !input.files[0]) return;
             const file = input.files[0];
+            const reader = new FileReader();
 
-            html5QrCodeScanner.scanFile(file, true)
-                .then(decodedText => {
+            document.getElementById('cropStatusMsg').innerText = '';
+
+            reader.onload = function(e) {
+                imagenGaleriaCargada = e.target.result;
+                const imgEl = document.getElementById('galleryPreviewImg');
+                imgEl.src = imagenGaleriaCargada;
+
+                imgEl.onload = function() {
+                    document.getElementById('modalGalleryCrop').classList.remove('hidden');
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function cerrarModalRecorteGaleria() {
+            document.getElementById('modalGalleryCrop').classList.add('hidden');
+            imagenGaleriaCargada = null;
+        }
+
+        function inicializarGestosRecorteGaleria() {
+            const cropBox = document.getElementById('galleryCropBox');
+            const container = document.getElementById('galleryCropContainer');
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            cropBox.addEventListener('pointerdown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = cropBox.offsetLeft;
+                startTop = cropBox.offsetTop;
+                cropBox.setPointerCapture(e.pointerId);
+            });
+
+            cropBox.addEventListener('pointermove', (e) => {
+                if (!isDragging) return;
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+
+                let maxLeft = container.clientWidth - cropBox.clientWidth;
+                let maxTop = container.clientHeight - cropBox.clientHeight;
+
+                let newLeft = Math.max(0, Math.min(maxLeft, startLeft + deltaX));
+                let newTop = Math.max(0, Math.min(maxTop, startTop + deltaY));
+
+                cropBox.style.left = newLeft + 'px';
+                cropBox.style.top = newTop + 'px';
+            });
+
+            cropBox.addEventListener('pointerup', (e) => {
+                if (isDragging) {
+                    isDragging = false;
+                    cropBox.releasePointerCapture(e.pointerId);
+                }
+            });
+        }
+
+        async function procesarRecorteGaleria() {
+            const statusMsg = document.getElementById('cropStatusMsg');
+            statusMsg.innerText = "⏳ Analizando zona seleccionada...";
+
+            const imgEl = document.getElementById('galleryPreviewImg');
+            const cropBox = document.getElementById('galleryCropBox');
+            const container = document.getElementById('galleryCropContainer');
+
+            // Calcular escala real entre el elemento visual y la imagen física original
+            const scaleX = imgEl.naturalWidth / container.clientWidth;
+            const scaleY = imgEl.naturalHeight / container.clientHeight;
+
+            const cropX = cropBox.offsetLeft * scaleX;
+            const cropY = cropBox.offsetTop * scaleY;
+            const cropW = cropBox.clientWidth * scaleX;
+            const cropH = cropBox.clientHeight * scaleY;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = cropW;
+            canvas.height = cropH;
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(imgEl, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+            canvas.toBlob(async (blob) => {
+                const fileRecortado = new File([blob], "cropped_barcode.jpg", { type: "image/jpeg" });
+
+                if (!html5QrCodeScanner) {
+                    html5QrCodeScanner = new Html5Qrcode("reader");
+                }
+
+                try {
+                    const decodedText = await html5QrCodeScanner.scanFile(fileRecortado, true);
                     onBarcodeScanSuccess(decodedText);
-                })
-                .catch(err => {
-                    alert("No se pudo detectar un código legible en la imagen.");
-                });
+                    cerrarModalRecorteGaleria();
+                } catch (err) {
+                    statusMsg.innerText = "❌ No se detectó código en esa zona. Intenta ajustar más el recuadro.";
+                }
+            }, 'image/jpeg', 0.95);
         }
 
         function emitirSonidoBeep() {
