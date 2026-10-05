@@ -503,7 +503,7 @@
         </nav>
     </div>
 
-    <!-- MODAL ESCÁNER PANTALLA COMPLETA CON RECUADRO INTERACTIVO -->
+    <!-- MODAL ESCÁNER PANTALLA COMPLETA CON SELECCIÓN DE CÁMARA Y LINTERNA -->
     <div id="modalBarcodeScanner" class="fixed inset-0 z-[9999] bg-black hidden overflow-hidden">
         
         <!-- Visor de Video Cristalino -->
@@ -1841,7 +1841,7 @@
             }
         }
 
-        // MOTOR DE CÁMARA HD NATIVO CON LINTERNA ROBUSTA
+        // MOTOR DE CÁMARA HD NATIVO CON SELECCIÓN DE LENTES Y LINTERNA
         async function abrirModalScanner(idFila) {
             if (escaneoEnProceso) return;
             escaneoEnProceso = true;
@@ -2101,7 +2101,6 @@
             const cropBox = document.getElementById('galleryCropBox');
             const container = document.getElementById('galleryCropContainer');
 
-            // Calcular escala real entre el elemento visual y la imagen física original
             const scaleX = imgEl.naturalWidth / container.clientWidth;
             const scaleY = imgEl.naturalHeight / container.clientHeight;
 
