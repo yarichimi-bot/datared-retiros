@@ -89,7 +89,7 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        /* ESCÁNER FULLSCREEN PROFESIONAL */
+        /* ESTILOS DEL ESCÁNER PANTALLA COMPLETA ESTILO TEACAPPS */
         #modalBarcodeScanner {
             background-color: #000000 !important;
         }
@@ -123,6 +123,23 @@
         }
         #reader__dashboard {
             display: none !important;
+        }
+
+        /* Línea Láser Animada */
+        @keyframes laserSweep {
+            0% { top: 10%; opacity: 0.3; }
+            50% { top: 85%; opacity: 1; }
+            100% { top: 10%; opacity: 0.3; }
+        }
+        .laser-line {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            height: 2px;
+            background: #10b981;
+            box-shadow: 0 0 12px #10b981, 0 0 2px #ffffff;
+            animation: laserSweep 2s infinite ease-in-out;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -431,49 +448,48 @@
         </nav>
     </div>
 
-    <!-- MODAL ESCÁNER FULLSCREEN PROFESIONAL CON CONTROLES FLOTANTES -->
+    <!-- MODAL ESCÁNER PANTALLA COMPLETA PROFESIONAL (ESTILO TEACAPPS) -->
     <div id="modalBarcodeScanner" class="fixed inset-0 z-[9999] bg-black hidden overflow-hidden">
         
-        <!-- Visor de Cámara de Pantalla Completa -->
+        <!-- Visor de Cámara Fullscreen -->
         <div id="readerWrapper">
             <div id="reader"></div>
         </div>
 
-        <!-- Capa de Interfaz Sobrepuesta (Overlay UI) -->
+        <!-- Capa Sobrepuesta (Overlay Flotante) -->
         <div class="absolute inset-0 z-20 flex flex-col justify-between p-4 pointer-events-none">
             
-            <!-- Encabezado Flotante -->
+            <!-- Barra Superior Flotante -->
             <div class="flex justify-between items-center bg-slate-900/80 backdrop-blur-md p-3 rounded-2xl border border-slate-700 pointer-events-auto">
                 <div class="flex items-center gap-2">
-                    <span class="text-lg">📷</span>
+                    <span class="text-lg">⚡</span>
                     <div>
-                        <p class="text-xs font-bold text-white">LECTOR HD PROFESIONAL</p>
-                        <p class="text-[9px] text-amber-400 font-semibold">Series & MACs (1D)</p>
+                        <p class="text-xs font-bold text-white">ESCÁNER ALTA VELOCIDAD</p>
+                        <p class="text-[9px] text-emerald-400 font-semibold">Aceleración por Hardware Activa</p>
                     </div>
                 </div>
-                <button onclick="cerrarModalScannerSolo()" class="bg-rose-900/80 hover:bg-rose-800 text-white text-xs px-3 py-1.5 rounded-xl border border-rose-600/50 font-bold">
+                <button onclick="cerrarModalScannerSolo()" class="bg-rose-900/80 hover:bg-rose-800 text-white text-xs px-3.5 py-1.5 rounded-xl border border-rose-600/50 font-bold">
                     Cerrar ✕
                 </button>
             </div>
 
-            <!-- Centro: Selector de Tamaño de Caja Dinámica -->
-            <div class="flex flex-col items-center justify-center space-y-2">
-                <div class="flex items-center justify-center gap-2 bg-slate-900/80 backdrop-blur-md p-1.5 rounded-xl border border-slate-700 pointer-events-auto">
-                    <span class="text-[10px] text-slate-300 font-bold px-1">📐 Recuadro:</span>
-                    <button onclick="cambiarTamanoCajaScanner('fino')" class="text-[10px] bg-slate-800 text-sky-300 px-2.5 py-1 rounded-lg border border-slate-600 font-bold hover:bg-sky-600 hover:text-white">Fino</button>
-                    <button onclick="cambiarTamanoCajaScanner('normal')" class="text-[10px] bg-sky-600 text-white px-2.5 py-1 rounded-lg border border-sky-400 font-bold">Normal</button>
-                    <button onclick="cambiarTamanoCajaScanner('amplio')" class="text-[10px] bg-slate-800 text-sky-300 px-2.5 py-1 rounded-lg border border-slate-600 font-bold hover:bg-sky-600 hover:text-white">Amplio</button>
+            <!-- Marco Guía con Láser -->
+            <div class="relative w-full max-w-sm h-36 mx-auto border-2 border-emerald-400 rounded-2xl pointer-events-none shadow-[0_0_25px_rgba(16,185,129,0.5)] my-auto flex items-center justify-center">
+                <div class="laser-line"></div>
+                <div class="absolute -top-3 bg-slate-900/90 text-emerald-300 text-[10px] font-bold px-3 py-0.5 rounded-full border border-emerald-500/40">
+                    Apunta a las barras rectangulares (MAC/Serie)
                 </div>
-                <div id="scannerErrorMessage" class="text-rose-400 text-[10px] font-semibold hidden bg-rose-950/90 p-2 rounded-lg text-center w-full max-w-xs pointer-events-auto"></div>
             </div>
 
-            <!-- Controles Inferiores Flotantes -->
+            <div id="scannerErrorMessage" class="text-rose-400 text-[10px] font-semibold hidden bg-rose-950/90 p-2 rounded-lg text-center w-full max-w-xs mx-auto pointer-events-auto"></div>
+
+            <!-- Panel de Controles Inferiores Flotantes -->
             <div class="bg-slate-900/85 backdrop-blur-md p-3.5 rounded-2xl border border-slate-700 space-y-3 pointer-events-auto">
                 
-                <!-- Selector de Cámara/Lente Físico y Botones de Luz/Galería -->
+                <!-- Selector de Cámara y Acciones -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div>
-                        <label class="block text-[10px] font-bold text-sky-300 mb-1">📷 SELECCIONAR LENTE / CÁMARA:</label>
+                        <label class="block text-[10px] font-bold text-sky-300 mb-1">📷 CÁMARA / LENTE DETECTADO:</label>
                         <select id="selectCamaraDispositivo" onchange="cambiarCamaraSeleccionada(this.value)" class="w-full bg-slate-950 text-white border border-slate-700 rounded-xl p-2 text-xs font-bold"></select>
                     </div>
 
@@ -485,13 +501,13 @@
 
                         <label class="flex-1 flex items-center justify-center gap-1.5 bg-slate-950 p-2 rounded-xl border border-slate-700 text-white text-xs font-bold cursor-pointer hover:border-sky-400">
                             <span>🖼️</span>
-                            <span>Foto</span>
+                            <span>Galería</span>
                             <input type="file" accept="image/*" class="hidden" onchange="escanearCodigoDesdeFoto(this)" />
                         </label>
                     </div>
                 </div>
 
-                <!-- Slider de Zoom -->
+                <!-- Slider de Zoom Dinámico -->
                 <div class="space-y-1">
                     <div class="flex justify-between items-center text-[11px] text-slate-300 font-bold">
                         <span>🔍 Zoom Óptico/Digital</span>
@@ -499,7 +515,7 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="text-xs">➖</span>
-                        <input type="range" id="zoomRangeInput" min="1" max="4" step="0.1" value="1" oninput="aplicarZoomCamara(this.value)" class="w-full accent-teal-400 cursor-pointer" />
+                        <input type="range" id="zoomRangeInput" min="1" max="4" step="0.1" value="1" oninput="aplicarZoomCamara(this.value)" class="w-full accent-emerald-400 cursor-pointer" />
                         <span class="text-xs">➕</span>
                     </div>
                 </div>
@@ -657,14 +673,13 @@
         let adminClusterGroup = null;
         let intervaloRealtime = null;
 
-        // Variables Escáner Universal
+        // Variables Escáner Universal Avanzado
         let html5QrCodeScanner = null;
         let filaDestinoScanner = null;
         let flashEncendido = false;
         let videoTrackActual = null;
         let escaneoEnProceso = false;
         let camaraSeleccionadaId = null;
-        let tamanoCajaScanner = { width: 320, height: 110 };
 
         function formatearGPS(val) {
             if (!val) return null;
@@ -1659,7 +1674,7 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        // 🚀 MOTOR DE CÁMARA FULLSCREEN CON SELECTOR DE CÁMARAS Y CUADRO DINÁMICO
+        // 🚀 MOTOR DE CÁMARA CON ACELERACIÓN POR HARDWARE Y FEEDBACK TÁCTIL (ESTILO TEACAPPS)
         async function abrirModalScanner(idFila) {
             if (escaneoEnProceso) return;
             escaneoEnProceso = true;
@@ -1676,11 +1691,8 @@
             document.getElementById('modalBarcodeScanner').classList.remove('hidden');
 
             try {
-                // Escanear todas las cámaras/lentes físicas del teléfono
                 await poblarListaCamarasDispositivo();
-
                 await iniciarInstanciaScanner();
-
             } catch (err) {
                 errDiv.innerText = "Error al iniciar la cámara: " + (err.message || err);
                 errDiv.classList.remove('hidden');
@@ -1735,6 +1747,7 @@
                 } catch(e) {}
             }
 
+            // Formatos 1D de lectura directa
             const formatTypes = [
                 Html5QrcodeSupportedFormats.CODE_128,
                 Html5QrcodeSupportedFormats.CODE_39,
@@ -1743,11 +1756,18 @@
                 Html5QrcodeSupportedFormats.CODABAR
             ];
 
-            html5QrCodeScanner = new Html5Qrcode("reader", { formatsToSupport: formatTypes, verbose: false });
+            // ACELERACIÓN POR HARDWARE NATIVA (BarcodeDetector API de Google Play)
+            html5QrCodeScanner = new Html5Qrcode("reader", { 
+                formatsToSupport: formatTypes, 
+                experimentalFeatures: {
+                    useBarCodeDetectorIfSupported: true // Utiliza los procesadores NPU de Android directamente
+                },
+                verbose: false 
+            });
 
             const configHD = {
                 fps: 30,
-                qrbox: tamanoCajaScanner
+                qrbox: { width: 320, height: 120 }
             };
 
             const cameraConfig = camaraSeleccionadaId && camaraSeleccionadaId !== 'environment' 
@@ -1761,7 +1781,7 @@
                 onBarcodeScanError
             );
 
-            // Aplicar enfoque continuo
+            // Activar enfoque continuo y máxima nitidez
             const videoEl = document.querySelector("#reader video");
             if (videoEl && videoEl.srcObject) {
                 const stream = videoEl.srcObject;
@@ -1791,16 +1811,6 @@
             } catch(err) {
                 errDiv.innerText = "No se pudo conectar con el lente seleccionado.";
                 errDiv.classList.remove('hidden');
-            }
-        }
-
-        async function cambiarTamanoCajaScanner(modo) {
-            if (modo === 'fino') tamanoCajaScanner = { width: 320, height: 80 };
-            if (modo === 'normal') tamanoCajaScanner = { width: 300, height: 130 };
-            if (modo === 'amplio') tamanoCajaScanner = { width: 340, height: 220 };
-
-            if (html5QrCodeScanner && html5QrCodeScanner.isScanning) {
-                await iniciarInstanciaScanner();
             }
         }
 
@@ -1844,7 +1854,7 @@
                     document.getElementById('btnFlashToggle').classList.toggle('border-amber-400', flashEncendido);
                 } catch (err2) {
                     const errDiv = document.getElementById('scannerErrorMessage');
-                    errDiv.innerText = "El control de linterna es bloqueado en este lente.";
+                    errDiv.innerText = "El control de linterna no está disponible en este lente.";
                     errDiv.classList.remove('hidden');
                 }
             }
@@ -1863,7 +1873,31 @@
                 });
         }
 
+        // Emite un todo Beep de confirmación de captura
+        function emitirSonidoBeep() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = "sine";
+                osc.frequency.value = 1800; // Tono agudo de escáner
+                gain.gain.value = 0.1;
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.12);
+            } catch(e) {}
+        }
+
         function onBarcodeScanSuccess(decodedText, decodedResult) {
+            // Feedback háptico (Vibración física)
+            if ("vibrate" in navigator) {
+                navigator.vibrate(80);
+            }
+
+            // Feedback auditivo (Beep)
+            emitirSonidoBeep();
+
             if (filaDestinoScanner) {
                 const fila = document.getElementById(filaDestinoScanner);
                 if (fila) {
@@ -1876,7 +1910,7 @@
         }
 
         function onBarcodeScanError(errorMessage) {
-            // Se ignoran cuadros sin código en tiempo real
+            // Ignorar cuadros vacíos en tiempo real
         }
 
         async function cerrarModalScannerSolo() {
