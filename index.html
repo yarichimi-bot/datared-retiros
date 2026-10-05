@@ -881,43 +881,32 @@
             aplicarFiltrosAdminLocales(false);
         }
 
+        // CORRECCIÓN 1: Nodos independientes asignados globalmente desde el inicio
         function poblarFiltrosDesplegables(lista) {
+            // 1. Departamentos
             const deptos = [...new Set(lista.map(o => o.departamento).filter(Boolean))].sort();
             const selectDepto = document.getElementById('deptoSelectFilter');
-            const valPrevDepto = selectDepto.value;
-            selectDepto.innerHTML = '<option value="">-- Depto --</option>' + deptos.map(d => `<option value="${d}">${d}</option>`).join('');
-            if (valPrevDepto) selectDepto.value = valPrevDepto;
+            if (selectDepto) {
+                const valPrevDepto = selectDepto.value;
+                selectDepto.innerHTML = '<option value="">-- Depto --</option>' + deptos.map(d => `<option value="${d}">${d}</option>`).join('');
+                if (valPrevDepto) selectDepto.value = valPrevDepto;
+            }
 
+            // 2. Poblar Todos los Nodos Globales (Permite filtrar directamente sin Depto/Ciudad)
+            poblarNodosDesplegable(lista);
+
+            // 3. Ciudades y Técnicos dependientes
             alCambiarFiltroDepto();
         }
 
-        function alCambiarFiltroDepto() {
-            const deptoVal = document.getElementById('deptoSelectFilter').value;
-            let listaCiudades = ordenesGlobalesAdmin;
-            if (deptoVal) {
-                listaCiudades = ordenesGlobalesAdmin.filter(o => o.departamento === deptoVal);
-            }
+        function poblarNodosDesplegable(listaBase) {
+            const selectNodo = document.getElementById('nodoSelectFilter');
+            if (!selectNodo) return;
 
-            const ciudades = [...new Set(listaCiudades.map(o => o.ciudad).filter(Boolean))].sort();
-            const selectCiudad = document.getElementById('ciudadSelectFilter');
-            const valPrevCiudad = selectCiudad.value;
-            
-            selectCiudad.innerHTML = '<option value="">-- Ciudad --</option>' + ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
-            if (ciudades.includes(valPrevCiudad)) selectCiudad.value = valPrevCiudad;
-
-            alCambiarFiltroCiudad();
-        }
-
-        function alCambiarFiltroCiudad() {
-            const deptoVal = document.getElementById('deptoSelectFilter').value;
-            const ciudadVal = document.getElementById('ciudadSelectFilter').value;
-            
-            let listaFiltrada = ordenesGlobalesAdmin;
-            if (deptoVal) listaFiltrada = listaFiltrada.filter(o => o.departamento === deptoVal);
-            if (ciudadVal) listaFiltrada = listaFiltrada.filter(o => o.ciudad === ciudadVal);
-
+            const valPrevNodo = selectNodo.value;
             const nodosSet = new Set();
-            listaFiltrada.forEach(o => {
+
+            listaBase.forEach(o => {
                 const z = o.zona_nodo_tap || o.nodo;
                 if (z) {
                     const n = extraerNombreNodo(z);
@@ -926,20 +915,51 @@
             });
 
             const nodos = Array.from(nodosSet).sort();
-            const selectNodo = document.getElementById('nodoSelectFilter');
-            const valPrevNodo = selectNodo.value;
-
             selectNodo.innerHTML = '<option value="">🔍 -- Filtrar Nodo --</option>' + nodos.map(n => `<option value="${n}">${n}</option>`).join('');
-            if (nodos.includes(valPrevNodo)) selectNodo.value = valPrevNodo;
+
+            if (nodos.includes(valPrevNodo)) {
+                selectNodo.value = valPrevNodo;
+            }
+        }
+
+        function alCambiarFiltroDepto() {
+            const selectDepto = document.getElementById('deptoSelectFilter');
+            const deptoVal = selectDepto ? selectDepto.value : '';
+
+            let listaFiltrada = ordenesGlobalesAdmin;
+            if (deptoVal) {
+                listaFiltrada = ordenesGlobalesAdmin.filter(o => o.departamento === deptoVal);
+            }
+
+            const ciudades = [...new Set(listaFiltrada.map(o => o.ciudad).filter(Boolean))].sort();
+            const selectCiudad = document.getElementById('ciudadSelectFilter');
+            
+            if (selectCiudad) {
+                const valPrevCiudad = selectCiudad.value;
+                selectCiudad.innerHTML = '<option value="">-- Ciudad --</option>' + ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
+                if (ciudades.includes(valPrevCiudad)) selectCiudad.value = valPrevCiudad;
+            }
+
+            alCambiarFiltroCiudad();
+        }
+
+        function alCambiarFiltroCiudad() {
+            const deptoVal = document.getElementById('deptoSelectFilter')?.value || '';
+            const ciudadVal = document.getElementById('ciudadSelectFilter')?.value || '';
+
+            let listaFiltrada = ordenesGlobalesAdmin;
+            if (deptoVal) listaFiltrada = listaFiltrada.filter(o => o.departamento === deptoVal);
+            if (ciudadVal) listaFiltrada = listaFiltrada.filter(o => o.ciudad === ciudadVal);
+
+            // Actualiza los nodos si hay filtro geográfico, pero sin bloquear los existentes
+            poblarNodosDesplegable(listaFiltrada);
 
             const tecnicos = [...new Set(listaFiltrada.map(o => o.tecnico_asignado).filter(Boolean))].sort();
             const selectTec = document.getElementById('tecnicoSelectFilter');
-            const valPrevTecnico = selectTec.value;
-
-            selectTec.innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
-            
-            if (tecnicos.includes(valPrevTecnico)) {
-                selectTec.value = valPrevTecnico;
+            if (selectTec) {
+                const valPrevTecnico = selectTec.value;
+                selectTec.innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
+                if (tecnicos.includes(valPrevTecnico)) selectTec.value = valPrevTecnico;
             }
 
             aplicarFiltrosAdminLocales(false);
@@ -1615,8 +1635,18 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        // 🚀 ESCÁNER CON SUPERPOSICIÓN MÁXIMA Y CÁMARA DIRECTA CORREGIDA
-        async function abrirModalScanner(idFila) {
+        // CORRECCIÓN 2: ESCÁNER HÍBRIDO (APK Native + Web Camera)
+        function abrirModalScanner(idFila) {
+            // Si la aplicación se ejecuta dentro de un marco nativo APK (Capacitor/Cordova)
+            if (window.Capacitor || window.cordova) {
+                iniciarEscaneoNativoAPK(idFila);
+            } else {
+                // Ejecución normal en el navegador
+                iniciarEscaneoWeb(idFila);
+            }
+        }
+
+        async function iniciarEscaneoWeb(idFila) {
             filaDestinoScanner = idFila;
             flashEncendido = false;
             document.getElementById('zoomRangeInput').value = 1;
@@ -1626,7 +1656,6 @@
             errDiv.classList.add('hidden');
             errDiv.innerText = '';
 
-            // Mostrar el modal inmediatamente con z-index superior
             document.getElementById('modalBarcodeScanner').classList.remove('hidden');
 
             try {
@@ -1661,6 +1690,22 @@
             }
         }
 
+        function iniciarEscaneoNativoAPK(idFila) {
+            if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.BarcodeScanner) {
+                window.Capacitor.Plugins.BarcodeScanner.scan().then(result => {
+                    if (result && result.hasContent) {
+                        filaDestinoScanner = idFila;
+                        onBarcodeScanSuccess(result.content);
+                    }
+                }).catch(err => {
+                    console.error("Error en escáner nativo APK:", err);
+                    iniciarEscaneoWeb(idFila);
+                });
+            } else {
+                iniciarEscaneoWeb(idFila);
+            }
+        }
+
         async function aplicarZoomCamara(val) {
             document.getElementById('zoomValText').innerText = parseFloat(val).toFixed(1) + "x";
             if (!videoTrackActual) return;
@@ -1685,11 +1730,8 @@
         async function toggleFlashLuz() {
             if (!videoTrackActual) return;
             try {
-                const capabilities = videoTrackActual.getCapabilities ? videoTrackActual.getCapabilities() : {};
-                
                 flashEncendido = !flashEncendido;
                 
-                // Intento estándar de linterna
                 await videoTrackActual.applyConstraints({
                     advanced: [{ torch: flashEncendido }]
                 });
@@ -1698,7 +1740,6 @@
                 document.getElementById('btnFlashToggle').classList.toggle('bg-amber-950/40', flashEncendido);
 
             } catch (e) {
-                // Intento alternativo para WebViews de Android
                 try {
                     const imageCapture = new ImageCapture(videoTrackActual);
                     await imageCapture.setOptions({ fillLightMode: flashEncendido ? 'flash' : 'off' });
@@ -1740,7 +1781,6 @@
             // Se ignoran imágenes sin código en tiempo real
         }
 
-        // Cierra únicamente el lector de cámara y regresa a la gestión de la OT
         function cerrarModalScannerSolo() {
             if (html5QrCodeScanner) {
                 html5QrCodeScanner.stop().then(() => {
