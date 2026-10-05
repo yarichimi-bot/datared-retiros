@@ -89,13 +89,13 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        /* Maximizar nitidez, visor grande y eliminación de opacidad en cámara WebApp */
+        /* Visor Nítido Nativo Sin Opacidad ni Estiramiento Distorsionado */
         #reader video {
-            object-fit: cover !important;
+            object-fit: contain !important;
             border-radius: 0.75rem;
             width: 100% !important;
             height: 100% !important;
-            filter: brightness(105%) contrast(105%) opacity(100%) !important;
+            filter: none !important;
             opacity: 1 !important;
         }
         #reader {
@@ -422,7 +422,7 @@
         </nav>
     </div>
 
-    <!-- MODAL ESCÁNER MULTIDISPOSITIVO HD -->
+    <!-- MODAL ESCÁNER MULTIDISPOSITIVO ULTRA RÁPIDO HD -->
     <div id="modalBarcodeScanner" class="fixed inset-0 z-[9999] bg-slate-950 flex flex-col hidden overflow-hidden">
         
         <!-- Barra Superior -->
@@ -453,11 +453,11 @@
             </div>
 
             <div class="text-center text-slate-300 text-xs px-4 space-y-1 my-1">
-                <p class="font-bold text-amber-400">Sensor HD & Enfoque Automático Activado</p>
+                <p class="font-bold text-amber-400">Lectura Instantánea de Series & MACs (1D)</p>
                 <p class="text-[10px] text-slate-400">Apunta directamente a las barras rectangulares de la etiqueta.</p>
             </div>
 
-            <!-- Visor de Cámara Ampliado -->
+            <!-- Visor de Cámara Ampliado Nativo Nítido -->
             <div id="readerWrapper" class="relative rounded-2xl overflow-hidden border-2 border-teal-500 bg-black w-full max-w-md h-80 flex items-center justify-center my-2 shadow-2xl">
                 <div id="reader" class="w-full h-full"></div>
                 
@@ -1138,7 +1138,7 @@
                     '<td class="p-3"><span class="' + badgeClass + ' border text-[10px] px-2 py-0.5 rounded-full">' + o.estado + '</span></td>' +
                     '<td class="p-3 text-center">' +
                         '<div class="flex items-center justify-center gap-1.5">' +
-                            (mapsUrl ? '<a href="' + mapsUrl + '" target="_blank" class="bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/40 text-[10px] px-2.5 py-1 rounded-lg font-bold">🗺️ Ir</a>' : '') +
+                            (mapsUrl ? '<a href="' + mapsUrl + '" target="_blank" class="bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/40 text-[10px] px-2.5 py-1 rounded-lg font-bold">🗺️️ Ir</a>' : '') +
                             (o.estado !== 'PAGADO' ? '<button onclick="abrirModalGestionGenerico(\'' + o.id + '\')" class="tech-button text-white text-[10px] px-3 py-1 rounded-lg font-bold">Gestionar</button>' : '<span class="text-rose-400 text-[10px] font-bold">BLOQUEADO</span>') +
                         '</div>' +
                     '</td>' +
@@ -1634,7 +1634,7 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        // 🚀 MOTOR DE CÁMARA MULTIDISPOSITIVO CON AUTO-DETECCIÓN Y MANEJO DE ESTADO
+        // 🚀 MOTOR DE CÁMARA NÍTIDA OPTIMIZADO PARA CÓDIGOS DE BARRAS (1D)
         async function abrirModalScanner(idFila) {
             if (escaneoEnProceso) return;
             escaneoEnProceso = true;
@@ -1658,22 +1658,36 @@
                         }
                         await html5QrCodeScanner.clear();
                     } catch(e) {}
-                } else {
-                    html5QrCodeScanner = new Html5Qrcode("reader");
                 }
+
+                // Filtrar solo formatos de códigos de barras 1D (Garantiza lectura instantánea en milisegundos)
+                const formatTypes = [
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.UPC_A,
+                    Html5QrcodeSupportedFormats.CODABAR
+                ];
+
+                html5QrCodeScanner = new Html5Qrcode("reader", { formatsToSupport: formatTypes, verbose: false });
 
                 const configHD = {
                     fps: 30,
-                    qrbox: { width: 320, height: 140 },
-                    aspectRatio: 1.777778
+                    qrbox: { width: 300, height: 110 },
+                    aspectRatio: 1.333333 // Relación 4:3 para nitidez directa sin deformación
                 };
 
-                // Detecta la mejor cámara física trasera (Lente HD/Principal) en cualquier modelo
+                // Detectar cámara trasera principal
                 let selectedCameraId = null;
                 try {
                     const cameras = await Html5Qrcode.getCameras();
                     if (cameras && cameras.length > 0) {
-                        const backCameras = cameras.filter(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('trasera') || c.label.toLowerCase().includes('rear') || c.label.toLowerCase().includes('0'));
+                        const backCameras = cameras.filter(c => 
+                            c.label.toLowerCase().includes('back') || 
+                            c.label.toLowerCase().includes('trasera') || 
+                            c.label.toLowerCase().includes('rear') || 
+                            c.label.toLowerCase().includes('0')
+                        );
                         selectedCameraId = backCameras.length > 0 ? backCameras[backCameras.length - 1].id : cameras[0].id;
                     }
                 } catch(eCam) {}
@@ -1687,7 +1701,7 @@
                     onBarcodeScanError
                 );
 
-                // Activa Enfoque Continuo Nativo en el sensor de cámara activo
+                // Activar enfoque continuo automático si el teléfono lo soporta
                 const videoEl = document.querySelector("#reader video");
                 if (videoEl && videoEl.srcObject) {
                     const stream = videoEl.srcObject;
@@ -1787,7 +1801,7 @@
         }
 
         function onBarcodeScanError(errorMessage) {
-            // Se ignoran imágenes sin código en tiempo real
+            // Se ignoran cuadros sin código en tiempo real
         }
 
         async function cerrarModalScannerSolo() {
