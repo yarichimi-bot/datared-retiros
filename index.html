@@ -89,7 +89,7 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
-        /* ESTILOS DEL ESCÁNER PANTALLA COMPLETA ESTILO TEACAPPS */
+        /* 🚀 ESCÁNER HD CRISTALINO SIN CAPAS OPACAS */
         #modalBarcodeScanner {
             background-color: #000000 !important;
         }
@@ -110,35 +110,38 @@
             object-fit: cover !important;
             width: 100% !important;
             height: 100% !important;
-            filter: none !important;
+            filter: contrast(1.1) brightness(1.05) !important;
             opacity: 1 !important;
         }
+        /* Elimina las capas grises/opacas que inyecta la librería */
         #reader__scan_region {
             background: transparent !important;
             width: 100% !important;
             height: 100% !important;
         }
-        #reader__scan_region img, #reader__scan_region svg {
+        #reader__scan_region img, #reader__scan_region svg, #reader__scan_region > div {
             display: none !important;
+            opacity: 0 !important;
+            background: transparent !important;
         }
         #reader__dashboard {
             display: none !important;
         }
 
-        /* Línea Láser Animada */
-        @keyframes laserSweep {
-            0% { top: 10%; opacity: 0.3; }
-            50% { top: 85%; opacity: 1; }
-            100% { top: 10%; opacity: 0.3; }
+        /* Guía Visual Dinámica Extra Ancha para Seriales Largos */
+        @keyframes laserSweepHD {
+            0% { top: 20%; opacity: 0.4; }
+            50% { top: 80%; opacity: 1; }
+            100% { top: 20%; opacity: 0.4; }
         }
-        .laser-line {
+        .laser-line-hd {
             position: absolute;
-            left: 5%;
-            right: 5%;
+            left: 2%;
+            right: 2%;
             height: 2px;
-            background: #10b981;
-            box-shadow: 0 0 12px #10b981, 0 0 2px #ffffff;
-            animation: laserSweep 2s infinite ease-in-out;
+            background: #38bdf8;
+            box-shadow: 0 0 15px #38bdf8, 0 0 3px #ffffff;
+            animation: laserSweepHD 2.2s infinite ease-in-out;
             pointer-events: none;
         }
     </style>
@@ -448,24 +451,24 @@
         </nav>
     </div>
 
-    <!-- MODAL ESCÁNER PANTALLA COMPLETA PROFESIONAL (ESTILO TEACAPPS) -->
+    <!-- MODAL ESCÁNER HD FULL FRAME CRISTALINO -->
     <div id="modalBarcodeScanner" class="fixed inset-0 z-[9999] bg-black hidden overflow-hidden">
         
-        <!-- Visor de Cámara Fullscreen -->
+        <!-- Visor de Video Cristalino -->
         <div id="readerWrapper">
             <div id="reader"></div>
         </div>
 
-        <!-- Capa Sobrepuesta (Overlay Flotante) -->
+        <!-- Capa Sobrepuesta Flotante -->
         <div class="absolute inset-0 z-20 flex flex-col justify-between p-4 pointer-events-none">
             
-            <!-- Barra Superior Flotante -->
+            <!-- Encabezado Flotante -->
             <div class="flex justify-between items-center bg-slate-900/80 backdrop-blur-md p-3 rounded-2xl border border-slate-700 pointer-events-auto">
                 <div class="flex items-center gap-2">
                     <span class="text-lg">⚡</span>
                     <div>
-                        <p class="text-xs font-bold text-white">ESCÁNER ALTA VELOCIDAD</p>
-                        <p class="text-[9px] text-emerald-400 font-semibold">Aceleración por Hardware Activa</p>
+                        <p class="text-xs font-bold text-white">ESCÁNER FULL-FRAME HD</p>
+                        <p class="text-[9px] text-sky-400 font-semibold">Lectura de Seriales Largos & MACs</p>
                     </div>
                 </div>
                 <button onclick="cerrarModalScannerSolo()" class="bg-rose-900/80 hover:bg-rose-800 text-white text-xs px-3.5 py-1.5 rounded-xl border border-rose-600/50 font-bold">
@@ -473,23 +476,22 @@
                 </button>
             </div>
 
-            <!-- Marco Guía con Láser -->
-            <div class="relative w-full max-w-sm h-36 mx-auto border-2 border-emerald-400 rounded-2xl pointer-events-none shadow-[0_0_25px_rgba(16,185,129,0.5)] my-auto flex items-center justify-center">
-                <div class="laser-line"></div>
-                <div class="absolute -top-3 bg-slate-900/90 text-emerald-300 text-[10px] font-bold px-3 py-0.5 rounded-full border border-emerald-500/40">
-                    Apunta a las barras rectangulares (MAC/Serie)
+            <!-- Guía Láser Panorámica Ancha -->
+            <div class="relative w-full max-w-md h-40 mx-auto border-2 border-sky-400/80 rounded-2xl pointer-events-none shadow-[0_0_30px_rgba(56,189,248,0.4)] my-auto flex items-center justify-center">
+                <div class="laser-line-hd"></div>
+                <div class="absolute -top-3 bg-slate-900/90 text-sky-300 text-[10px] font-bold px-3 py-0.5 rounded-full border border-sky-500/40">
+                    Apunta a cualquier parte del código de barras
                 </div>
             </div>
 
             <div id="scannerErrorMessage" class="text-rose-400 text-[10px] font-semibold hidden bg-rose-950/90 p-2 rounded-lg text-center w-full max-w-xs mx-auto pointer-events-auto"></div>
 
-            <!-- Panel de Controles Inferiores Flotantes -->
+            <!-- Panel de Controles Flotante Inferior -->
             <div class="bg-slate-900/85 backdrop-blur-md p-3.5 rounded-2xl border border-slate-700 space-y-3 pointer-events-auto">
                 
-                <!-- Selector de Cámara y Acciones -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div>
-                        <label class="block text-[10px] font-bold text-sky-300 mb-1">📷 CÁMARA / LENTE DETECTADO:</label>
+                        <label class="block text-[10px] font-bold text-sky-300 mb-1">📷 SELECCIONAR LENTE DE CÁMARA:</label>
                         <select id="selectCamaraDispositivo" onchange="cambiarCamaraSeleccionada(this.value)" class="w-full bg-slate-950 text-white border border-slate-700 rounded-xl p-2 text-xs font-bold"></select>
                     </div>
 
@@ -507,15 +509,14 @@
                     </div>
                 </div>
 
-                <!-- Slider de Zoom Dinámico -->
                 <div class="space-y-1">
                     <div class="flex justify-between items-center text-[11px] text-slate-300 font-bold">
-                        <span>🔍 Zoom Óptico/Digital</span>
+                        <span>🔍 Zoom Enfoque</span>
                         <span id="zoomValText" class="text-sky-400 font-black">1.0x</span>
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="text-xs">➖</span>
-                        <input type="range" id="zoomRangeInput" min="1" max="4" step="0.1" value="1" oninput="aplicarZoomCamara(this.value)" class="w-full accent-emerald-400 cursor-pointer" />
+                        <input type="range" id="zoomRangeInput" min="1" max="4" step="0.1" value="1" oninput="aplicarZoomCamara(this.value)" class="w-full accent-sky-400 cursor-pointer" />
                         <span class="text-xs">➕</span>
                     </div>
                 </div>
@@ -673,7 +674,7 @@
         let adminClusterGroup = null;
         let intervaloRealtime = null;
 
-        // Variables Escáner Universal Avanzado
+        // Variables Escáner HD
         let html5QrCodeScanner = null;
         let filaDestinoScanner = null;
         let flashEncendido = false;
@@ -1674,7 +1675,7 @@
             container.insertAdjacentHTML('beforeend', rowHtml);
         }
 
-        // 🚀 MOTOR DE CÁMARA CON ACELERACIÓN POR HARDWARE Y FEEDBACK TÁCTIL (ESTILO TEACAPPS)
+        // 🚀 MOTOR DE CÁMARA HD NATIVO - SIN SOMBRAS - FULL FRAME
         async function abrirModalScanner(idFila) {
             if (escaneoEnProceso) return;
             escaneoEnProceso = true;
@@ -1747,27 +1748,29 @@
                 } catch(e) {}
             }
 
-            // Formatos 1D de lectura directa
+            // Exclusivamente Code128 y Code39 para evitar falsos positivos
             const formatTypes = [
                 Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.CODABAR
+                Html5QrcodeSupportedFormats.CODE_39
             ];
 
-            // ACELERACIÓN POR HARDWARE NATIVA (BarcodeDetector API de Google Play)
             html5QrCodeScanner = new Html5Qrcode("reader", { 
-                formatsToSupport: formatTypes, 
+                formatsToSupport: formatTypes,
                 experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true // Utiliza los procesadores NPU de Android directamente
+                    useBarCodeDetectorIfSupported: true
                 },
                 verbose: false 
             });
 
+            // Configuración Full-Frame HD sin recortar la pantalla
             const configHD = {
-                fps: 30,
-                qrbox: { width: 320, height: 120 }
+                fps: 25,
+                aspectRatio: 1.777778, // Aspect ratio 16:9 HD
+                videoConstraints: {
+                    width: { ideal: 1920, min: 1280 },
+                    height: { ideal: 1080, min: 720 },
+                    facingMode: "environment"
+                }
             };
 
             const cameraConfig = camaraSeleccionadaId && camaraSeleccionadaId !== 'environment' 
@@ -1781,7 +1784,7 @@
                 onBarcodeScanError
             );
 
-            // Activar enfoque continuo y máxima nitidez
+            // Activar enfoque continuo nativo y máxima nitidez
             const videoEl = document.querySelector("#reader video");
             if (videoEl && videoEl.srcObject) {
                 const stream = videoEl.srcObject;
@@ -1873,14 +1876,13 @@
                 });
         }
 
-        // Emite un todo Beep de confirmación de captura
         function emitirSonidoBeep() {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.type = "sine";
-                osc.frequency.value = 1800; // Tono agudo de escáner
+                osc.frequency.value = 1800;
                 gain.gain.value = 0.1;
                 osc.connect(gain);
                 gain.connect(ctx.destination);
@@ -1889,21 +1891,31 @@
             } catch(e) {}
         }
 
+        // Filtro para eliminar caracteres inválidos o lecturas corruptas
+        function limpiarTextoCodigo(str) {
+            if (!str) return '';
+            // Remueve caracteres ASCII de control o símbolos no imprimibles
+            return str.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
+        }
+
         function onBarcodeScanSuccess(decodedText, decodedResult) {
-            // Feedback háptico (Vibración física)
+            const textoLimpio = limpiarTextoCodigo(decodedText);
+            
+            // Si el código es demasiado corto o corrupto se ignora
+            if (!textoLimpio || textoLimpio.length < 4) return;
+
+            // Feedback táctil y sonoro
             if ("vibrate" in navigator) {
                 navigator.vibrate(80);
             }
-
-            // Feedback auditivo (Beep)
             emitirSonidoBeep();
 
             if (filaDestinoScanner) {
                 const fila = document.getElementById(filaDestinoScanner);
                 if (fila) {
-                    fila.querySelector('.serieInput').value = decodedText.trim();
+                    fila.querySelector('.serieInput').value = textoLimpio;
                     const statusDiv = document.getElementById('gestionStatusOutput');
-                    if (statusDiv) statusDiv.innerText = "✅ Serie leída con éxito: " + decodedText;
+                    if (statusDiv) statusDiv.innerText = "✅ Serie leída con éxito: " + textoLimpio;
                 }
             }
             cerrarModalScannerSolo();
@@ -1938,7 +1950,7 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                imgPreview.src = e.target.result;
+                imgPreview.src = e.result;
                 previewContainer.classList.remove('hidden');
             };
             reader.readAsDataURL(file);
