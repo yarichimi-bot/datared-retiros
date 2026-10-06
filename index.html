@@ -12,6 +12,9 @@
     <meta name="apple-mobile-web-app-title" content="DATARED Retiros">
     <link rel="manifest" href="manifest.json">
 
+    <script>
+        window.tailwind = { config: { suppressDeprecationWarnings: true } };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -24,184 +27,48 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
-        body {
-            background-color: #0f172a;
-            color: #f1f5f9;
-        }
-        .tech-card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
-        }
-        .tech-input {
-            background-color: #0f172a;
-            border: 1px solid #475569;
-            color: #ffffff;
-        }
-        .tech-input:focus {
-            outline: none;
-            border-color: #38bdf8;
-        }
-        .tech-input[readonly] {
-            background-color: #1e293b;
-            color: #94a3b8;
-            cursor: not-allowed;
-        }
-        .tech-button {
-            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-        }
-        .field-service-header {
-            background: #0f172a;
-            border-bottom: 1px solid #334155;
-        }
-        #mobileMapContainer {
-            height: 220px;
-            width: 100%;
-            border-bottom: 1px solid #334155;
-            position: relative;
-            z-index: 10;
-        }
-        #adminMapContainer {
-            height: 320px;
-            width: 100%;
-            border-radius: 0.75rem;
-            position: relative;
-            z-index: 10;
-        }
-        .leaflet-pane {
-            z-index: 10 !important;
-        }
-        .leaflet-top, .leaflet-bottom {
-            z-index: 15 !important;
-        }
-        .label-tecnico-gps {
-            background: #0284c7;
-            border: 1px solid #38bdf8;
-            color: white;
-            font-weight: bold;
-            font-size: 10px;
-            padding: 2px 6px;
-            border-radius: 6px;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
+        body { background-color: #0f172a; color: #f1f5f9; }
+        .tech-card { background: #1e293b; border: 1px solid #334155; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.1); }
+        .tech-input { background-color: #0f172a; border: 1px solid #475569; color: #ffffff; }
+        .tech-input:focus { outline: none; border-color: #38bdf8; }
+        .tech-input[readonly] { background-color: #1e293b; color: #94a3b8; cursor: not-allowed; }
+        .tech-button { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); }
+        .field-service-header { background: #0f172a; border-bottom: 1px solid #334155; }
+        #mobileMapContainer { height: 220px; width: 100%; border-bottom: 1px solid #334155; position: relative; z-index: 10; }
+        #adminMapContainer { height: 320px; width: 100%; border-radius: 0.75rem; position: relative; z-index: 10; }
+        .leaflet-pane { z-index: 10 !important; }
+        .leaflet-top, .leaflet-bottom { z-index: 15 !important; }
+        .label-tecnico-gps { background: #0284c7; border: 1px solid #38bdf8; color: white; font-weight: bold; font-size: 10px; padding: 2px 6px; border-radius: 6px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
 
         /* ESCÁNER FULLSCREEN HD CON RECUADRO INTERACTIVO */
-        #modalBarcodeScanner {
-            background-color: #000000 !important;
-        }
-        #readerWrapper {
-            position: absolute;
-            inset: 0;
-            width: 100% !important;
-            height: 100% !important;
-            z-index: 1;
-        }
-        #reader {
-            border: none !important;
-            background: #000 !important;
-            width: 100% !important;
-            height: 100% !important;
-        }
-        #reader video {
-            object-fit: cover !important;
-            width: 100% !important;
-            height: 100% !important;
-            filter: contrast(1.1) brightness(1.05) !important;
-            opacity: 1 !important;
-        }
-        #reader__scan_region {
-            background: transparent !important;
-            width: 100% !important;
-            height: 100% !important;
-        }
-        #reader__scan_region img, #reader__scan_region svg, #reader__scan_region > div {
-            display: none !important;
-            opacity: 0 !important;
-            background: transparent !important;
-        }
-        #reader__dashboard {
-            display: none !important;
-        }
+        #modalBarcodeScanner { background-color: #000000 !important; }
+        #readerWrapper { position: absolute; inset: 0; width: 100% !important; height: 100% !important; z-index: 1; }
+        #reader { border: none !important; background: #000 !important; width: 100% !important; height: 100% !important; }
+        #reader video { object-fit: cover !important; width: 100% !important; height: 100% !important; filter: contrast(1.1) brightness(1.05) !important; opacity: 1 !important; }
+        #reader__scan_region { background: transparent !important; width: 100% !important; height: 100% !important; }
+        #reader__scan_region img, #reader__scan_region svg, #reader__scan_region > div { display: none !important; opacity: 0 !important; background: transparent !important; }
+        #reader__dashboard { display: none !important; }
 
         /* Recuadro de Enfoque Resizable */
         #customScanBox {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 320px;
-            height: 90px;
-            min-width: 160px;
-            min-height: 45px;
-            max-width: 95vw;
-            max-height: 40vh;
-            border: 2px solid #38bdf8;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.6);
-            border-radius: 12px;
-            z-index: 10;
-            touch-action: none;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 320px; height: 90px; min-width: 160px; min-height: 45px; max-width: 95vw; max-height: 40vh;
+            border: 2px solid #38bdf8; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.6);
+            border-radius: 12px; z-index: 10; touch-action: none;
         }
-
-        .resize-handle {
-            position: absolute;
-            width: 22px;
-            height: 22px;
-            background: #38bdf8;
-            border: 2px solid #ffffff;
-            border-radius: 50%;
-            z-index: 20;
-        }
+        .resize-handle { position: absolute; width: 22px; height: 22px; background: #38bdf8; border: 2px solid #ffffff; border-radius: 50%; z-index: 20; }
         .resize-handle.top-left { top: -11px; left: -11px; cursor: nwse-resize; }
         .resize-handle.top-right { top: -11px; right: -11px; cursor: nesw-resize; }
         .resize-handle.bottom-left { bottom: -11px; left: -11px; cursor: nesw-resize; }
         .resize-handle.bottom-right { bottom: -11px; right: -11px; cursor: nwse-resize; }
 
-        @keyframes laserSweepHD {
-            0% { top: 15%; opacity: 0.3; }
-            50% { top: 85%; opacity: 1; }
-            100% { top: 15%; opacity: 0.3; }
-        }
-        .laser-line-hd {
-            position: absolute;
-            left: 4px;
-            right: 4px;
-            height: 2px;
-            background: #38bdf8;
-            box-shadow: 0 0 12px #38bdf8, 0 0 2px #ffffff;
-            animation: laserSweepHD 2s infinite ease-in-out;
-            pointer-events: none;
-        }
+        @keyframes laserSweepHD { 0% { top: 15%; opacity: 0.3; } 50% { top: 85%; opacity: 1; } 100% { top: 15%; opacity: 0.3; } }
+        .laser-line-hd { position: absolute; left: 4px; right: 4px; height: 2px; background: #38bdf8; box-shadow: 0 0 12px #38bdf8, 0 0 2px #ffffff; animation: laserSweepHD 2s infinite ease-in-out; pointer-events: none; }
 
         /* VISOR DE RECORTE PARA IMÁGENES DE GALERÍA */
-        #galleryCropContainer {
-            position: relative;
-            display: inline-block;
-            max-width: 100%;
-            max-height: 60vh;
-            overflow: hidden;
-            touch-action: none;
-        }
-        #galleryCropBox {
-            position: absolute;
-            top: 20%;
-            left: 10%;
-            width: 80%;
-            height: 25%;
-            border: 2px solid #10b981;
-            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65);
-            border-radius: 8px;
-            touch-action: none;
-        }
-        .crop-handle {
-            position: absolute;
-            width: 18px;
-            height: 18px;
-            background: #10b981;
-            border: 2px solid #ffffff;
-            border-radius: 50%;
-            z-index: 20;
-        }
+        #galleryCropContainer { position: relative; display: inline-block; max-width: 100%; max-height: 60vh; overflow: hidden; touch-action: none; }
+        #galleryCropBox { position: absolute; top: 20%; left: 10%; width: 80%; height: 25%; border: 2px solid #10b981; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.65); border-radius: 8px; touch-action: none; }
+        .crop-handle { position: absolute; width: 18px; height: 18px; background: #10b981; border: 2px solid #ffffff; border-radius: 50%; z-index: 20; }
         .crop-handle.tl { top: -9px; left: -9px; cursor: nwse-resize; }
         .crop-handle.tr { top: -9px; right: -9px; cursor: nesw-resize; }
         .crop-handle.bl { bottom: -9px; left: -9px; cursor: nesw-resize; }
@@ -304,12 +171,8 @@
 
                 <section class="tech-card p-4 rounded-2xl space-y-2">
                     <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-sky-300 text-xs flex items-center gap-1.5">
-                            MAPA GPS EN TIEMPO REAL
-                        </h3>
-                        <button onclick="toggleMapaAdmin()" id="btnToggleMapaAdmin" class="text-[10px] bg-slate-800 text-sky-300 px-2.5 py-1 rounded-lg border border-slate-600">
-                            Ocultar Mapa
-                        </button>
+                        <h3 class="font-bold text-sky-300 text-xs flex items-center gap-1.5">MAPA GPS EN TIEMPO REAL</h3>
+                        <button onclick="toggleMapaAdmin()" id="btnToggleMapaAdmin" class="text-[10px] bg-slate-800 text-sky-300 px-2.5 py-1 rounded-lg border border-slate-600">Ocultar Mapa</button>
                     </div>
                     <div id="adminMapWrapper">
                         <div id="adminMapContainer"></div>
@@ -333,9 +196,7 @@
                             <select id="nodoSelectFilter" onchange="aplicarFiltrosAdminLocales(true)" class="tech-input rounded-xl p-2 text-xs font-bold text-amber-300"><option value="">-- Nodo --</option></select>
                             <select id="tecnicoSelectFilter" onchange="aplicarFiltrosAdminLocales(true)" class="tech-input rounded-xl p-2 text-xs"><option value="">-- Técnico --</option></select>
 
-                            <button onclick="exportarPlanillaPagosGlobal()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1">
-                                Exportar Planilla
-                            </button>
+                            <button onclick="exportarPlanillaPagosGlobal()" class="text-xs bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap flex items-center gap-1">Exportar Planilla</button>
                             <button id="btnAsignacionMasiva" onclick="abrirModalAsignacionMasiva()" class="hidden text-xs bg-sky-700 hover:bg-sky-600 text-white font-bold px-3 py-2 rounded-xl transition-all whitespace-nowrap">
                                 Asignar (<span id="selectedCount">0</span>)
                             </button>
@@ -373,9 +234,7 @@
                             <h2 class="text-lg font-bold text-sky-300">CONCILIACIÓN DE PAGOS</h2>
                             <p class="text-xs text-slate-400">Resumen auditado según el formato oficial.</p>
                         </div>
-                        <button onclick="exportarPlanillaPagosGlobal()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl">
-                            Exportar Planilla General
-                        </button>
+                        <button onclick="exportarPlanillaPagosGlobal()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl">Exportar Planilla General</button>
                     </div>
                     <div id="contenedorResumenPagosTecnicos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </section>
@@ -444,9 +303,7 @@
                         <p class="text-[11px] text-sky-400 font-semibold" id="conteoCitasTexto">Tiene 0 Cita(s) en su ruta</p>
                     </div>
                     <input type="date" id="tecFechaPickerInput" onchange="seleccionarFechaCalendario(this.value)" class="tech-input p-1 rounded-lg text-xs text-slate-300 w-28 bg-slate-950" />
-                    <button onclick="centrarEnMiGps()" class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-1 rounded-lg font-bold">
-                        🎯 GPS
-                    </button>
+                    <button onclick="centrarEnMiGps()" class="text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-1 rounded-lg font-bold">🎯 GPS</button>
                 </div>
 
                 <div id="listaCitasDiaContainer" class="space-y-2.5"></div>
@@ -460,9 +317,7 @@
                         <h2 class="text-sm font-bold text-sky-300">📦 INVENTARIO & PLANILLA</h2>
                         <p class="text-xs text-slate-400">Respaldo auditado de boletas ejecutadas.</p>
                     </div>
-                    <button onclick="exportarPlanillaPagoTecnico()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl">
-                        Exportar Excel
-                    </button>
+                    <button onclick="exportarPlanillaPagoTecnico()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl">Exportar Excel</button>
                 </div>
 
                 <div class="bg-slate-950 p-3 rounded-xl border border-emerald-500/30 flex justify-between items-center text-xs">
@@ -496,9 +351,7 @@
                     <p><b>Ciudad:</b> <span id="perfilCiudad">-</span></p>
                     <p><b>Sincronización:</b> <span id="perfilSync">-</span></p>
                 </div>
-                <button onclick="cerrarSesion()" class="w-full bg-rose-900/60 hover:bg-rose-800 text-rose-200 text-xs py-3 rounded-xl font-bold border border-rose-500/40">
-                    Cerrar Sesión
-                </button>
+                <button onclick="cerrarSesion()" class="w-full bg-rose-900/60 hover:bg-rose-800 text-rose-200 text-xs py-3 rounded-xl font-bold border border-rose-500/40">Cerrar Sesión</button>
             </div>
         </div>
 
@@ -515,13 +368,10 @@
 
     <!-- MODAL ESCÁNER PANTALLA COMPLETA CON SELECCIÓN DE CÁMARA Y LINTERNA -->
     <div id="modalBarcodeScanner" class="fixed inset-0 z-[9999] bg-black hidden overflow-hidden">
-        
-        <!-- Visor de Video Cristalino -->
         <div id="readerWrapper">
             <div id="reader"></div>
         </div>
 
-        <!-- Recuadro Táctil Resizable -->
         <div id="customScanBox">
             <div class="laser-line-hd"></div>
             <div class="resize-handle top-left"></div>
@@ -533,10 +383,7 @@
             </div>
         </div>
 
-        <!-- Capa Sobrepuesta Flotante -->
         <div class="absolute inset-0 z-20 flex flex-col justify-between p-4 pointer-events-none">
-            
-            <!-- Encabezado Flotante -->
             <div class="flex justify-between items-center bg-slate-900/80 backdrop-blur-md p-3 rounded-2xl border border-slate-700 pointer-events-auto">
                 <div class="flex items-center gap-2">
                     <span class="text-lg">⚡</span>
@@ -545,29 +392,18 @@
                         <p class="text-[9px] text-sky-400 font-semibold">Aísla el código exacto a leer</p>
                     </div>
                 </div>
-                <button onclick="cerrarModalScannerSolo()" class="bg-rose-900/80 hover:bg-rose-800 text-white text-xs px-3.5 py-1.5 rounded-xl border border-rose-600/50 font-bold">
-                    Cerrar ✕
-                </button>
+                <button onclick="cerrarModalScannerSolo()" class="bg-rose-900/80 hover:bg-rose-800 text-white text-xs px-3.5 py-1.5 rounded-xl border border-rose-600/50 font-bold">Cerrar ✕</button>
             </div>
 
-            <!-- Botones Rápido de Ajuste de Alto / Ancho -->
             <div class="flex justify-center gap-2 pointer-events-auto my-2">
-                <button onclick="presetTamanoScanBox('fino')" class="bg-slate-900/90 hover:bg-sky-700 text-sky-300 text-[10px] font-bold px-3 py-1.5 rounded-xl border border-sky-500/40 shadow">
-                    📐 Delgado (MAC/Serie)
-                </button>
-                <button onclick="presetTamanoScanBox('normal')" class="bg-slate-900/90 hover:bg-sky-700 text-sky-300 text-[10px] font-bold px-3 py-1.5 rounded-xl border border-sky-500/40 shadow">
-                    ⏹ Normal
-                </button>
-                <button onclick="presetTamanoScanBox('alto')" class="bg-slate-900/90 hover:bg-sky-700 text-sky-300 text-[10px] font-bold px-3 py-1.5 rounded-xl border border-sky-500/40 shadow">
-                    ↔️ Amplio
-                </button>
+                <button onclick="presetTamanoScanBox('fino')" class="bg-slate-900/90 hover:bg-sky-700 text-sky-300 text-[10px] font-bold px-3 py-1.5 rounded-xl border border-sky-500/40 shadow">📐 Delgado (MAC/Serie)</button>
+                <button onclick="presetTamanoScanBox('normal')" class="bg-slate-900/90 hover:bg-sky-700 text-sky-300 text-[10px] font-bold px-3 py-1.5 rounded-xl border border-sky-500/40 shadow">⏹ Normal</button>
+                <button onclick="presetTamanoScanBox('alto')" class="bg-slate-900/90 hover:bg-sky-700 text-sky-300 text-[10px] font-bold px-3 py-1.5 rounded-xl border border-sky-500/40 shadow">↔️ Amplio</button>
             </div>
 
             <div id="scannerErrorMessage" class="text-rose-400 text-[10px] font-semibold hidden bg-rose-950/90 p-2 rounded-lg text-center w-full max-w-xs mx-auto pointer-events-auto"></div>
 
-            <!-- Panel de Controles Flotante Inferior -->
             <div class="bg-slate-900/85 backdrop-blur-md p-3.5 rounded-2xl border border-slate-700 space-y-3 pointer-events-auto">
-                
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div>
                         <label class="block text-[10px] font-bold text-sky-300 mb-1">📷 SELECCIONAR LENTE DE CÁMARA:</label>
@@ -576,13 +412,10 @@
 
                     <div class="flex items-center justify-around gap-2 pt-1">
                         <button onclick="toggleFlashLuz()" id="btnFlashToggle" class="flex-1 flex items-center justify-center gap-1.5 bg-slate-950 p-2 rounded-xl border border-slate-700 text-white text-xs font-bold hover:border-amber-400">
-                            <span>💡</span>
-                            <span>Linterna</span>
+                            <span>💡</span><span>Linterna</span>
                         </button>
-
                         <label class="flex-1 flex items-center justify-center gap-1.5 bg-slate-950 p-2 rounded-xl border border-slate-700 text-white text-xs font-bold cursor-pointer hover:border-sky-400">
-                            <span>🖼️</span>
-                            <span>Galería</span>
+                            <span>🖼️</span><span>Galería</span>
                             <input type="file" accept="image/*" class="hidden" onchange="abrirModalRecorteGaleria(this)" />
                         </label>
                     </div>
@@ -599,13 +432,11 @@
                         <span class="text-xs">➕</span>
                     </div>
                 </div>
-
             </div>
-
         </div>
     </div>
 
-    <!-- MODAL RECORTE DE GALERÍA (MARCAR CÓDIGO) -->
+    <!-- MODAL RECORTE DE GALERÍA -->
     <div id="modalGalleryCrop" class="fixed inset-0 z-[10000] bg-slate-950/95 backdrop-blur-md hidden flex flex-col justify-between p-4">
         <div class="flex justify-between items-center bg-slate-900 p-3 rounded-xl border border-slate-700">
             <div>
@@ -619,13 +450,9 @@
             <div id="galleryCropContainer">
                 <img id="galleryPreviewImg" src="" class="max-w-full max-h-[60vh] object-contain select-none" />
                 <div id="galleryCropBox">
-                    <div class="crop-handle tl"></div>
-                    <div class="crop-handle tr"></div>
-                    <div class="crop-handle bl"></div>
-                    <div class="crop-handle br"></div>
-                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded pointer-events-none whitespace-nowrap">
-                        Arrastra/Ajusta recuadro
-                    </div>
+                    <div class="crop-handle tl"></div><div class="crop-handle tr"></div>
+                    <div class="crop-handle bl"></div><div class="crop-handle br"></div>
+                    <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white text-[9px] font-bold px-2 py-0.5 rounded pointer-events-none whitespace-nowrap">Arrastra/Ajusta recuadro</div>
                 </div>
             </div>
         </div>
@@ -633,12 +460,8 @@
         <div class="space-y-2">
             <div id="cropStatusMsg" class="text-xs text-sky-300 text-center font-semibold min-h-[1rem]"></div>
             <div class="flex gap-2">
-                <button onclick="cerrarModalRecorteGaleria()" class="flex-1 bg-slate-800 text-slate-300 text-xs py-3 rounded-xl font-bold">
-                    Cancelar
-                </button>
-                <button onclick="procesarRecorteGaleria()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-3 rounded-xl font-bold shadow-lg">
-                    🔍 Procesar Selección
-                </button>
+                <button onclick="cerrarModalRecorteGaleria()" class="flex-1 bg-slate-800 text-slate-300 text-xs py-3 rounded-xl font-bold">Cancelar</button>
+                <button onclick="procesarRecorteGaleria()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-3 rounded-xl font-bold shadow-lg">🔍 Procesar Selección</button>
             </div>
         </div>
     </div>
@@ -682,34 +505,22 @@
 
                 <div class="flex items-center gap-2 bg-slate-900/80 p-2.5 rounded-xl border border-slate-700">
                     <input type="checkbox" id="gestionEsFeriado" class="w-4 h-4 rounded accent-sky-500" />
-                    <label for="gestionEsFeriado" class="text-xs font-bold text-amber-300 cursor-pointer">
-                        🎉 ¿Es Día Feriado / Festivo?
-                    </label>
+                    <label for="gestionEsFeriado" class="text-xs font-bold text-amber-300 cursor-pointer">🎉 ¿Es Día Feriado / Festivo?</label>
                 </div>
 
                 <div class="space-y-3">
                     <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-sky-300 flex items-center gap-1.5">
-                            📟 EQUIPOS RECUPERADOS (MÓDEMS / DECODIFICADORES)
-                        </h4>
-                        <button onclick="agregarFilaEquipoDinamicamente()" type="button" class="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">
-                            ➕ Agregar Otro Equipo
-                        </button>
+                        <h4 class="font-bold text-sky-300 flex items-center gap-1.5">📟 EQUIPOS RECUPERADOS (MÓDEMS / DECODIFICADORES)</h4>
+                        <button onclick="agregarFilaEquipoDinamicamente()" type="button" class="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1">➕ Agregar Otro Equipo</button>
                     </div>
-
                     <div id="contenedorEquiposDinamicos" class="space-y-2"></div>
                 </div>
 
                 <div class="bg-slate-900/80 p-3.5 rounded-xl border border-amber-500/30 space-y-3">
                     <div class="flex justify-between items-center">
-                        <h4 class="font-bold text-amber-300 flex items-center gap-1">
-                            🔌 CONTROLES, FUENTES Y ACCESORIOS (CATÁLOGO SIGA)
-                        </h4>
-                        <button onclick="agregarFilaFungibleCat()" type="button" class="bg-amber-700 hover:bg-amber-600 text-white text-[10px] font-bold px-2 py-1 rounded-lg">
-                            ➕ Agregar Accesorio
-                        </button>
+                        <h4 class="font-bold text-amber-300 flex items-center gap-1">🔌 CONTROLES, FUENTES Y ACCESORIOS (CATÁLOGO SIGA)</h4>
+                        <button onclick="agregarFilaFungibleCat()" type="button" class="bg-amber-700 hover:bg-amber-600 text-white text-[10px] font-bold px-2 py-1 rounded-lg">➕ Agregar Accesorio</button>
                     </div>
-
                     <div id="contenedorFungiblesCatalogo" class="space-y-2"></div>
                 </div>
 
@@ -742,7 +553,7 @@
     <script>
         const BASE_URL = "https://darcifsfttemivwssbqd.supabase.co";
         const SUPABASE_URL = BASE_URL.split('/rest')[0].replace(/\/$/, "");
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhcmNpZnNmdHRlbWl2d3NzYnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1OTY5NjUsImV4cCI6MjEwNjE3Mjk2NX0.BpgHDsOIAvPaMJooaxpBj0Fuu5W_yg0lvj9Ga6GREnc";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhcmNpZnNmdHRlbWl2d3NzYnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1OTY5NjUsImV4cCI6MjA2NDE3Mjk2NX0.BpgHDsOIAvPaMJooaxpBj0Fuu5W_yg0lvj9Ga6GREnc";
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -777,7 +588,6 @@
         let contadorEquiposDinamicos = 0;
         let contadorFungiblesCat = 0;
         let conteoPrevioOrdenesTecnico = 0;
-        
         let idsSeleccionadosGlobal = new Set();
 
         let esPrimeraCargaMapaAdmin = true;
@@ -798,8 +608,6 @@
         let videoTrackActual = null;
         let escaneoEnProceso = false;
         let camaraSeleccionadaId = null;
-
-        // Variables Recorte de Galería
         let imagenGaleriaCargada = null;
 
         function formatearGPS(val) {
@@ -809,9 +617,7 @@
             if (str.includes('.')) return str;
             const esNeg = str.startsWith('-');
             const nums = str.replace('-', '');
-            if (nums.length >= 4) {
-                return `${esNeg ? '-' : ''}${nums.substring(0, 2)}.${nums.substring(2)}`;
-            }
+            if (nums.length >= 4) return `${esNeg ? '-' : ''}${nums.substring(0, 2)}.${nums.substring(2)}`;
             return str;
         }
 
@@ -828,9 +634,7 @@
             inicializarGestosRecorteGaleria();
             
             const agendaInput = document.getElementById('agendaFechaFilter');
-            if (agendaInput) {
-                agendaInput.value = new Date().toISOString().slice(0, 10);
-            }
+            if (agendaInput) agendaInput.value = new Date().toISOString().slice(0, 10);
 
             const savedUser = localStorage.getItem('datared_active_user');
             if (savedUser) {
@@ -918,11 +722,8 @@
                 document.getElementById('adminUserRole').innerText = `${usuarioActual.rol} - ${usuarioActual.ciudad || usuarioActual.departamento || 'BOLIVIA'}`;
 
                 const navCarga = document.getElementById('navBtnCarga');
-                if (esAdminOuSupervisor) {
-                    navCarga.classList.remove('hidden');
-                } else {
-                    navCarga.classList.add('hidden');
-                }
+                if (esAdminOuSupervisor) navCarga.classList.remove('hidden');
+                else navCarga.classList.add('hidden');
 
                 inicializarMapaAdmin();
                 await cargarOrdenesAdminDesdeSupabase();
@@ -973,26 +774,19 @@
             const elPendientes = document.getElementById('agendaPendientes');
             const elReportes = document.getElementById('agendaConReporte');
 
-            elEjecutados.innerText = "⏳";
-            elPendientes.innerText = "⏳";
-            elReportes.innerText = "⏳";
+            elEjecutados.innerText = "⏳"; elPendientes.innerText = "⏳"; elReportes.innerText = "⏳";
 
             const { data: ordenes } = await supabaseClient.from('ordenes_retiro').select('*');
             const { data: gestiones } = await supabaseClient.from('historial_gestiones').select('*');
 
-            let ejecutados = 0;
-            let pendientes = 0;
-            let conReporte = 0;
+            let ejecutados = 0, pendientes = 0, conReporte = 0;
 
             if (ordenes) {
                 ordenes.forEach(o => {
                     const fReg = o.fecha_registro ? o.fecha_registro.slice(0, 10) : '';
                     if (fReg === fechaInput) {
-                        if (o.estado === 'RETIRADO' || o.estado === 'PAGADO') {
-                            ejecutados++;
-                        } else {
-                            pendientes++;
-                        }
+                        if (o.estado === 'RETIRADO' || o.estado === 'PAGADO') ejecutados++;
+                        else pendientes++;
                     }
                 });
             }
@@ -1000,9 +794,7 @@
             if (gestiones) {
                 gestiones.forEach(g => {
                     const fGest = g.fecha_gestion ? g.fecha_gestion.slice(0, 10) : '';
-                    if (fGest === fechaInput) {
-                        conReporte++;
-                    }
+                    if (fGest === fechaInput) conReporte++;
                 });
             }
 
@@ -1015,7 +807,6 @@
             if (adminMap) return;
             adminMap = L.map('adminMapContainer').setView([-21.96, -63.67], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(adminMap);
-            
             adminClusterGroup = L.layerGroup().addTo(adminMap);
 
             adminMap.on('movestart zoomstart dragstart', () => { estaUsuarioInteractuandoMapa = true; });
@@ -1038,15 +829,8 @@
 
         async function cargarOrdenesAdminDesdeSupabase() {
             try {
-                const { data, error } = await supabaseClient
-                    .from('ordenes_retiro')
-                    .select('*');
-
-                if (error) {
-                    console.error("Error al consultar Supabase:", error);
-                    return;
-                }
-
+                const { data, error } = await supabaseClient.from('ordenes_retiro').select('*');
+                if (error) return;
                 ordenesGlobalesAdmin = data || [];
                 poblarFiltrosDesplegables(ordenesGlobalesAdmin);
                 actualizarContadoresAdmin();
@@ -1064,7 +848,6 @@
                 selectDepto.innerHTML = '<option value="">-- Depto --</option>' + deptos.map(d => `<option value="${d}">${d}</option>`).join('');
                 if (valPrevDepto) selectDepto.value = valPrevDepto;
             }
-
             poblarNodosDesplegable(lista);
             alCambiarFiltroDepto();
         }
@@ -1086,10 +869,7 @@
 
             const nodos = Array.from(nodosSet).sort();
             selectNodo.innerHTML = '<option value="">🔍 -- Filtrar Nodo --</option>' + nodos.map(n => `<option value="${n}">${n}</option>`).join('');
-
-            if (nodos.includes(valPrevNodo)) {
-                selectNodo.value = valPrevNodo;
-            }
+            if (nodos.includes(valPrevNodo)) selectNodo.value = valPrevNodo;
         }
 
         function alCambiarFiltroDepto() {
@@ -1097,9 +877,7 @@
             const deptoVal = selectDepto ? selectDepto.value : '';
 
             let listaFiltrada = ordenesGlobalesAdmin;
-            if (deptoVal) {
-                listaFiltrada = ordenesGlobalesAdmin.filter(o => o.departamento === deptoVal);
-            }
+            if (deptoVal) listaFiltrada = ordenesGlobalesAdmin.filter(o => o.departamento === deptoVal);
 
             const ciudades = [...new Set(listaFiltrada.map(o => o.ciudad).filter(Boolean))].sort();
             const selectCiudad = document.getElementById('ciudadSelectFilter');
@@ -1109,7 +887,6 @@
                 selectCiudad.innerHTML = '<option value="">-- Ciudad --</option>' + ciudades.map(c => `<option value="${c}">${c}</option>`).join('');
                 if (ciudades.includes(valPrevCiudad)) selectCiudad.value = valPrevCiudad;
             }
-
             alCambiarFiltroCiudad();
         }
 
@@ -1130,13 +907,11 @@
                 selectTec.innerHTML = '<option value="">-- Técnico --</option>' + tecnicos.map(t => `<option value="${t}">${t}</option>`).join('');
                 if (tecnicos.includes(valPrevTecnico)) selectTec.value = valPrevTecnico;
             }
-
             aplicarFiltrosAdminLocales(false);
         }
 
         function actualizarContadoresAdmin() {
             document.getElementById('countTotal').innerText = ordenesGlobalesAdmin.length;
-            
             const sinAsignar = ordenesGlobalesAdmin.filter(o => (!o.tecnico_asignado || String(o.tecnico_asignado).trim() === '') && o.estado !== 'RETIRADO' && o.estado !== 'PAGADO');
             const enRuta = ordenesGlobalesAdmin.filter(o => o.tecnico_asignado && String(o.tecnico_asignado).trim() !== '' && o.estado !== 'RETIRADO' && o.estado !== 'PAGADO');
             
@@ -1193,7 +968,6 @@
 
         async function actualizarMapaAdminConPuntosYTecnicos(lista, forzarAjuste = false) {
             if (!adminMap || !adminClusterGroup) return;
-
             if (estaUsuarioInteractuandoMapa && !forzarAjuste) return;
 
             adminClusterGroup.clearLayers();
@@ -1213,10 +987,7 @@
                     if (o.estado === 'PAGADO') colorHex = '#e11d48';
 
                     const marker = L.circleMarker([latNum, lngNum], {
-                        radius: 6,
-                        color: colorHex,
-                        fillColor: colorHex,
-                        fillOpacity: 0.8
+                        radius: 6, color: colorHex, fillColor: colorHex, fillOpacity: 0.8
                     }).bindPopup(`
                         <div class="text-xs font-sans">
                             <b class="text-sky-600">${o.cliente_nro}</b><br>
@@ -1379,9 +1150,7 @@
                         '<span class="text-slate-400">Total a Liquidar:</span>' +
                         '<span class="text-emerald-400 font-black text-sm">Bs. ' + info.montoTotal.toFixed(2) + '</span>' +
                     '</div>' +
-                    '<button onclick="exportarPlanillaPorTecnicoAdmin(\'' + tec + '\')" class="w-full bg-slate-800 hover:bg-slate-700 text-sky-300 text-[11px] font-bold py-2 rounded-lg border border-slate-600 flex items-center justify-center gap-1">' +
-                        '📊 Exportar Planilla Individual (.xlsx)' +
-                    '</button>' +
+                    '<button onclick="exportarPlanillaPorTecnicoAdmin(\'' + tec + '\')" class="w-full bg-slate-800 hover:bg-slate-700 text-sky-300 text-[11px] font-bold py-2 rounded-lg border border-slate-600 flex items-center justify-center gap-1">📊 Exportar Planilla Individual (.xlsx)</button>' +
                 '</div>';
             }).join('');
         }
@@ -1419,9 +1188,7 @@
                     'OT 0': g.ot || '',
                     'OT 1': g.ot1 || '',
                     'OT 2': g.ot2 || '',
-                    'OT 3 ': '',
-                    'OT 4': '',
-                    'OT 5': '',
+                    'OT 3 ': '', 'OT 4': '', 'OT 5': '',
                     'TOR': g.tor || 'RP0',
                     'TECNICO': g.tecnico_nombre,
                     'POBLACION': g.poblacion || 'URBANO',
@@ -1551,10 +1318,13 @@
 
         async function cargarDatosTecnico() {
             const tecNombre = usuarioActual.nombre.trim();
+            
+            // Búsqueda flexible sin provocar error Bad Request 400
+            const primerNombre = tecNombre.split(' ')[0];
             const { data: ordenes, error } = await supabaseClient
                 .from('ordenes_retiro')
                 .select('*')
-                .ilike('tecnico_asignado', `%${tecNombre}%`);
+                .or(`tecnico_asignado.ilike.%${tecNombre}%,tecnico_asignado.ilike.%${primerNombre}%`);
 
             if (error) {
                 console.error("Error al cargar datos técnico:", error);
@@ -1568,7 +1338,7 @@
             const { data: gestiones } = await supabaseClient
                 .from('historial_gestiones')
                 .select('*')
-                .ilike('tecnico_nombre', `%${tecNombre}%`);
+                .or(`tecnico_nombre.ilike.%${tecNombre}%,tecnico_nombre.ilike.%${primerNombre}%`);
 
             historialRetiros = gestiones || [];
             renderizarInventarioEquipos();
@@ -1577,10 +1347,11 @@
 
         async function cargarDatosTecnicoSilencioso() {
             const tecNombre = usuarioActual.nombre.trim();
+            const primerNombre = tecNombre.split(' ')[0];
             const { data: ordenes } = await supabaseClient
                 .from('ordenes_retiro')
                 .select('*')
-                .ilike('tecnico_asignado', `%${tecNombre}%`);
+                .or(`tecnico_asignado.ilike.%${tecNombre}%,tecnico_asignado.ilike.%${primerNombre}%`);
 
             if (ordenes) {
                 const pendNuevos = ordenes.filter(o => o.estado !== 'RETIRADO' && o.estado !== 'PAGADO').length;
@@ -1784,9 +1555,7 @@
                         '<option value="ROUTER" ' + (tipoDefault === 'ROUTER' ? 'selected' : '') + '>📶 ROUTER / EXTENDER</option>' +
                     '</select>' +
                     '<div class="flex items-center gap-1.5 flex-wrap justify-end">' +
-                        '<button type="button" onclick="abrirModalScanner(\'' + idFila + '\')" class="bg-sky-600 hover:bg-sky-500 text-white px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1">' +
-                            '📷 Escanear' +
-                        '</button>' +
+                        '<button type="button" onclick="abrirModalScanner(\'' + idFila + '\')" class="bg-sky-600 hover:bg-sky-500 text-white px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1">📷 Escanear</button>' +
                         '<label class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-600 px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1">' +
                             '📸 Foto Config / Respaldo' +
                             '<input type="file" accept="image/*" class="hidden" onchange="cargarFotoRespaldoGalería(this, \'' + idFila + '\')" />' +
@@ -1810,30 +1579,23 @@
 
         function inicializarGestosResizeBox() {
             const box = document.getElementById('customScanBox');
-            let isDragging = false;
-            let startX, startY, startWidth, startHeight;
+            let isDragging = false, startX, startY, startWidth, startHeight;
 
             box.addEventListener('pointerdown', (e) => {
                 if (e.target.classList.contains('resize-handle') || e.target === box) {
                     isDragging = true;
-                    startX = e.clientX;
-                    startY = e.clientY;
-                    startWidth = box.offsetWidth;
-                    startHeight = box.offsetHeight;
+                    startX = e.clientX; startY = e.clientY;
+                    startWidth = box.offsetWidth; startHeight = box.offsetHeight;
                     box.setPointerCapture(e.pointerId);
                 }
             });
 
             box.addEventListener('pointermove', (e) => {
                 if (!isDragging) return;
-                const deltaX = e.clientX - startX;
-                const deltaY = e.clientY - startY;
-
+                const deltaX = e.clientX - startX, deltaY = e.clientY - startY;
                 let newW = Math.max(160, Math.min(window.innerWidth * 0.95, startWidth + deltaX * 2));
                 let newH = Math.max(45, Math.min(window.innerHeight * 0.45, startHeight + deltaY * 2));
-
-                box.style.width = newW + 'px';
-                box.style.height = newH + 'px';
+                box.style.width = newW + 'px'; box.style.height = newH + 'px';
             });
 
             box.addEventListener('pointerup', (e) => {
@@ -1847,16 +1609,9 @@
 
         function presetTamanoScanBox(modo) {
             const box = document.getElementById('customScanBox');
-            if (modo === 'fino') {
-                box.style.width = '340px';
-                box.style.height = '50px';
-            } else if (modo === 'normal') {
-                box.style.width = '300px';
-                box.style.height = '100px';
-            } else if (modo === 'alto') {
-                box.style.width = '350px';
-                box.style.height = '180px';
-            }
+            if (modo === 'fino') { box.style.width = '340px'; box.style.height = '50px'; }
+            else if (modo === 'normal') { box.style.width = '300px'; box.style.height = '100px'; }
+            else if (modo === 'alto') { box.style.width = '350px'; box.style.height = '180px'; }
             reaplicarRegionEscaneo();
         }
 
@@ -1866,13 +1621,10 @@
             }
         }
 
-        // DETENCIÓN Y LIBERACIÓN TOTAL DE PISTAS DE CÁMARA
         async function detenerCamaraPista() {
             if (html5QrCodeScanner) {
                 try {
-                    if (html5QrCodeScanner.isScanning) {
-                        await html5QrCodeScanner.stop();
-                    }
+                    if (html5QrCodeScanner.isScanning) await html5QrCodeScanner.stop();
                     await html5QrCodeScanner.clear();
                 } catch(e) {}
             }
@@ -1901,20 +1653,11 @@
             document.getElementById('zoomValText').innerText = "1.0x";
             
             const errDiv = document.getElementById('scannerErrorMessage');
-            errDiv.classList.add('hidden');
-            errDiv.innerText = '';
+            errDiv.classList.add('hidden'); errDiv.innerText = '';
 
             document.getElementById('modalBarcodeScanner').classList.remove('hidden');
 
             try {
-                // Solicitar permiso preliminar para forzar que el dispositivo muestre todas las cámaras traseras/frontales
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    try {
-                        const initStream = await navigator.mediaDevices.getUserMedia({ video: true });
-                        initStream.getTracks().forEach(t => t.stop());
-                    } catch (permErr) {}
-                }
-
                 await poblarListaCamarasDispositivo();
                 await iniciarInstanciaScanner();
             } catch (err) {
@@ -1930,32 +1673,47 @@
             selectEl.innerHTML = '';
 
             try {
+                // Solicitar stream de cámara trasera explícito para forzar la enumeración de lentes
+                let tempStream = null;
+                try {
+                    tempStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: { exact: "environment" } }
+                    });
+                } catch (e1) {
+                    try {
+                        tempStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                    } catch (e2) {}
+                }
+
+                if (tempStream) {
+                    tempStream.getTracks().forEach(t => t.stop());
+                }
+
                 const cameras = await Html5Qrcode.getCameras();
                 if (cameras && cameras.length > 0) {
                     cameras.forEach((cam, idx) => {
                         const opt = document.createElement('option');
                         opt.value = cam.id;
                         let labelName = cam.label || `Lente ${idx + 1}`;
-                        
                         const lblLower = labelName.toLowerCase();
-                        if (lblLower.includes('back') || lblLower.includes('trasera') || lblLower.includes('rear') || lblLower.includes('0') || lblLower.includes('environment')) {
+                        
+                        if (lblLower.includes('back') || lblLower.includes('trasera') || lblLower.includes('rear') || lblLower.includes('environment')) {
                             labelName = `📷 Trasera (${labelName.split(' ')[0] || 'Principal'})`;
-                        } else if (lblLower.includes('front') || lblLower.includes('frontal') || lblLower.includes('selfie') || lblLower.includes('1')) {
+                        } else if (lblLower.includes('front') || lblLower.includes('frontal') || lblLower.includes('selfie')) {
                             labelName = `🤳 Frontal / Selfie`;
                         } else {
-                            labelName = `📷 Lente ${idx + 1} (${labelName})`;
+                            labelName = `📷 Lente Trasera #${idx + 1}`;
                         }
                         opt.innerText = labelName;
                         selectEl.appendChild(opt);
                     });
 
                     if (!camaraSeleccionadaId) {
-                        // Buscar primero una cámara trasera por etiqueta
                         const backCam = cameras.find(c => {
                             const l = c.label.toLowerCase();
                             return l.includes('back') || l.includes('trasera') || l.includes('rear') || l.includes('environment');
                         });
-                        camaraSeleccionadaId = backCam ? backCam.id : cameras[0].id;
+                        camaraSeleccionadaId = backCam ? backCam.id : cameras[cameras.length - 1].id;
                     }
                     selectEl.value = camaraSeleccionadaId;
                 } else {
@@ -1984,9 +1742,7 @@
 
             html5QrCodeScanner = new Html5Qrcode("reader", { 
                 formatsToSupport: formatTypes,
-                experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true
-                },
+                experimentalFeatures: { useBarCodeDetectorIfSupported: true },
                 verbose: false 
             });
 
@@ -1999,7 +1755,8 @@
                 qrbox: { width: boxW, height: boxH },
                 videoConstraints: {
                     width: { ideal: 1920, min: 1280 },
-                    height: { ideal: 1080, min: 720 }
+                    height: { ideal: 1080, min: 720 },
+                    facingMode: "environment"
                 }
             };
 
@@ -2007,7 +1764,7 @@
             if (camaraSeleccionadaId && camaraSeleccionadaId !== 'environment') {
                 cameraConfig = { deviceId: { exact: camaraSeleccionadaId } };
             } else {
-                cameraConfig = { facingMode: "environment" };
+                cameraConfig = { facingMode: { exact: "environment" } };
             }
 
             try {
@@ -2018,7 +1775,7 @@
                     onBarcodeScanError
                 );
             } catch (errFallback) {
-                // Si la selección exacta falla, forzamos el modo trasero flexible
+                // Si la restricción exacta falla por el navegador móvil, forzamos la orientación trasera sin el ID
                 await html5QrCodeScanner.start(
                     { facingMode: "environment" },
                     configHD,
@@ -2081,14 +1838,11 @@
 
             try {
                 flashEncendido = !flashEncendido;
-
                 await videoTrackActual.applyConstraints({
                     advanced: [{ torch: flashEncendido }]
                 });
-
                 document.getElementById('btnFlashToggle').classList.toggle('border-amber-400', flashEncendido);
                 document.getElementById('btnFlashToggle').classList.toggle('bg-amber-950/80', flashEncendido);
-
             } catch (e) {
                 try {
                     const imageCapture = new ImageCapture(videoTrackActual);
@@ -2102,7 +1856,6 @@
             }
         }
 
-        // SELECTOR Y RECORTE DE IMÁGENES DE GALERÍA
         function abrirModalRecorteGaleria(input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
@@ -2127,22 +1880,16 @@
             imagenGaleriaCargada = null;
         }
 
-        // REDIMENSIÓN TÁCTIL Y DESPLAZAMIENTO DEL RECUADRO DE GALERÍA
         function inicializarGestosRecorteGaleria() {
             const cropBox = document.getElementById('galleryCropBox');
             const container = document.getElementById('galleryCropContainer');
-            let isAction = false;
-            let actionType = '';
-            let startX, startY, startL, startT, startW, startH;
+            let isAction = false, actionType = '', startX, startY, startL, startT, startW, startH;
 
             cropBox.addEventListener('pointerdown', (e) => {
                 isAction = true;
-                startX = e.clientX;
-                startY = e.clientY;
-                startL = cropBox.offsetLeft;
-                startT = cropBox.offsetTop;
-                startW = cropBox.offsetWidth;
-                startH = cropBox.offsetHeight;
+                startX = e.clientX; startY = e.clientY;
+                startL = cropBox.offsetLeft; startT = cropBox.offsetTop;
+                startW = cropBox.offsetWidth; startH = cropBox.offsetHeight;
 
                 if (e.target.classList.contains('crop-handle')) {
                     actionType = 'resize_' + e.target.className.split(' ')[1];
@@ -2154,8 +1901,7 @@
 
             cropBox.addEventListener('pointermove', (e) => {
                 if (!isAction) return;
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
+                const dx = e.clientX - startX, dy = e.clientY - startY;
 
                 if (actionType === 'drag') {
                     let maxL = container.clientWidth - cropBox.clientWidth;
@@ -2167,10 +1913,8 @@
                         cropBox.style.width = Math.max(80, startW + dx) + 'px';
                         cropBox.style.height = Math.max(30, startH + dy) + 'px';
                     } else if (actionType.includes('tl')) {
-                        let nw = Math.max(80, startW - dx);
-                        let nh = Math.max(30, startH - dy);
-                        cropBox.style.width = nw + 'px';
-                        cropBox.style.height = nh + 'px';
+                        let nw = Math.max(80, startW - dx), nh = Math.max(30, startH - dy);
+                        cropBox.style.width = nw + 'px'; cropBox.style.height = nh + 'px';
                         cropBox.style.left = (startL + (startW - nw)) + 'px';
                         cropBox.style.top = (startT + (startH - nh)) + 'px';
                     } else if (actionType.includes('tr')) {
@@ -2195,7 +1939,6 @@
             });
         }
 
-        // PROCESAMIENTO MULTI-PASO DE IMÁGENES DE GALERÍA
         async function procesarRecorteGaleria() {
             const statusMsg = document.getElementById('cropStatusMsg');
             if (statusMsg) statusMsg.innerText = "⏳ Procesando y leyendo barras...";
@@ -2240,10 +1983,7 @@
                 let gray = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
                 let contrastGray = factor * (gray - 128) + 128;
                 contrastGray = Math.max(0, Math.min(255, contrastGray));
-                
-                data[i] = contrastGray;
-                data[i + 1] = contrastGray;
-                data[i + 2] = contrastGray;
+                data[i] = contrastGray; data[i + 1] = contrastGray; data[i + 2] = contrastGray;
             }
             ctx.putImageData(imgData, 0, 0);
 
@@ -2264,13 +2004,9 @@
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
-                osc.type = "sine";
-                osc.frequency.value = 1800;
-                gain.gain.value = 0.1;
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.12);
+                osc.type = "sine"; osc.frequency.value = 1800; gain.gain.value = 0.1;
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.start(); osc.stop(ctx.currentTime + 0.12);
             } catch(e) {}
         }
 
@@ -2281,12 +2017,9 @@
 
         function onBarcodeScanSuccess(decodedText, decodedResult) {
             const textoLimpio = limpiarTextoCodigo(decodedText);
-            
             if (!textoLimpio || textoLimpio.length < 4) return;
 
-            if ("vibrate" in navigator) {
-                navigator.vibrate(80);
-            }
+            if ("vibrate" in navigator) navigator.vibrate(80);
             emitirSonidoBeep();
 
             if (filaDestinoScanner) {
@@ -2384,8 +2117,7 @@
 
             document.getElementById('contenedorEquiposDinamicos').innerHTML = '';
             document.getElementById('contenedorFungiblesCatalogo').innerHTML = '';
-            contadorEquiposDinamicos = 0;
-            contadorFungiblesCat = 0;
+            contadorEquiposDinamicos = 0; contadorFungiblesCat = 0;
 
             agregarFilaEquipoDinamicamente('MODEM', '', '');
             agregarFilaEquipoDinamicamente('DECODER', '', '');
@@ -2452,9 +2184,7 @@
                     descItem = '[OTRO] ' + descManual + ' x' + cant;
                 } else {
                     const itemObj = CATALOGO_FUNGIBLES.find(c => c.siga === siga);
-                    if (itemObj) {
-                        descItem = '[SIGA ' + siga + '] ' + itemObj.tipo + ' x' + cant;
-                    }
+                    if (itemObj) descItem = '[SIGA ' + siga + '] ' + itemObj.tipo + ' x' + cant;
                 }
 
                 if (descItem) {
@@ -2525,9 +2255,7 @@
             const { data } = await supabaseClient.from('usuarios').select('nombre').order('nombre');
             if (data) {
                 const datalist = document.getElementById('listaTecnicosDatalist');
-                if (datalist) {
-                    datalist.innerHTML = data.map(t => `<option value="${t.nombre}">`).join('');
-                }
+                if (datalist) datalist.innerHTML = data.map(t => `<option value="${t.nombre}">`).join('');
             }
         }
 
@@ -2544,23 +2272,14 @@
             if (!tecnico) return alert('Selecciona o escribe un técnico.');
 
             const rawIds = Array.from(idsSeleccionadosGlobal);
-            
-            if (rawIds.length === 0) {
-                return alert('No hay ningún cliente seleccionado en la tabla.');
-            }
+            if (rawIds.length === 0) return alert('No hay ningún cliente seleccionado en la tabla.');
 
-            const idsProcessed = rawIds.map(id => {
-                return (/^\d+$/).test(id) ? Number(id) : id;
-            });
-
+            const idsProcessed = rawIds.map(id => (/^\d+$/).test(id) ? Number(id) : id);
             const fechaHoy = new Date().toISOString().slice(0, 10);
 
             const { data, error } = await supabaseClient
                 .from('ordenes_retiro')
-                .update({ 
-                    tecnico_asignado: tecnico,
-                    fecha_registro: fechaHoy
-                })
+                .update({ tecnico_asignado: tecnico, fecha_registro: fechaHoy })
                 .in('id', idsProcessed)
                 .select();
 
