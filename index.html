@@ -479,7 +479,7 @@
             </div>
 
             <div id="observacionAlertaDiv" class="hidden bg-amber-950/40 border border-amber-500/50 p-2.5 rounded-xl text-xs space-y-1">
-                <p class="font-bold text-amber-300">⚠️️ OBSERVACIÓN BACK OFFICE:</p>
+                <p class="font-bold text-amber-300">⚠️ OBSERVACIÓN BACK OFFICE:</p>
                 <p class="text-slate-200" id="observacionTextoMsg"></p>
             </div>
 
@@ -1670,39 +1670,60 @@
             selectEl.innerHTML = '';
 
             try {
-                // Forzamos autorización previa para obtener la lista completa sin bloqueo de Android
+                // Detener cualquier stream activo para no bloquear las demás cámaras
+                await detenerCamaraPista();
+
+                // Forzar solicitar la cámara trasera (environment) para activar permisos de hardware
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     try {
-                        const initStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        const initStream = await navigator.mediaDevices.getUserMedia({ 
+                            video: { facingMode: { exact: "environment" } } 
+                        });
                         initStream.getTracks().forEach(t => t.stop());
-                    } catch (eGUM) {}
+                    } catch (eGUM1) {
+                        try {
+                            const initStream2 = await navigator.mediaDevices.getUserMedia({ 
+                                video: { facingMode: "environment" } 
+                            });
+                            initStream2.getTracks().forEach(t => t.stop());
+                        } catch (eGUM2) {}
+                    }
                 }
 
                 const cameras = await Html5Qrcode.getCameras();
                 if (cameras && cameras.length > 0) {
+                    // Filtrar y ordenar priorizando cámaras traseras
+                    const camarasTraseras = [];
+                    const camarasFrontales = [];
+
                     cameras.forEach((cam, idx) => {
-                        const opt = document.createElement('option');
-                        opt.value = cam.id;
                         let labelName = cam.label || `Lente ${idx + 1}`;
                         const lblLower = labelName.toLowerCase();
                         
                         if (lblLower.includes('back') || lblLower.includes('trasera') || lblLower.includes('rear') || lblLower.includes('0')) {
                             labelName = `📷 Trasera (${labelName.split(' ')[0] || 'Lente ' + (idx + 1)})`;
+                            camarasTraseras.push({ id: cam.id, label: labelName });
                         } else if (lblLower.includes('front') || lblLower.includes('frontal') || lblLower.includes('selfie') || lblLower.includes('1')) {
                             labelName = `🤳 Frontal / Selfie`;
+                            camarasFrontales.push({ id: cam.id, label: labelName });
                         } else {
-                            labelName = `📷 Lente ${labelName}`;
+                            labelName = `📷 Lente Trasera (${labelName})`;
+                            camarasTraseras.push({ id: cam.id, label: labelName });
                         }
-                        opt.innerText = labelName;
+                    });
+
+                    // Concatenar traseras primero y luego frontales
+                    const listaOrdenada = [...camarasTraseras, ...camarasFrontales];
+
+                    listaOrdenada.forEach(camObj => {
+                        const opt = document.createElement('option');
+                        opt.value = camObj.id;
+                        opt.innerText = camObj.label;
                         selectEl.appendChild(opt);
                     });
 
                     if (!camaraSeleccionadaId) {
-                        const backCam = cameras.find(c => {
-                            const l = c.label.toLowerCase();
-                            return l.includes('back') || l.includes('trasera') || l.includes('rear') || l.includes('0');
-                        });
-                        camaraSeleccionadaId = backCam ? backCam.id : cameras[0].id;
+                        camaraSeleccionadaId = listaOrdenada.length > 0 ? listaOrdenada[0].id : cameras[0].id;
                     }
                     selectEl.value = camaraSeleccionadaId;
                 } else {
@@ -1744,7 +1765,8 @@
                 qrbox: { width: boxW, height: boxH },
                 videoConstraints: {
                     width: { ideal: 1920, min: 1280 },
-                    height: { ideal: 1080, min: 720 }
+                    height: { ideal: 1080, min: 720 },
+                    facingMode: "environment"
                 }
             };
 
