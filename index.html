@@ -19,6 +19,9 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
+    <!-- Generador PDF (html2pdf.js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <!-- Lector Profesional de Código de Barras en Tiempo Real -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
@@ -73,6 +76,19 @@
         .crop-handle.tr { top: -9px; right: -9px; cursor: nesw-resize; }
         .crop-handle.bl { bottom: -9px; left: -9px; cursor: nesw-resize; }
         .crop-handle.br { bottom: -9px; right: -9px; cursor: nwse-resize; }
+
+        /* ESTILO PARA PLANTILLA PDF OCULTA */
+        #pdfTemplate {
+            background-color: #ffffff;
+            color: #000000;
+            font-family: Arial, sans-serif;
+            width: 750px;
+            padding: 25px;
+            box-sizing: border-box;
+        }
+        #pdfTemplate table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        #pdfTemplate th, #pdfTemplate td { border: 1px solid #333; padding: 6px 8px; text-align: left; font-size: 11px; }
+        #pdfTemplate th { background-color: #f1f5f9; font-weight: bold; }
     </style>
 </head>
 <body class="min-h-screen font-sans antialiased">
@@ -326,6 +342,14 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN: HISTORIAL DE ACTAS GENERADAS -->
+            <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-700 space-y-3">
+                <h3 class="text-xs font-bold text-sky-300 flex items-center gap-1.5">📄 ACTAS DE DEVOLUCIÓN GENERADAS (PDF)</h3>
+                <div id="contenedorHistorialActasPdf" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <p class="text-slate-500 text-xs italic text-center py-2">No has generado actas PDF en esta sesión.</p>
+                </div>
+            </div>
+
             <div id="contenedorInventarioEquipos" class="space-y-3"></div>
         </div>
 
@@ -529,7 +553,8 @@
 
             <div class="flex justify-end gap-2 pt-2 border-t border-slate-700 sticky bottom-0 bg-slate-900 py-2">
                 <button onclick="cerrarModalGestion()" class="px-3 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Cancelar</button>
-                <button onclick="enviarReporteAWhatsApp()" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow">📲 Finalizar y Enviar a Grupo WPP</button>
+                <button onclick="generarActaDevolucionPDF()" class="px-3 py-2 rounded-xl bg-sky-700 hover:bg-sky-600 text-white text-xs font-bold shadow flex items-center gap-1">📄 Generar PDF</button>
+                <button onclick="enviarReporteAWhatsApp()" class="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold shadow">📲 Finalizar y Enviar WPP</button>
             </div>
         </div>
     </div>
@@ -546,6 +571,71 @@
             <div class="flex justify-end gap-2 pt-2">
                 <button onclick="cerrarModalAsignacionMasiva()" class="text-xs px-4 py-2 rounded-xl bg-slate-800 text-slate-300">Cancelar</button>
                 <button onclick="ejecutarAsignacionMasiva()" class="text-xs px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold">Guardar Asignación</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR OCULTO PARA IMPRESIÓN Y GENERACIÓN DEL PDF -->
+    <div style="display: none;">
+        <div id="pdfTemplate">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0284c7; padding-bottom: 8px;">
+                <div>
+                    <h2 style="margin: 0; color: #0284c7; font-size: 18px;">DATARED BOLIVIA</h2>
+                    <p style="margin: 2px 0 0 0; font-size: 10px; color: #555;">ACTA DE DEVOLUCIÓN DE EQUIPOS Y MATERIALES</p>
+                </div>
+                <div style="text-align: right; font-size: 10px;">
+                    <p style="margin: 0;"><b>FECHA:</b> <span id="pdfFecha"></span></p>
+                    <p style="margin: 2px 0 0 0;"><b>CIUDAD:</b> <span id="pdfCiudad"></span></p>
+                </div>
+            </div>
+
+            <div style="margin-top: 15px; font-size: 11px; line-height: 1.5;">
+                <p style="margin: 3px 0;"><b>CLIENTE:</b> <span id="pdfClienteNombre"></span></p>
+                <p style="margin: 3px 0;"><b>CÓDIGO DE CLIENTE:</b> <span id="pdfClienteCodigo"></span></p>
+                <p style="margin: 3px 0;"><b>DIRECCIÓN:</b> <span id="pdfDireccion"></span></p>
+                <p style="margin: 3px 0;"><b>NODO / TAP:</b> <span id="pdfNodo"></span></p>
+                <p style="margin: 3px 0;"><b>NRO. DE OT:</b> <span id="pdfOt"></span></p>
+                <p style="margin: 3px 0;"><b>TÉCNICO RESPONSABLE:</b> <span id="pdfTecnico"></span></p>
+            </div>
+
+            <h4 style="margin-top: 15px; margin-bottom: 5px; color: #0284c7; font-size: 12px; border-bottom: 1px solid #ccc; padding-bottom: 3px;">DETALLE DE EQUIPOS RECUPERADOS</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>TIPO</th>
+                        <th>MODELO</th>
+                        <th>SERIE / MAC</th>
+                        <th>ESTADO</th>
+                    </tr>
+                </thead>
+                <tbody id="pdfTablaEquipos">
+                    <!-- Dinámico -->
+                </tbody>
+            </table>
+
+            <h4 style="margin-top: 15px; margin-bottom: 5px; color: #0284c7; font-size: 12px; border-bottom: 1px solid #ccc; padding-bottom: 3px;">ACCESORIOS Y FUNGIBLES</h4>
+            <table>
+                <thead>
+                    <tr>
+                        <th>CÓDIGO SIGA</th>
+                        <th>DESCRIPCIÓN</th>
+                        <th>CANT.</th>
+                    </tr>
+                </thead>
+                <tbody id="pdfTablaAccesorios">
+                    <!-- Dinámico -->
+                </tbody>
+            </table>
+
+            <div style="margin-top: 60px; display: flex; justify-content: space-between; text-align: center; font-size: 10px;">
+                <div style="width: 40%; border-top: 1px solid #000; padding-top: 5px;">
+                    FIRMA TÉCNICO EN CAMPO<br>
+                    <span id="pdfFirmaTecnico"></span>
+                </div>
+                <div style="width: 40%; border-top: 1px solid #000; padding-top: 5px;">
+                    FIRMA / CONFORMIDAD CLIENTE<br>
+                    CI: 
+                </div>
             </div>
         </div>
     </div>
@@ -583,6 +673,7 @@
         let ordenesFiltradasAdmin = [];
         let ordenesTecnico = [];
         let historialRetiros = [];
+        let actasGeneradasPDF = [];
         let tabActualAdmin = 'TODOS';
         let ordenSeleccionadaGestion = null;
         let contadorEquiposDinamicos = 0;
@@ -1672,7 +1763,6 @@
             try {
                 await detenerCamaraPista();
 
-                // Forzar solicitar la cámara trasera (environment) de forma limpia
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     try {
                         const initStream = await navigator.mediaDevices.getUserMedia({ 
@@ -2137,6 +2227,187 @@
                 } else {
                     await cargarOrdenesAdminDesdeSupabase();
                 }
+            }
+        }
+
+        // FUNCIÓN NUEVA: GENERAR Y DESCARGAR PDF ACTA DE DEVOLUCIÓN
+        async function generarActaDevolucionPDF() {
+            if (!ordenSeleccionadaGestion) return alert('Seleccione un cliente primero.');
+
+            const ot = document.getElementById('gestionOt').value || 'S/OT';
+            const hoy = new Date();
+            const fechaTxt = String(hoy.getDate()).padStart(2,'0') + '/' + String(hoy.getMonth()+1).padStart(2,'0') + '/' + hoy.getFullYear();
+
+            // Llenar campos del PDF
+            document.getElementById('pdfFecha').innerText = fechaTxt;
+            document.getElementById('pdfCiudad').innerText = ordenSeleccionadaGestion.ciudad || 'YACUIBA';
+            document.getElementById('pdfClienteNombre').innerText = ordenSeleccionadaGestion.cliente_nombre || 'CLIENTE';
+            document.getElementById('pdfClienteCodigo').innerText = ordenSeleccionadaGestion.cliente_nro || '-';
+            document.getElementById('pdfDireccion').innerText = ordenSeleccionadaGestion.direccion || '';
+            document.getElementById('pdfNodo').innerText = ordenSeleccionadaGestion.zona_nodo_tap || 'S/N';
+            document.getElementById('pdfOt').innerText = ot;
+            document.getElementById('pdfTecnico').innerText = usuarioActual ? usuarioActual.nombre : '-';
+            document.getElementById('pdfFirmaTecnico').innerText = usuarioActual ? usuarioActual.nombre : '-';
+
+            // Llenar tabla de equipos en el PDF
+            const pdfTablaEquipos = document.getElementById('pdfTablaEquipos');
+            pdfTablaEquipos.innerHTML = '';
+            const filasEquipos = document.querySelectorAll('#contenedorEquiposDinamicos > div');
+
+            let totalEquiposCount = 0;
+            filasEquipos.forEach(fila => {
+                const tipo = fila.querySelector('.tipoEquipoSelect').value;
+                const mod = fila.querySelector('.modeloInput').value.trim();
+                const ser = fila.querySelector('.serieInput').value.trim();
+
+                if (mod || ser) {
+                    totalEquiposCount++;
+                    pdfTablaEquipos.innerHTML += `
+                        <tr>
+                            <td>${tipo}</td>
+                            <td>${mod || 'GENÉRICO'}</td>
+                            <td>${ser || 'S/N'}</td>
+                            <td>RETIRADO / BUEN ESTADO</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            if (totalEquiposCount === 0) {
+                pdfTablaEquipos.innerHTML = '<tr><td colspan="4" style="text-align:center;">Sin equipos recuperados</td></tr>';
+            }
+
+            // Llenar tabla de accesorios en el PDF
+            const pdfTablaAccesorios = document.getElementById('pdfTablaAccesorios');
+            pdfTablaAccesorios.innerHTML = '';
+            const filasFungibles = document.querySelectorAll('#contenedorFungiblesCatalogo > div');
+
+            let totalAccCount = 0;
+            filasFungibles.forEach(f => {
+                const select = f.querySelector('.fungibleSelect');
+                if (!select) return;
+                const siga = select.value;
+                const cant = f.querySelector('.fungibleCantInput').value;
+                
+                let desc = '';
+                if (siga === 'OTRO') {
+                    desc = f.querySelector('.fungibleOtroInput').value.trim() || 'ACCESORIO OTRO';
+                } else {
+                    const itemObj = CATALOGO_FUNGIBLES.find(c => c.siga === siga);
+                    if (itemObj) desc = itemObj.nombre;
+                }
+
+                if (desc) {
+                    totalAccCount++;
+                    pdfTablaAccesorios.innerHTML += `
+                        <tr>
+                            <td>${siga}</td>
+                            <td>${desc}</td>
+                            <td>${cant}</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            if (totalAccCount === 0) {
+                pdfTablaAccesorios.innerHTML = '<tr><td colspan="3" style="text-align:center;">Sin accesorios/fungibles</td></tr>';
+            }
+
+            // Opciones de configuración de html2pdf
+            const element = document.getElementById('pdfTemplate');
+            const opt = {
+                margin:       10,
+                filename:     `Acta_Devolucion_${ordenSeleccionadaGestion.cliente_nro}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'letter', orientation: 'portrait' }
+            };
+
+            const statusDiv = document.getElementById('gestionStatusOutput');
+            if (statusDiv) statusDiv.innerText = "⏳ Generando documento PDF...";
+
+            try {
+                // Generar en Blob URL para descarga y registro en historial
+                const pdfWorker = html2pdf().set(opt).from(element);
+                const pdfBlob = await pdfWorker.output('blob');
+                const pdfUrl = URL.createObjectURL(pdfBlob);
+
+                // Guardar en array de historial
+                const actaObj = {
+                    id: ordenSeleccionadaGestion.id,
+                    codigo: ordenSeleccionadaGestion.cliente_nro,
+                    cliente: ordenSeleccionadaGestion.cliente_nombre,
+                    fecha: fechaTxt,
+                    cantidad: totalEquiposCount,
+                    pdfUrl: pdfUrl
+                };
+
+                actasGeneradasPDF.unshift(actaObj);
+                renderizarHistorialActasPdf();
+
+                // Disparar descarga automática
+                const link = document.createElement('a');
+                link.href = pdfUrl;
+                link.download = `Acta_Devolucion_${ordenSeleccionadaGestion.cliente_nro}.pdf`;
+                link.click();
+
+                if (statusDiv) statusDiv.innerText = "✅ PDF descargado e incorporado a tu inventario.";
+            } catch (errPdf) {
+                console.error("Error al generar PDF:", errPdf);
+                if (statusDiv) statusDiv.innerText = "❌ Error al generar el archivo PDF.";
+            }
+        }
+
+        // FUNCIÓN NUEVA: RENDERIZAR LISTA DE ACTAS PDF GENERADAS
+        function renderizarHistorialActasPdf() {
+            const container = document.getElementById('contenedorHistorialActasPdf');
+            if (!container) return;
+
+            if (actasGeneradasPDF.length === 0) {
+                container.innerHTML = '<p class="text-slate-500 text-xs italic text-center py-2">No has generado actas PDF en esta sesión.</p>';
+                return;
+            }
+
+            container.innerHTML = actasGeneradasPDF.map(a => `
+                <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex justify-between items-center text-xs">
+                    <div>
+                        <span class="text-sky-400 font-bold">📄 CÓDIGO: ${a.codigo}</span>
+                        <p class="text-white font-semibold text-[11px]">${a.cliente}</p>
+                        <p class="text-slate-400 text-[10px]">📄 ${a.cantidad} Equipo(s) • 📅 ${a.fecha}</p>
+                    </div>
+                    <button onclick="reDescargarPDFActa('${a.id}')" class="bg-sky-600 hover:bg-sky-500 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-lg flex items-center gap-1">
+                        📥 Ver PDF
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function reDescargarPDFActa(id) {
+            const acta = actasGeneradasPDF.find(a => String(a.id) === String(id));
+            if (acta && acta.pdfUrl) {
+                const link = document.createElement('a');
+                link.href = acta.pdfUrl;
+                link.download = `Acta_Devolucion_${id}.pdf`;
+                link.click();
+            }
+        }
+
+        function cambiarTabMobile(tab) {
+            ['tecTabProgramar', 'tecTabInventario', 'tecTabNotificaciones', 'tecTabPerfil'].forEach(t => document.getElementById(t).classList.add('hidden'));
+
+            if (tab === 'programar') {
+                document.getElementById('tecTabProgramar').classList.remove('hidden');
+                document.getElementById('tituloSeccionTecnico').innerText = "Programar";
+                setTimeout(() => { if (mobileMap) mobileMap.invalidateSize(); }, 200);
+            } else if (tab === 'inventario') {
+                document.getElementById('tecTabInventario').classList.remove('hidden');
+                document.getElementById('tituloSeccionTecnico').innerText = "Inventario & Planilla";
+            } else if (tab === 'notificaciones') {
+                document.getElementById('tecTabNotificaciones').classList.remove('hidden');
+                document.getElementById('tituloSeccionTecnico').innerText = "Notificaciones";
+            } else if (tab === 'perfil') {
+                document.getElementById('tecTabPerfil').classList.remove('hidden');
+                document.getElementById('tituloSeccionTecnico').innerText = "Perfil Técnico";
             }
         }
 
