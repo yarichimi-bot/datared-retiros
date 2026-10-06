@@ -553,7 +553,7 @@
     <script>
         const BASE_URL = "https://darcifsfttemivwssbqd.supabase.co";
         const SUPABASE_URL = BASE_URL.split('/rest')[0].replace(/\/$/, "");
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhcmNpZnNmdHRlbWl2d3NzYnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1OTY5NjUsImV4cCI6MjEwNjE3Mjk2NX0.BpgHDsOIAvPaMJooaxpBj0Fuu5W_yg0lvj9Ga6GREnc";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhcmNpZnNmdHRlbWl2d3NzYnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1OTY5NjUsImV4cCI6MjA2NDE3Mjk2NX0.BpgHDsOIAvPaMJooaxpBj0Fuu5W_yg0lvj9Ga6GREnc";
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1319,12 +1319,11 @@
         async function cargarDatosTecnico() {
             const tecNombre = usuarioActual.nombre.trim();
             
-            // Búsqueda flexible sin provocar error Bad Request 400
-            const primerNombre = tecNombre.split(' ')[0];
+            // Búsqueda directa sin provocar error URL Bad Request 400
             const { data: ordenes, error } = await supabaseClient
                 .from('ordenes_retiro')
                 .select('*')
-                .or(`tecnico_asignado.ilike.%${tecNombre}%,tecnico_asignado.ilike.%${primerNombre}%`);
+                .ilike('tecnico_asignado', `%${tecNombre}%`);
 
             if (error) {
                 console.error("Error al cargar datos técnico:", error);
@@ -1338,7 +1337,7 @@
             const { data: gestiones } = await supabaseClient
                 .from('historial_gestiones')
                 .select('*')
-                .or(`tecnico_nombre.ilike.%${tecNombre}%,tecnico_nombre.ilike.%${primerNombre}%`);
+                .ilike('tecnico_nombre', `%${tecNombre}%`);
 
             historialRetiros = gestiones || [];
             renderizarInventarioEquipos();
@@ -1347,11 +1346,10 @@
 
         async function cargarDatosTecnicoSilencioso() {
             const tecNombre = usuarioActual.nombre.trim();
-            const primerNombre = tecNombre.split(' ')[0];
             const { data: ordenes } = await supabaseClient
                 .from('ordenes_retiro')
                 .select('*')
-                .or(`tecnico_asignado.ilike.%${tecNombre}%,tecnico_asignado.ilike.%${primerNombre}%`);
+                .ilike('tecnico_asignado', `%${tecNombre}%`);
 
             if (ordenes) {
                 const pendNuevos = ordenes.filter(o => o.estado !== 'RETIRADO' && o.estado !== 'PAGADO').length;
@@ -1673,22 +1671,6 @@
             selectEl.innerHTML = '';
 
             try {
-                // Solicitar stream de cámara trasera explícito para forzar la enumeración de lentes
-                let tempStream = null;
-                try {
-                    tempStream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: { exact: "environment" } }
-                    });
-                } catch (e1) {
-                    try {
-                        tempStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-                    } catch (e2) {}
-                }
-
-                if (tempStream) {
-                    tempStream.getTracks().forEach(t => t.stop());
-                }
-
                 const cameras = await Html5Qrcode.getCameras();
                 if (cameras && cameras.length > 0) {
                     cameras.forEach((cam, idx) => {
@@ -1697,9 +1679,9 @@
                         let labelName = cam.label || `Lente ${idx + 1}`;
                         const lblLower = labelName.toLowerCase();
                         
-                        if (lblLower.includes('back') || lblLower.includes('trasera') || lblLower.includes('rear') || lblLower.includes('environment')) {
+                        if (lblLower.includes('back') || lblLower.includes('trasera') || lblLower.includes('rear') || lblLower.includes('0')) {
                             labelName = `📷 Trasera (${labelName.split(' ')[0] || 'Principal'})`;
-                        } else if (lblLower.includes('front') || lblLower.includes('frontal') || lblLower.includes('selfie')) {
+                        } else if (lblLower.includes('front') || lblLower.includes('frontal') || lblLower.includes('selfie') || lblLower.includes('1')) {
                             labelName = `🤳 Frontal / Selfie`;
                         } else {
                             labelName = `📷 Lente Trasera #${idx + 1}`;
@@ -1711,9 +1693,9 @@
                     if (!camaraSeleccionadaId) {
                         const backCam = cameras.find(c => {
                             const l = c.label.toLowerCase();
-                            return l.includes('back') || l.includes('trasera') || l.includes('rear') || l.includes('environment');
+                            return l.includes('back') || l.includes('trasera') || l.includes('rear') || l.includes('0');
                         });
-                        camaraSeleccionadaId = backCam ? backCam.id : cameras[cameras.length - 1].id;
+                        camaraSeleccionadaId = backCam ? backCam.id : cameras[0].id;
                     }
                     selectEl.value = camaraSeleccionadaId;
                 } else {
@@ -1760,22 +1742,23 @@
                 }
             };
 
-            let cameraConfig;
-            if (camaraSeleccionadaId && camaraSeleccionadaId !== 'environment') {
-                cameraConfig = { deviceId: { exact: camaraSeleccionadaId } };
-            } else {
-                cameraConfig = { facingMode: { exact: "environment" } };
-            }
-
             try {
-                await html5QrCodeScanner.start(
-                    cameraConfig,
-                    configHD,
-                    onBarcodeScanSuccess,
-                    onBarcodeScanError
-                );
+                if (camaraSeleccionadaId && camaraSeleccionadaId !== 'environment') {
+                    await html5QrCodeScanner.start(
+                        camaraSeleccionadaId,
+                        configHD,
+                        onBarcodeScanSuccess,
+                        onBarcodeScanError
+                    );
+                } else {
+                    await html5QrCodeScanner.start(
+                        { facingMode: "environment" },
+                        configHD,
+                        onBarcodeScanSuccess,
+                        onBarcodeScanError
+                    );
+                }
             } catch (errFallback) {
-                // Si la restricción exacta falla por el navegador móvil, forzamos la orientación trasera sin el ID
                 await html5QrCodeScanner.start(
                     { facingMode: "environment" },
                     configHD,
