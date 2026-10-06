@@ -1040,12 +1040,21 @@
                 setTimeout(() => { if (adminMap) adminMap.invalidateSize(); }, 200);
             } else {
                 wrapper.classList.add('hidden');
-                btn.innerText = "Mostrar Mapa 🗺️️";
+                btn.innerText = "Mostrar Mapa 🗺";
             }
         }
 
         async function cargarOrdenesAdminDesdeSupabase() {
-            const { data } = await supabaseClient.from('ordenes_retiro').select('*').order('fecha_registro', { ascending: false });
+            const { data, error } = await supabaseClient
+                .from('ordenes_retiro')
+                .select('*');
+
+            if (error) {
+                console.error("Error al consultar Supabase:", error);
+                alert("Error de consulta Supabase: " + error.message + " (Verifica la política RLS en tu consola Supabase)");
+                return;
+            }
+
             ordenesGlobalesAdmin = data || [];
             poblarFiltrosDesplegables(ordenesGlobalesAdmin);
             actualizarContadoresAdmin();
@@ -1547,11 +1556,16 @@
 
         async function cargarDatosTecnico() {
             const tecNombre = usuarioActual.nombre.trim();
-            const { data: ordenes } = await supabaseClient
+            const { data: ordenes, error } = await supabaseClient
                 .from('ordenes_retiro')
                 .select('*')
-                .ilike('tecnico_asignado', `%${tecNombre}%`)
-                .order('fecha_registro', { ascending: false });
+                .ilike('tecnico_asignado', `%${tecNombre}%`);
+
+            if (error) {
+                console.error("Error al cargar datos técnico:", error);
+                alert("Error Supabase Técnico: " + error.message);
+                return;
+            }
 
             ordenesTecnico = ordenes || [];
             conteoPrevioOrdenesTecnico = ordenesTecnico.filter(o => o.estado !== 'RETIRADO' && o.estado !== 'PAGADO').length;
@@ -1560,8 +1574,7 @@
             const { data: gestiones } = await supabaseClient
                 .from('historial_gestiones')
                 .select('*')
-                .ilike('tecnico_nombre', `%${tecNombre}%`)
-                .order('fecha_gestion', { ascending: false });
+                .ilike('tecnico_nombre', `%${tecNombre}%`);
 
             historialRetiros = gestiones || [];
             renderizarInventarioEquipos();
@@ -1573,8 +1586,7 @@
             const { data: ordenes } = await supabaseClient
                 .from('ordenes_retiro')
                 .select('*')
-                .ilike('tecnico_asignado', `%${tecNombre}%`)
-                .order('fecha_registro', { ascending: false });
+                .ilike('tecnico_asignado', `%${tecNombre}%`);
 
             if (ordenes) {
                 const pendNuevos = ordenes.filter(o => o.estado !== 'RETIRADO' && o.estado !== 'PAGADO').length;
