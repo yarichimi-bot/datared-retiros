@@ -19,7 +19,7 @@
     <!-- Lector Profesional de Código de Barras en Tiempo Real -->
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
-    <!-- Leaflet Mapa (Librería Base Garantizada) -->
+    <!-- Leaflet Mapa -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -742,7 +742,7 @@
     <script>
         const BASE_URL = "https://darcifsfttemivwssbqd.supabase.co";
         const SUPABASE_URL = BASE_URL.split('/rest')[0].replace(/\/$/, "");
-        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhcmNpZnNmdHRlbWl2d3NzYnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1OTY5NjUsImV4cCI6MjEwNjE3Mjk2NX0.BpgHDsOIAvPaMJooaxpBj0Fuu5W_yg0lvj9Ga6GREnc";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhcmNpZnNmdHRlbWl2d3NzYnFkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1OTY5NjUsImV4cCI6MjA2NDE3Mjk2NX0.BpgHDsOIAvPaMJooaxpBj0Fuu5W_yg0lvj9Ga6GREnc";
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -1044,7 +1044,6 @@
 
                 if (error) {
                     console.error("Error al consultar Supabase:", error);
-                    alert("Error Supabase: " + error.message + "\n\n💡 Revisa en tu panel Supabase si RLS está activo.");
                     return;
                 }
 
@@ -1559,7 +1558,6 @@
 
             if (error) {
                 console.error("Error al cargar datos técnico:", error);
-                alert("Error Supabase Técnico: " + error.message);
                 return;
             }
 
@@ -1909,6 +1907,14 @@
             document.getElementById('modalBarcodeScanner').classList.remove('hidden');
 
             try {
+                // Solicitar permiso preliminar para forzar que el dispositivo muestre todas las cámaras traseras/frontales
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    try {
+                        const initStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        initStream.getTracks().forEach(t => t.stop());
+                    } catch (permErr) {}
+                }
+
                 await poblarListaCamarasDispositivo();
                 await iniciarInstanciaScanner();
             } catch (err) {
@@ -1931,24 +1937,31 @@
                         opt.value = cam.id;
                         let labelName = cam.label || `Lente ${idx + 1}`;
                         
-                        if (labelName.toLowerCase().includes('back') || labelName.toLowerCase().includes('trasera') || labelName.toLowerCase().includes('rear')) {
+                        const lblLower = labelName.toLowerCase();
+                        if (lblLower.includes('back') || lblLower.includes('trasera') || lblLower.includes('rear') || lblLower.includes('0') || lblLower.includes('environment')) {
                             labelName = `📷 Trasera (${labelName.split(' ')[0] || 'Principal'})`;
-                        } else if (labelName.toLowerCase().includes('front') || labelName.toLowerCase().includes('frontal')) {
+                        } else if (lblLower.includes('front') || lblLower.includes('frontal') || lblLower.includes('selfie') || lblLower.includes('1')) {
                             labelName = `🤳 Frontal / Selfie`;
+                        } else {
+                            labelName = `📷 Lente ${idx + 1} (${labelName})`;
                         }
                         opt.innerText = labelName;
                         selectEl.appendChild(opt);
                     });
 
                     if (!camaraSeleccionadaId) {
-                        const backCam = cameras.find(c => c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('trasera') || c.label.toLowerCase().includes('rear'));
+                        // Buscar primero una cámara trasera por etiqueta
+                        const backCam = cameras.find(c => {
+                            const l = c.label.toLowerCase();
+                            return l.includes('back') || l.includes('trasera') || l.includes('rear') || l.includes('environment');
+                        });
                         camaraSeleccionadaId = backCam ? backCam.id : cameras[0].id;
                     }
                     selectEl.value = camaraSeleccionadaId;
                 } else {
                     const opt = document.createElement('option');
                     opt.value = "environment";
-                    opt.innerText = "📷 Cámara Trasera";
+                    opt.innerText = "📷 Cámara Trasera Principal";
                     selectEl.appendChild(opt);
                     camaraSeleccionadaId = "environment";
                 }
@@ -1994,7 +2007,7 @@
             if (camaraSeleccionadaId && camaraSeleccionadaId !== 'environment') {
                 cameraConfig = { deviceId: { exact: camaraSeleccionadaId } };
             } else {
-                cameraConfig = { facingMode: { exact: "environment" } };
+                cameraConfig = { facingMode: "environment" };
             }
 
             try {
@@ -2005,6 +2018,7 @@
                     onBarcodeScanError
                 );
             } catch (errFallback) {
+                // Si la selección exacta falla, forzamos el modo trasero flexible
                 await html5QrCodeScanner.start(
                     { facingMode: "environment" },
                     configHD,
