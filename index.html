@@ -1612,9 +1612,13 @@
         }
 
         function cambiarTabMobile(tab) {
-            ['tecTabProgramar', 'tecTabInventario', 'tecTabNotificaciones', 'tecTabPerfil'].forEach(t => document.getElementById(t).classList.add('hidden'));
+    if (tab !== 'programar') {
+        registrarEstadoHistorial('tab_' + tab);
+    }
 
-            if (tab === 'programar') {
+    ['tecTabProgramar', 'tecTabInventario', 'tecTabNotificaciones', 'tecTabPerfil'].forEach(t => document.getElementById(t).classList.add('hidden'));
+
+    if (tab === 'programar') {
                 document.getElementById('tecTabProgramar').classList.remove('hidden');
                 document.getElementById('tituloSeccionTecnico').innerText = "Programar";
                 setTimeout(() => { if (mobileMap) mobileMap.invalidateSize(); }, 200);
@@ -1733,6 +1737,7 @@
 
         async function abrirModalScanner(idFila) {
             if (escaneoEnProceso) return;
+            registrarEstadoHistorial('scanner');
             escaneoEnProceso = true;
 
             filaDestinoScanner = idFila;
@@ -2196,7 +2201,8 @@
             const listaBusqueda = ordenesGlobalesAdmin.concat(ordenesTecnico);
             ordenSeleccionadaGestion = listaBusqueda.find(o => String(o.id) === String(id));
             if (!ordenSeleccionadaGestion) return;
-
+            registrarEstadoHistorial('gestion');
+            
             document.getElementById('gestionTecnologia').innerText = ordenSeleccionadaGestion.tipo_tecnologia || ordenSeleccionadaGestion.tecnologia || 'HFC';
             document.getElementById('gestionClienteNombre').innerText = ordenSeleccionadaGestion.cliente_nombre || 'CLIENTE';
             document.getElementById('gestionClienteCodigo').innerText = ordenSeleccionadaGestion.cliente_nro || '-';
@@ -2391,26 +2397,7 @@
                 link.click();
             }
         }
-
-        function cambiarTabMobile(tab) {
-            ['tecTabProgramar', 'tecTabInventario', 'tecTabNotificaciones', 'tecTabPerfil'].forEach(t => document.getElementById(t).classList.add('hidden'));
-
-            if (tab === 'programar') {
-                document.getElementById('tecTabProgramar').classList.remove('hidden');
-                document.getElementById('tituloSeccionTecnico').innerText = "Programar";
-                setTimeout(() => { if (mobileMap) mobileMap.invalidateSize(); }, 200);
-            } else if (tab === 'inventario') {
-                document.getElementById('tecTabInventario').classList.remove('hidden');
-                document.getElementById('tituloSeccionTecnico').innerText = "Inventario & Planilla";
-            } else if (tab === 'notificaciones') {
-                document.getElementById('tecTabNotificaciones').classList.remove('hidden');
-                document.getElementById('tituloSeccionTecnico').innerText = "Notificaciones";
-            } else if (tab === 'perfil') {
-                document.getElementById('tecTabPerfil').classList.remove('hidden');
-                document.getElementById('tituloSeccionTecnico').innerText = "Perfil Técnico";
-            }
-        }
-
+        
         async function enviarReporteAWhatsApp() {
             const ot = document.getElementById('gestionOt').value || 'S/OT';
             const precioUnit = parseFloat(document.getElementById('gestionPrecioUnit').value) || 45;
@@ -2566,6 +2553,56 @@
                 await cargarOrdenesAdminDesdeSupabase();
             }
         }
+        // ==========================================
+    // CONTROL DEL BOTÓN "ATRÁS" DE ANDROID (PWA)
+    // ==========================================
+    function registrarEstadoHistorial(nombreEstado) {
+        window.history.pushState({ estado: nombreEstado }, "");
+    }
+
+    window.addEventListener('popstate', function(event) {
+        // Cierra escáner si está abierto
+        const modalScanner = document.getElementById('modalBarcodeScanner');
+        if (modalScanner && !modalScanner.classList.contains('hidden')) {
+            cerrarModalScannerSolo();
+            return;
+        }
+
+        // Cierra modal de gestión si está abierto
+        const modalGestion = document.getElementById('modalGestion');
+        if (modalGestion && !modalGestion.classList.contains('hidden')) {
+            cerrarModalGestion();
+            return;
+        }
+
+        // Cierra recorte de galería si está abierto
+        const modalCrop = document.getElementById('modalGalleryCrop');
+        if (modalCrop && !modalCrop.classList.contains('hidden')) {
+            cerrarModalRecorteGaleria();
+            return;
+        }
+
+        // Cierra asignación masiva si está abierto
+        const modalAsignacion = document.getElementById('modalAsignacionMasiva');
+        if (modalAsignacion && !modalAsignacion.classList.contains('hidden')) {
+            cerrarModalAsignacionMasiva();
+            return;
+        }
+
+        // Devuelve al técnico a la pestaña principal
+        const tabProgramar = document.getElementById('tecTabProgramar');
+        if (tabProgramar && tabProgramar.classList.contains('hidden')) {
+            cambiarTabMobile('programar');
+            return;
+        }
+
+        // Devuelve al admin a la sección principal
+        const seccionCodigos = document.getElementById('seccionAdminCodigos');
+        if (seccionCodigos && seccionCodigos.classList.contains('hidden')) {
+            cambiarSeccionAdmin('codigos');
+            return;
+        }
+    });
         // Registro del Service Worker para PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
