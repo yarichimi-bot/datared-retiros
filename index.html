@@ -752,31 +752,43 @@
                 });
             }
         }
-
+// ==========================================
+// SEGURIDAD: PREVENCIÓN DE INYECCIÓN XSS
+// ==========================================
+function sanitizarHTML(cadena) {
+    if (!cadena) return '';
+    return String(cadena)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
         async function iniciarSesion(event) {
-            event.preventDefault();
-            const usernameInput = document.getElementById('loginUsernameInput').value.trim();
-            const passInput = document.getElementById('loginPasswordInput').value.trim();
-            const status = document.getElementById('loginStatus');
+    event.preventDefault();
+    const usernameInput = document.getElementById('loginUsernameInput').value.trim();
+    const passInput = document.getElementById('loginPasswordInput').value.trim();
+    const status = document.getElementById('loginStatus');
 
-            status.innerText = "Verificando credenciales...";
+    status.innerText = "Verificando credenciales...";
 
-            const { data, error } = await supabaseClient
-                .from('usuarios')
-                .select('*')
-                .eq('usuario', usernameInput)
-                .single();
+    const { data, error } = await supabaseClient
+        .from('usuarios')
+        .select('id, nombre, usuario, rol, ciudad')
+        .eq('usuario', usernameInput)
+        .eq('password', passInput)
+        .single();
 
-            if (error || !data || data.password !== passInput) {
-                status.innerText = "Usuario o contraseña incorrectos.";
-                return;
-            }
+    if (error || !data) {
+        status.innerText = "Usuario o contraseña incorrectos.";
+        return;
+    }
 
-            usuarioActual = data;
-            localStorage.setItem('datared_active_user', JSON.stringify(usuarioActual));
-            status.innerText = "";
-            aplicarSesionIniciada();
-        }
+    usuarioActual = data;
+    localStorage.setItem('datared_active_user', JSON.stringify(usuarioActual));
+    status.innerText = "";
+    aplicarSesionIniciada();
+}
 
         async function aplicarSesionIniciada() {
             document.getElementById('loginOverlay').classList.add('hidden');
@@ -1376,37 +1388,45 @@
         }
 
         function inicializarMapaMobile() {
-            if (mobileMap) return;
-            mobileMap = L.map('mobileMapContainer').setView([-21.96, -63.67], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mobileMap);
-            mobileMarkersGroup = L.layerGroup().addTo(mobileMap);
+    if (mobileMap) return;
+    mobileMap = L.map('mobileMapContainer').setView([-21.96, -63.67], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mobileMap);
+    mobileMarkersGroup = L.layerGroup().addTo(mobileMap);
 
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(async pos => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    if (miGpsMarker) {
-                        miGpsMarker.setLatLng([lat, lng]);
-                    } else {
-                        miGpsMarker = L.circleMarker([lat, lng], { radius: 7, color: '#38bdf8', fillColor: '#0284c7', fillOpacity: 1 }).addTo(mobileMap);
-                    }
+    if (navigator.geolocation) {
+        const actualizarGPS = () => {
+            navigator.geolocation.getCurrentPosition(async pos => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
 
-                    if (usuarioActual && usuarioActual.id) {
-                        await supabaseClient.from('usuarios').update({
-                            latitud_actual: lat,
-                            longitud_actual: lng
-                        }).eq('id', usuarioActual.id);
-                    }
-                });
-            }
-        }
+                if (miGpsMarker) {
+                    miGpsMarker.setLatLng([lat, lng]);
+                } else if (typeof L !== 'undefined' && mobileMap) {
+                    miGpsMarker = L.circleMarker([lat, lng], { radius: 7, color: '#38bdf8', fillColor: '#0284c7', fillOpacity: 1 }).addTo(mobileMap);
+                }
 
-        function centrarEnMiGps() {
-            if (miGpsMarker && mobileMap) {
-                mobileMap.setView(miGpsMarker.getLatLng(), 15);
-            }
-        }
+                if (usuarioActual && usuarioActual.id) {
+                    await supabaseClient.from('usuarios').update({
+                        latitud_actual: lat,
+                        longitud_actual: lng
+                    }).eq('id', usuarioActual.id);
+                }
+            }, err => console.log('Error GPS:', err), { enableHighAccuracy: true });
+        };
 
+        // Ejecutar inmediatamente al abrir el mapa
+        actualizarGPS();
+
+        // Repetir cada 3 minutos (180,000 milisegundos)
+        setInterval(actualizarGPS, 180000);
+    }
+}
+
+function centrarEnMiGps() {
+    if (miGpsMarker && mobileMap) {
+        mobileMap.setView(miGpsMarker.getLatLng(), 15);
+    }
+}
         async function cargarDatosTecnico() {
             const tecNombre = usuarioActual.nombre.trim();
             
@@ -1520,57 +1540,55 @@
             let bounds = [];
 
             container.innerHTML = listaDia.map((o) => {
-                const lat = formatearGPS(o.coordenada_x);
-                const lng = formatearGPS(o.coordenada_y);
-                const mapsUrl = (lat && lng) ? "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng : null;
+    const lat = formatearGPS(o.coordenada_x);
+    const lng = formatearGPS(o.coordenada_y);
+    const mapsUrl = (lat && lng) ? "https://www.google.com/maps/search/?api=1&query=" + lat + "," + lng : null;
 
-                const tel = o.cliente_telefono ? String(o.cliente_telefono).replace(/\D/g, '') : '';
-                const wppUrl = tel ? `https://wa.me/591${tel}` : null;
-                const callUrl = tel ? `tel:${tel}` : null;
+    const tel = o.cliente_telefono ? String(o.cliente_telefono).replace(/\D/g, '') : '';
+    const wppUrl = tel ? `https://wa.me/591${tel}` : null;
+    const callUrl = tel ? `tel:${tel}` : null;
 
-                if (lat && lng) {
-                    bounds.push([parseFloat(lat), parseFloat(lng)]);
-                    L.marker([parseFloat(lat), parseFloat(lng)]).addTo(mobileMarkersGroup)
-                        .bindPopup('<b>' + o.cliente_nro + '</b><br>' + o.cliente_nombre);
-                }
+    if (lat && lng) {
+        bounds.push([parseFloat(lat), parseFloat(lng)]);
+        L.marker([parseFloat(lat), parseFloat(lng)]).addTo(mobileMarkersGroup)
+          .bindPopup('<b>' + sanitizarHTML(o.cliente_nro) + '</b><br>' + sanitizarHTML(o.cliente_nombre));
+    }
 
-                let statusBadge = "bg-sky-500/20 text-sky-300 border-sky-500/30";
-                if (o.estado === 'RETIRADO') statusBadge = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
-                if (o.estado === 'OBSERVADO') statusBadge = "bg-amber-500/20 text-amber-300 border-amber-500/30 font-bold animate-pulse";
-                if (o.estado === 'PAGADO') statusBadge = "bg-rose-600 text-white font-bold border-rose-500";
+    let statusBadge = "bg-sky-500/20 text-sky-300 border-sky-500/30";
+    if (o.estado === 'RETIRADO') statusBadge = "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
+    if (o.estado === 'OBSERVADO') statusBadge = "bg-amber-500/20 text-amber-300 border-amber-500/30 font-bold animate-pulse";
+    if (o.estado === 'PAGADO') statusBadge = "bg-rose-600 text-white font-bold border-rose-500";
 
-                return '<div id="cita_card_' + o.id + '" class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-700 space-y-2 transition-all">' +
-                    '<div class="flex justify-between items-start">' +
-                        '<div>' +
-                            '<span class="text-[9px] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">SA-' + o.cliente_nro + '</span>' +
-                            '<h4 class="font-bold text-white text-xs mt-1">' + o.cliente_nombre + '</h4>' +
-                            '<p class="text-[10px] text-amber-300 font-semibold">' + (o.zona_nodo_tap || 'S/NODO') + '</p>' +
-                            '<p class="text-[10px] text-slate-300">📍 ' + o.direccion + '</p>' +
-                            (o.referencia ? '<p class="text-[10px] text-amber-300/80 italic">Ref: ' + o.referencia + '</p>' : '') +
-                        '</div>' +
-                        '<span class="' + statusBadge + ' text-[9px] px-2 py-0.5 rounded-full border">' + o.estado + '</span>' +
-                    '</div>' +
-                    (tel ? `
-                        <div class="flex items-center gap-2 pt-1">
-                            <a href="${callUrl}" class="flex-1 bg-blue-900/50 hover:bg-blue-800 text-sky-300 border border-sky-500/30 text-[10px] font-bold py-1.5 rounded-lg text-center">📞 Llamar (${tel})</a>
-                            <a href="${wppUrl}" target="_blank" class="flex-1 bg-emerald-900/50 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold py-1.5 rounded-lg text-center">💬 WhatsApp</a>
-                        </div>
-                    ` : '') +
-                    '<div class="flex justify-between items-center pt-2 border-t border-slate-800 text-[10px]">' +
-                        '<span class="text-slate-400">' + (o.tipo_tecnologia || o.tecnologia || '') + ' • ' + o.ciudad + '</span>' +
-                        '<div class="flex gap-1.5">' +
-                            (mapsUrl ? '<a href="' + mapsUrl + '" target="_blank" class="bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold">🗺️ Ir GPS</a>' : '') +
-                            (o.estado !== 'PAGADO' ? '<button onclick="abrirModalGestionGenerico(\'' + o.id + '\')" class="bg-sky-600 text-white px-3 py-1 rounded-lg font-bold">Gestionar</button>' : '') +
-                        '</div>' +
-                    '</div>' +
-                '</div>';
-            }).join('');
+    return '<div id="cita_card_' + o.id + '" class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-700 space-y-2 transition-all">' +
+        '<div class="flex justify-between items-start">' +
+            '<div>' +
+                '<span class="text-[9px] font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">SA-' + sanitizarHTML(o.cliente_nro) + '</span>' +
+                '<h4 class="font-bold text-white text-xs mt-1">' + sanitizarHTML(o.cliente_nombre) + '</h4>' +
+                '<p class="text-[10px] text-amber-300 font-semibold">' + sanitizarHTML(o.zona_nodo_tap || 'S/NODO') + '</p>' +
+                '<p class="text-[10px] text-slate-300">📍 ' + sanitizarHTML(o.direccion) + '</p>' +
+                (o.referencia ? '<p class="text-[10px] text-amber-300/80 italic">Ref: ' + sanitizarHTML(o.referencia) + '</p>' : '') +
+            '</div>' +
+            '<span class="' + statusBadge + ' text-[9px] px-2 py-0.5 rounded-full border">' + sanitizarHTML(o.estado) + '</span>' +
+        '</div>' +
+        (tel ? `
+            <div class="flex items-center gap-2 pt-1">
+                <a href="${callUrl}" class="flex-1 bg-blue-900/50 hover:bg-blue-800 text-sky-300 border border-sky-500/30 text-[10px] font-bold py-1.5 rounded-lg text-center">📞 Llamar (${sanitizarHTML(tel)})</a>
+                <a href="${wppUrl}" target="_blank" class="flex-1 bg-emerald-900/50 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold py-1.5 rounded-lg text-center">💬 WhatsApp</a>
+            </div>
+        ` : '') +
+        '<div class="flex justify-between items-center pt-2 border-t border-slate-800 text-[10px]">' +
+            '<span class="text-slate-400">' + sanitizarHTML(o.tipo_tecnologia || o.tecnologia || '') + ' • ' + sanitizarHTML(o.ciudad) + '</span>' +
+            '<div class="flex gap-1.5">' +
+                (mapsUrl ? '<a href="' + mapsUrl + '" target="_blank" class="bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold">🗺️ Ir GPS</a>' : '') +
+                (o.estado !== 'PAGADO' ? '<button onclick="abrirModalGestionGenerico(\'' + o.id + '\')" class="bg-sky-600 text-white px-3 py-1 rounded-lg font-bold">Gestionar</button>' : '') +
+            '</div>' +
+        '</div>' +
+    '</div>';
+}).join('');
 
-            if (bounds.length > 0 && mobileMap) {
-                mobileMap.fitBounds(bounds, { padding: [20, 20] });
-            }
-        }
-
+if (bounds.length > 0 && mobileMap) {
+    mobileMap.fitBounds(bounds, { padding: [20, 20] });
+}
         function renderizarInventarioEquipos() {
             const container = document.getElementById('contenedorInventarioEquipos');
             let totalMonto = 0;
